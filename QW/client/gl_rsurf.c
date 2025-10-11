@@ -1480,6 +1480,10 @@ void BuildSurfaceDisplayList (msurface_t *fa)
 	//
 	// draw texture
 	//
+	// Check for integer overflow before allocation
+	if (lnumverts > 4 && (lnumverts - 4) > (INT_MAX / VERTEXSIZE / sizeof(float))) {
+		Sys_Error("GL_BuildLightmaps: lnumverts too large");
+	}
 	poly = Hunk_Alloc (sizeof(glpoly_t) + (lnumverts-4) * VERTEXSIZE*sizeof(float));
 	poly->next = fa->polys;
 	poly->flags = fa->flags;

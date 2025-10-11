@@ -120,6 +120,10 @@ void SubdividePolygon (int numverts, float *verts)
 		return;
 	}
 
+	// Check for integer overflow before allocation
+	if (numverts > 4 && (numverts - 4) > (INT_MAX / VERTEXSIZE / sizeof(float))) {
+		Sys_Error("SubdividePolygon: numverts too large");
+	}
 	poly = Hunk_Alloc (sizeof(glpoly_t) + (numverts-4) * VERTEXSIZE*sizeof(float));
 	poly->next = warpface->polys;
 	warpface->polys = poly;

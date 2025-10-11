@@ -717,7 +717,8 @@ static void Check_Gamma (unsigned char *pal)
 	unsigned char	palette[768];
 	int		i;
 
-	if ((i = COM_CheckParm("-gamma")) == 0) {
+	i = COM_CheckParm("-gamma");
+	if (i == 0 || i >= com_argc - 1) {
 		if ((gl_renderer && strstr(gl_renderer, "Voodoo")) ||
 			(gl_vendor && strstr(gl_vendor, "3Dfx")))
 			vid_gamma = 1;

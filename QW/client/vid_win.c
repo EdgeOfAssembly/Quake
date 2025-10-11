@@ -240,6 +240,10 @@ qboolean VID_CheckAdequateMem (int width, int height)
 {
 	int		tbuffersize;
 
+	// Check for integer overflow in multiplication
+	if (width > 0 && height > 0 && width > INT_MAX / height / sizeof(*d_pzbuffer)) {
+		return false; // Would overflow
+	}
 	tbuffersize = width * height * sizeof (*d_pzbuffer);
 
 	tbuffersize += D_SurfaceCacheForRes (width, height);
@@ -265,6 +269,10 @@ qboolean VID_AllocBuffers (int width, int height)
 {
 	int		tsize, tbuffersize;
 
+	// Check for integer overflow in multiplication
+	if (width > 0 && height > 0 && width > INT_MAX / height / sizeof(*d_pzbuffer)) {
+		return false; // Would overflow
+	}
 	tbuffersize = width * height * sizeof (*d_pzbuffer);
 
 	tsize = D_SurfaceCacheForRes (width, height);
