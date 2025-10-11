@@ -7,9 +7,10 @@ This document tracks security fixes and compatibility improvements made to the Q
 
 ### Critical Fixes
 
-#### 1. GL_EXTENSIONS Buffer Overflow (CVE-2024-XXXX)
+#### 1. GL_EXTENSIONS Buffer Overflow
 **Severity:** CRITICAL  
-**Impact:** Crash on startup with modern GPUs
+**Impact:** Crash on startup with modern GPUs  
+**CVE Status:** Pending assignment
 
 Modern NVIDIA and AMD GPUs return OpenGL extension strings exceeding 10KB in length. The original code used a fixed 4096-byte buffer with `vsprintf()`, causing immediate buffer overflow and crash on modern systems.
 
@@ -171,8 +172,8 @@ For debugging:
 
 ## Credits
 
-Security fixes implemented by GitHub Copilot Code Review Agent
-Original codebase by id Software (1996-1997)
+Security analysis and fixes for EdgeOfAssembly/Quake repository  
+Original codebase by id Software (1996-1997)  
 Released under GNU GPL v2
 
 ## References

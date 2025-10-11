@@ -105,7 +105,7 @@ This document summarizes the security vulnerabilities and compatibility issues t
 ## Compatibility Improvements
 
 ### Display Resolution
-- ✅ Auto-detection of native screen resolution on Linux/X11
+- ✅ Automatic detection of native screen resolution on Linux/X11
 - ✅ Proper support for Full HD (1920x1080) and higher displays
 - ✅ Maintains backward compatibility with command-line parameters
 
