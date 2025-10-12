@@ -579,7 +579,29 @@ void GL_Init (void)
 	gl_version = glGetString (GL_VERSION);
 	Con_Printf ("GL_VERSION: %s\n", gl_version);
 	gl_extensions = glGetString (GL_EXTENSIONS);
-	Con_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
+	
+	// Print GL_EXTENSIONS safely - modern GPUs can have very long extension strings
+	// that would overflow the console print buffer
+	if (gl_extensions) {
+		int ext_len = strlen(gl_extensions);
+		if (ext_len > 0) {
+			Con_Printf ("GL_EXTENSIONS: ");
+			// Print extensions in chunks to avoid buffer overflow
+			const char *ext = gl_extensions;
+			const int chunk_size = 1024;
+			while (*ext) {
+				char chunk[1025];
+				int i;
+				for (i = 0; i < chunk_size && ext[i] != '\0'; i++) {
+					chunk[i] = ext[i];
+				}
+				chunk[i] = '\0';
+				Con_Printf ("%s", chunk);
+				ext += i;
+			}
+			Con_Printf ("\n");
+		}
+	}
 
 //	Con_Printf ("%s %s\n", gl_renderer, gl_version);
 
@@ -695,7 +717,8 @@ static void Check_Gamma (unsigned char *pal)
 	unsigned char	palette[768];
 	int		i;
 
-	if ((i = COM_CheckParm("-gamma")) == 0) {
+	i = COM_CheckParm("-gamma");
+	if (i == 0 || i >= com_argc - 1) {
 		if ((gl_renderer && strstr(gl_renderer, "Voodoo")) ||
 			(gl_vendor && strstr(gl_vendor, "3Dfx")))
 			vid_gamma = 1;
@@ -757,13 +780,36 @@ void VID_Init(unsigned char *palette)
 	if ((i = COM_CheckParm("-window")) != 0)
 		fullscreen = false;
 
-	if ((i = COM_CheckParm("-width")) != 0)
+	if (!(dpy = XOpenDisplay(NULL))) {
+		fprintf(stderr, "Error couldn't open the X display\n");
+		exit(1);
+	}
+
+	scrnum = DefaultScreen(dpy);
+	root = RootWindow(dpy, scrnum);
+	
+	// Auto-detect screen dimensions if not specified on command line
+	// This fixes issues with hardcoded 640x480 on Full HD and higher displays
+	i = COM_CheckParm("-width");
+	if (i == 0 || i >= com_argc - 1) {
+		width = DisplayWidth(dpy, scrnum);
+		// Cap at reasonable resolution for performance
+		if (width > 1920) width = 1920;
+	} else {
 		width = atoi(com_argv[i+1]);
-
-	if ((i = COM_CheckParm("-height")) != 0)
+	}
+	
+	i = COM_CheckParm("-height");
+	if (i == 0 || i >= com_argc - 1) {
+		height = DisplayHeight(dpy, scrnum);
+		// Cap at reasonable resolution for performance
+		if (height > 1080) height = 1080;
+	} else {
 		height = atoi(com_argv[i+1]);
+	}
 
-	if ((i = COM_CheckParm("-conwidth")) != 0)
+	i = COM_CheckParm("-conwidth");
+	if (i != 0 && i < com_argc - 1)
 		vid.conwidth = Q_atoi(com_argv[i+1]);
 	else
 		vid.conwidth = 640;
@@ -776,18 +822,11 @@ void VID_Init(unsigned char *palette)
 	// pick a conheight that matches with correct aspect
 	vid.conheight = vid.conwidth*3 / 4;
 
-	if ((i = COM_CheckParm("-conheight")) != 0)
+	i = COM_CheckParm("-conheight");
+	if (i != 0 && i < com_argc - 1)
 		vid.conheight = Q_atoi(com_argv[i+1]);
 	if (vid.conheight < 200)
 		vid.conheight = 200;
-
-	if (!(dpy = XOpenDisplay(NULL))) {
-		fprintf(stderr, "Error couldn't open the X display\n");
-		exit(1);
-	}
-
-	scrnum = DefaultScreen(dpy);
-	root = RootWindow(dpy, scrnum);
 
 	// Get video mode list
 	MajorVersion = MinorVersion = 0;
@@ -894,7 +933,7 @@ void VID_Init(unsigned char *palette)
 
 	GL_Init();
 
-	sprintf (gldir, "%s/glquake", com_gamedir);
+	snprintf (gldir, sizeof(gldir), "%s/glquake", com_gamedir);
 	Sys_mkdir (gldir);
 
 	VID_SetPalette(palette);

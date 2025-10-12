@@ -1,0 +1,52 @@
+# Build artifacts
+*.o
+*.a
+*.so
+*.so.*
+*.dll
+*.exe
+*.obj
+*.lib
+*.dylib
+
+# Compiled binaries
+glquake
+qwcl
+qwsv
+quake
+quake.exe
+glquake.exe
+
+# Temporary files
+*~
+*.swp
+*.swo
+*.tmp
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+*.code-workspace
+
+# Build directories
+build/
+dist/
+bin/
+obj/
+Debug/
+Release/
+
+# Game data (not part of source)
+id1/
+*.pak
+*.bsp
+*.mdl
+*.spr
+*.wav
+*.mp3
+
+# Log files
+*.log
+qconsole.log

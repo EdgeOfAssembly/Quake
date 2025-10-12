@@ -500,9 +500,9 @@ void	VID_SetPalette (unsigned char *palette)
 			}
 			d_15to8table[i]=k;
 		}
-		sprintf(s, "%s/glquake", com_gamedir);
+		snprintf(s, sizeof(s), "%s/glquake", com_gamedir);
  		Sys_mkdir (s);
-		sprintf(s, "%s/glquake/15to8.pal", com_gamedir);
+		snprintf(s, sizeof(s), "%s/glquake/15to8.pal", com_gamedir);
 		if ((f = fopen(s, "wb")) != NULL) {
 			fwrite(d_15to8table, 1<<15, 1, f);
 			fclose(f);
@@ -525,7 +525,29 @@ void GL_Init (void)
 	gl_version = glGetString (GL_VERSION);
 	Con_Printf ("GL_VERSION: %s\n", gl_version);
 	gl_extensions = glGetString (GL_EXTENSIONS);
-	Con_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
+	
+	// Print GL_EXTENSIONS safely - modern GPUs can have very long extension strings
+	// that would overflow the console print buffer
+	if (gl_extensions) {
+		int ext_len = strlen(gl_extensions);
+		if (ext_len > 0) {
+			Con_Printf ("GL_EXTENSIONS: ");
+			// Print extensions in chunks to avoid buffer overflow
+			const char *ext = gl_extensions;
+			const int chunk_size = 1024;
+			while (*ext) {
+				char chunk[1025];
+				int i;
+				for (i = 0; i < chunk_size && ext[i] != '\0'; i++) {
+					chunk[i] = ext[i];
+				}
+				chunk[i] = '\0';
+				Con_Printf ("%s", chunk);
+				ext += i;
+			}
+			Con_Printf ("\n");
+		}
+	}
 
 //	Con_Printf ("%s %s\n", gl_renderer, gl_version);
 
@@ -668,12 +690,36 @@ void VID_Init(unsigned char *palette)
 
 // set vid parameters
 
-	if ((i = COM_CheckParm("-width")) != 0)
-		width = atoi(com_argv[i+1]);
-	if ((i = COM_CheckParm("-height")) != 0)
-		height = atoi(com_argv[i+1]);
+	if (!(dpy = XOpenDisplay(NULL))) {
+		fprintf(stderr, "Error couldn't open the X display\n");
+		exit(1);
+	}
 
-	if ((i = COM_CheckParm("-conwidth")) != 0)
+	scrnum = DefaultScreen(dpy);
+	root = RootWindow(dpy, scrnum);
+	
+	// Auto-detect screen dimensions if not specified on command line
+	// This fixes issues with hardcoded 640x480 on Full HD and higher displays
+	i = COM_CheckParm("-width");
+	if (i == 0 || i >= com_argc - 1) {
+		width = DisplayWidth(dpy, scrnum);
+		// Cap at reasonable resolution for performance
+		if (width > 1920) width = 1920;
+	} else {
+		width = atoi(com_argv[i+1]);
+	}
+	
+	i = COM_CheckParm("-height");
+	if (i == 0 || i >= com_argc - 1) {
+		height = DisplayHeight(dpy, scrnum);
+		// Cap at reasonable resolution for performance
+		if (height > 1080) height = 1080;
+	} else {
+		height = atoi(com_argv[i+1]);
+	}
+
+	i = COM_CheckParm("-conwidth");
+	if (i != 0 && i < com_argc - 1)
 		vid.conwidth = Q_atoi(com_argv[i+1]);
 	else
 		vid.conwidth = 640;
@@ -686,18 +732,11 @@ void VID_Init(unsigned char *palette)
 	// pick a conheight that matches with correct aspect
 	vid.conheight = vid.conwidth*3 / 4;
 
-	if ((i = COM_CheckParm("-conheight")) != 0)
+	i = COM_CheckParm("-conheight");
+	if (i != 0 && i < com_argc - 1)
 		vid.conheight = Q_atoi(com_argv[i+1]);
 	if (vid.conheight < 200)
 		vid.conheight = 200;
-
-	if (!(dpy = XOpenDisplay(NULL))) {
-		fprintf(stderr, "Error couldn't open the X display\n");
-		exit(1);
-	}
-
-	scrnum = DefaultScreen(dpy);
-	root = RootWindow(dpy, scrnum);
 
 	visinfo=glXChooseVisual(dpy,scrnum,attrib);
 	if (!visinfo) {
@@ -753,7 +792,7 @@ void VID_Init(unsigned char *palette)
 
 	GL_Init();
 
-	sprintf (gldir, "%s/glquake", com_gamedir);
+	snprintf (gldir, sizeof(gldir), "%s/glquake", com_gamedir);
 	Sys_mkdir (gldir);
 
 	VID_SetPalette(palette);

@@ -187,12 +187,15 @@ void Q_strcpy (char *dest, char *src)
 
 void Q_strncpy (char *dest, char *src, int count)
 {
-	while (*src && count--)
+	if (count <= 0)
+		return;
+	
+	while (*src && count > 1)
 	{
 		*dest++ = *src++;
+		count--;
 	}
-	if (count)
-		*dest++ = 0;
+	*dest = '\0'; // Always null terminate
 }
 
 int Q_strlen (char *str)
