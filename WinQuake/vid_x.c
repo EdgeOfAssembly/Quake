@@ -448,8 +448,9 @@ void	VID_Init (unsigned char *palette)
    int template_mask;
    
    ignorenext=0;
-   vid.width = 320;
-   vid.height = 200;
+   /* Defaults; overridden by -width/-height or auto-detect below. */
+   vid.width = 640;
+   vid.height = 480;
    vid.maxwarpwidth = WARP_WIDTH;
    vid.maxwarpheight = WARP_HEIGHT;
    vid.numpages = 2;
@@ -512,6 +513,24 @@ void	VID_Init (unsigned char *palette)
 		if (!vid.height)
 			Sys_Error("VID: Bad window height\n");
 	}
+
+	/* Auto-detect native size when user did not pass -width/-height/-winsize. */
+	if (!COM_CheckParm("-width") && !COM_CheckParm("-height") && !COM_CheckParm("-winsize"))
+	{
+		int scr = DefaultScreen(x_disp);
+		vid.width = DisplayWidth(x_disp, scr);
+		vid.height = DisplayHeight(x_disp, scr);
+	}
+	/* Clamp to software renderer limits (Full HD). */
+	if (vid.width > MAXWIDTH)
+		vid.width = MAXWIDTH;
+	if (vid.height > MAXHEIGHT)
+		vid.height = MAXHEIGHT;
+	if (vid.width < 320)
+		vid.width = 320;
+	if (vid.height < 200)
+		vid.height = 200;
+	vid.width &= ~7; /* renderer wants multiple of 8 */
 
 	template_mask = 0;
 

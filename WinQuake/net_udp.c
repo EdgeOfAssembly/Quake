@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <errno.h>
+#include <unistd.h>
+#include <arpa/inet.h>
 
 #ifdef __sun__
 #include <sys/filio.h>
@@ -37,8 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <libc.h>
 #endif
 
-extern int gethostname (char *, int);
-extern int close (int);
+/* gethostname/close come from unistd.h (size_t buflen on modern glibc). */
 
 extern cvar_t hostname;
 

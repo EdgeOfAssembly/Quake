@@ -1,0 +1,550 @@
+diff -Naur WinQuake.org/chase.c WinQuake/chase.c
+--- WinQuake.org/chase.c	2021-12-03 22:11:00.619238951 +0200
++++ WinQuake/chase.c	2021-05-20 03:13:19.295379675 +0300
+@@ -21,10 +21,13 @@
+ 
+ #include "quakedef.h"
+ 
+-cvar_t	chase_back = {"chase_back", "100"};
+-cvar_t	chase_up = {"chase_up", "16"};
+-cvar_t	chase_right = {"chase_right", "0"};
+-cvar_t	chase_active = {"chase_active", "0"};
++
++extern qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace);
++
++cvar_t	chase_back = {"chase_back", "100",false,false,0.0,NULL};
++cvar_t	chase_up = {"chase_up", "16",false,false,0.0,NULL};
++cvar_t	chase_right = {"chase_right", "0",false,false,0.0,NULL};
++cvar_t	chase_active = {"chase_active", "0",false,false,0.0,NULL};
+ 
+ vec3_t	chase_pos;
+ vec3_t	chase_angles;
+diff -Naur WinQuake.org/cl_demo.c WinQuake/cl_demo.c
+--- WinQuake.org/cl_demo.c	2021-12-03 22:11:00.619238951 +0200
++++ WinQuake/cl_demo.c	2021-05-20 02:48:06.667292488 +0300
+@@ -114,7 +114,12 @@
+ 		}
+ 		
+ 	// get the next message
+-		fread (&net_message.cursize, 4, 1, cls.demofile);
++		r = fread (&net_message.cursize, 4, 1, cls.demofile);
++		if((r == 0) && (ferror(cls.demofile) != 0)) {
++			perror(": ");
++			exit(EXIT_FAILURE);
++		}
++
+ 		VectorCopy (cl.mviewangles[0], cl.mviewangles[1]);
+ 		for (i=0 ; i<3 ; i++)
+ 		{
+@@ -195,6 +200,7 @@
+ */
+ void CL_Record_f (void)
+ {
++	int	r;
+ 	int		c;
+ 	char	name[MAX_OSPATH];
+ 	int		track;
+@@ -230,7 +236,11 @@
+ 	else
+ 		track = -1;	
+ 
+-	sprintf (name, "%s/%s", com_gamedir, Cmd_Argv(1));
++	r = snprintf (name,MAX_OSPATH, "%s/%s", com_gamedir, Cmd_Argv(1));
++	if(r < 0) {
++		perror(": ");
++		exit(EXIT_FAILURE);
++	}
+ 	
+ //
+ // start the map up
+diff -Naur WinQuake.org/cl_input.c WinQuake/cl_input.c
+--- WinQuake.org/cl_input.c	2021-12-03 22:11:00.619238951 +0200
++++ WinQuake/cl_input.c	2021-05-20 03:01:41.797339472 +0300
+@@ -178,27 +178,34 @@
+ 	down = key->state & 1;
+ 	val = 0;
+ 	
+-	if (impulsedown && !impulseup)
+-		if (down)
++	if (impulsedown && !impulseup) {
++		if (down) {
+ 			val = 0.5;	// pressed and held this frame
+-		else
++		} else {
+ 			val = 0;	//	I_Error ();
+-	if (impulseup && !impulsedown)
+-		if (down)
++		}
++	}
++	if (impulseup && !impulsedown) {
++		if (down) {
+ 			val = 0;	//	I_Error ();
+-		else
++		} else {
+ 			val = 0;	// released this frame
+-	if (!impulsedown && !impulseup)
+-		if (down)
++		}
++	}
++	if (!impulsedown && !impulseup) {
++		if (down) {
+ 			val = 1.0;	// held the entire frame
+-		else
++		} else {
+ 			val = 0;	// up the entire frame
+-	if (impulsedown && impulseup)
+-		if (down)
++		}
++	}
++	if (impulsedown && impulseup) {
++		if (down) {
+ 			val = 0.75;	// released and re-pressed this frame
+-		else
++		} else {
+ 			val = 0.25;	// pressed and released this frame
+-
++		}
++	}
+ 	key->state &= 1;		// clear impulses
+ 	
+ 	return val;
+@@ -209,17 +216,17 @@
+ 
+ //==========================================================================
+ 
+-cvar_t	cl_upspeed = {"cl_upspeed","200"};
+-cvar_t	cl_forwardspeed = {"cl_forwardspeed","200", true};
+-cvar_t	cl_backspeed = {"cl_backspeed","200", true};
+-cvar_t	cl_sidespeed = {"cl_sidespeed","350"};
++cvar_t	cl_upspeed = {"cl_upspeed","200", false, false, 0.0, NULL};
++cvar_t	cl_forwardspeed = {"cl_forwardspeed","200", true,false,0.0,NULL};
++cvar_t	cl_backspeed = {"cl_backspeed","200", true,false,0.0,NULL};
++cvar_t	cl_sidespeed = {"cl_sidespeed","350",false,false,0.0,NULL};
+ 
+-cvar_t	cl_movespeedkey = {"cl_movespeedkey","2.0"};
++cvar_t	cl_movespeedkey = {"cl_movespeedkey","2.0",false,false,0.0,NULL};
+ 
+-cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
+-cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
++cvar_t	cl_yawspeed = {"cl_yawspeed","140",false,false,0.0,NULL};
++cvar_t	cl_pitchspeed = {"cl_pitchspeed","150",false,false,0.0,NULL};
+ 
+-cvar_t	cl_anglespeedkey = {"cl_anglespeedkey","1.5"};
++cvar_t	cl_anglespeedkey = {"cl_anglespeedkey","1.5",false,false,0.0,NULL};
+ 
+ 
+ /*
+diff -Naur WinQuake.org/cl_main.c WinQuake/cl_main.c
+--- WinQuake.org/cl_main.c	2021-12-03 22:11:00.619238951 +0200
++++ WinQuake/cl_main.c	2021-05-20 03:05:18.750351977 +0300
+@@ -25,20 +25,20 @@
+ // references them even when on a unix system.
+ 
+ // these two are not intended to be set directly
+-cvar_t	cl_name = {"_cl_name", "player", true};
+-cvar_t	cl_color = {"_cl_color", "0", true};
++cvar_t	cl_name = {"_cl_name", "player", true,false,0.0,NULL};
++cvar_t	cl_color = {"_cl_color", "0", true,false,0.0,NULL};
+ 
+-cvar_t	cl_shownet = {"cl_shownet","0"};	// can be 0, 1, or 2
+-cvar_t	cl_nolerp = {"cl_nolerp","0"};
++cvar_t	cl_shownet = {"cl_shownet","0",false,false,0.0,NULL};	// can be 0, 1, or 2
++cvar_t	cl_nolerp = {"cl_nolerp","0",false,false,0.0,NULL};
+ 
+-cvar_t	lookspring = {"lookspring","0", true};
+-cvar_t	lookstrafe = {"lookstrafe","0", true};
+-cvar_t	sensitivity = {"sensitivity","3", true};
+-
+-cvar_t	m_pitch = {"m_pitch","0.022", true};
+-cvar_t	m_yaw = {"m_yaw","0.022", true};
+-cvar_t	m_forward = {"m_forward","1", true};
+-cvar_t	m_side = {"m_side","0.8", true};
++cvar_t	lookspring = {"lookspring","0", true,false,0.0,NULL};
++cvar_t	lookstrafe = {"lookstrafe","0", true,false,0.0,NULL};
++cvar_t	sensitivity = {"sensitivity","3", true,false,0.0,NULL};
++
++cvar_t	m_pitch = {"m_pitch","0.022", true,false,0.0,NULL};
++cvar_t	m_yaw = {"m_yaw","0.022", true,false,0.0,NULL};
++cvar_t	m_forward = {"m_forward","1", true,false,0.0,NULL};
++cvar_t	m_side = {"m_side","0.8", true,false,0.0,NULL};
+ 
+ 
+ client_static_t	cls;
+@@ -272,7 +272,7 @@
+ Debugging tool, just flashes the screen
+ ===============
+ */
+-void SetPal (int i)
++void SetPal (int i __attribute__((unused)) )
+ {
+ #if 0
+ 	static int old;
+diff -Naur WinQuake.org/cl_parse.c WinQuake/cl_parse.c
+--- WinQuake.org/cl_parse.c	2021-12-03 22:11:00.619238951 +0200
++++ WinQuake/cl_parse.c	2021-05-20 03:09:57.359368036 +0300
+@@ -335,7 +335,7 @@
+ 	qboolean	forcelink;
+ 	entity_t	*ent;
+ 	int			num;
+-	int			skin;
++	int			skin __attribute__((unused));
+ 
+ 	if (cls.signon == SIGNONS - 1)
+ 	{	// first update is the final signon stage
+@@ -356,14 +356,17 @@
+ 
+ 	ent = CL_EntityNum (num);
+ 
+-for (i=0 ; i<16 ; i++)
+-if (bits&(1<<i))
+-	bitcounts[i]++;
++	for (i=0 ; i<16 ; i++) {
++		if (bits&(1<<i)) {
++			bitcounts[i]++;
++		}
++	}
+ 
+-	if (ent->msgtime != cl.mtime[1])
++	if (ent->msgtime != cl.mtime[1]) {
+ 		forcelink = true;	// no previous frame to lerp from
+-	else
++	} else {
+ 		forcelink = false;
++	}
+ 
+ 	ent->msgtime = cl.mtime[0];
+ 	
+@@ -788,7 +791,7 @@
+ 			
+ 		case svc_disconnect:
+ 			Host_EndGame ("Server disconnected\n");
+-
++			break;
+ 		case svc_print:
+ 			Con_Printf ("%s", MSG_ReadString ());
+ 			break;
+diff -Naur WinQuake.org/cmd.c WinQuake/cmd.c
+--- WinQuake.org/cmd.c	2021-12-03 22:11:00.619238951 +0200
++++ WinQuake/cmd.c	2021-05-20 03:39:52.702471518 +0300
+@@ -455,9 +455,9 @@
+ */
+ char	*Cmd_Argv (int arg)
+ {
+-	if ( (unsigned)arg >= cmd_argc )
++	if ( arg >= cmd_argc )
+ 		return cmd_null_string;
+-	return cmd_argv[arg];	
++	return cmd_argv[arg];
+ }
+ 
+ /*
+diff -Naur WinQuake.org/cmd.h WinQuake/cmd.h
+--- WinQuake.org/cmd.h	2021-12-03 22:11:00.619238951 +0200
++++ WinQuake/cmd.h	2021-05-20 03:27:13.664427768 +0300
+@@ -35,19 +35,19 @@
+ */
+ 
+ 
+-void Cbuf_Init (void);
++//void Cbuf_Init (void);
+ // allocates an initial text buffer that will grow as needed
+ 
+-void Cbuf_AddText (char *text);
++//void Cbuf_AddText (char *text);
+ // as new commands are generated from the console or keybindings,
+ // the text is added to the end of the command buffer.
+ 
+-void Cbuf_InsertText (char *text);
++//void Cbuf_InsertText (char *text);
+ // when a command wants to issue other commands immediately, the text is
+ // inserted at the beginning of the buffer, before any remaining unexecuted
+ // commands.
+ 
+-void Cbuf_Execute (void);
++//void Cbuf_Execute (void);
+ // Pulls off \n terminated lines of text from the command buffer and sends
+ // them through Cmd_ExecuteString.  Stops when the buffer is empty.
+ // Normally called once per frame, but may be explicitly invoked.
+diff -Naur WinQuake.org/common.c WinQuake/common.c
+--- WinQuake.org/common.c	2021-12-03 22:11:00.620238951 +0200
++++ WinQuake/common.c	2021-05-20 03:49:40.156505379 +0300
+@@ -29,8 +29,8 @@
+ static char     *safeargvs[NUM_SAFE_ARGVS] =
+ 	{"-stdvid", "-nolan", "-nosound", "-nocdaudio", "-nojoy", "-nomouse", "-dibonly"};
+ 
+-cvar_t  registered = {"registered","0"};
+-cvar_t  cmdline = {"cmdline","0", false, true};
++cvar_t  registered = {"registered","0",false,false,0.0,NULL};
++cvar_t  cmdline = {"cmdline","0", false, true,0.0,NULL};
+ 
+ qboolean        com_modified;   // set true if using non-id files
+ 
+@@ -697,9 +697,9 @@
+ char *MSG_ReadString (void)
+ {
+ 	static char     string[2048];
+-	int             l,c;
++	unsigned int	l = 0;
++	int             c;
+ 	
+-	l = 0;
+ 	do
+ 	{
+ 		c = MSG_ReadChar ();
+@@ -1122,7 +1122,7 @@
+ COM_Init
+ ================
+ */
+-void COM_Init (char *basedir)
++void COM_Init (char *basedir __attribute__((unused)) )
+ {
+ 	byte    swaptest[2] = {1,0};
+ 
+@@ -1283,7 +1283,11 @@
+ 	int             handle;
+ 	char    name[MAX_OSPATH];
+ 	
+-	sprintf (name, "%s/%s", com_gamedir, filename);
++	int	r = snprintf (name, MAX_OSPATH, "%s/%s", com_gamedir, filename);
++	if(r < 0) {
++		perror(": ");
++		exit(EXIT_FAILURE);
++	}
+ 
+ 	handle = Sys_FileOpenWrite (name);
+ 	if (handle == -1)
+@@ -1332,7 +1336,7 @@
+ void COM_CopyFile (char *netpath, char *cachepath)
+ {
+ 	int             in, out;
+-	int             remaining, count;
++	unsigned int             remaining, count;
+ 	char    buf[4096];
+ 	
+ 	remaining = Sys_FileOpenRead (netpath, &in);            
+@@ -1371,6 +1375,8 @@
+ 	int                     i;
+ 	int                     findtime, cachetime;
+ 
++	int	r;
++
+ 	if (file && handle)
+ 		Sys_Error ("COM_FindFile: both handle and file set");
+ 	if (!file && !handle)
+@@ -1421,7 +1427,11 @@
+ 					continue;
+ 			}
+ 			
+-			sprintf (netpath, "%s/%s",search->filename, filename);
++			r = snprintf (netpath, MAX_OSPATH, "%s/%s",search->filename, filename);
++			if(r < 0) {
++				perror(": ");
++				exit(EXIT_FAILURE);
++			}
+ 			
+ 			findtime = Sys_FileTime (netpath);
+ 			if (findtime == -1)
+@@ -1433,12 +1443,21 @@
+ 			else
+ 			{	
+ #if defined(_WIN32)
+-				if ((strlen(netpath) < 2) || (netpath[1] != ':'))
+-					sprintf (cachepath,"%s%s", com_cachedir, netpath);
+-				else
+-					sprintf (cachepath,"%s%s", com_cachedir, netpath+2);
++				if ((strlen(netpath) < 2) || (netpath[1] != ':')) {
++					r = snprintf (cachepath,MAX_OSPATH,"%s%s", com_cachedir, netpath);
++				} else {
++					r = snprintf (cachepath,MAX_OSPATH,"%s%s", com_cachedir, netpath+2);
++					if(r < 0) {
++						perror(": ");
++						exit(EXIT_FAILURE);
++					}
++				}
+ #else
+-				sprintf (cachepath,"%s%s", com_cachedir, netpath);
++				r = snprintf (cachepath,MAX_OSPATH,"%s%s", com_cachedir, netpath);
++				if(r < 0) {
++					perror(": ");
++					exit(EXIT_FAILURE);
++				}
+ #endif
+ 
+ 				cachetime = Sys_FileTime (cachepath);
+diff -Naur WinQuake.org/console.c WinQuake/console.c
+--- WinQuake.org/console.c	2021-12-03 22:11:00.620238951 +0200
++++ WinQuake/console.c	2021-05-20 03:54:34.292522333 +0300
+@@ -42,7 +42,7 @@
+ int			con_x;				// offset in current line for next print
+ char		*con_text=0;
+ 
+-cvar_t		con_notifytime = {"con_notifytime","3"};		//seconds
++cvar_t		con_notifytime = {"con_notifytime","3",false,false,0.0,NULL};		//seconds
+ 
+ #define	NUM_CON_TIMES 4
+ float		con_times[NUM_CON_TIMES];	// realtime time the line was generated
+@@ -360,7 +360,12 @@
+     vsprintf(data, fmt, argptr);
+     va_end(argptr);
+     fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0666);
+-    write(fd, data, strlen(data));
++    long r = write(fd, data, strlen(data));
++    if(r == -1) {
++	    close(fd);
++	    perror(": ");
++	    exit(EXIT_FAILURE);
++    }
+     close(fd);
+ }
+ 
+@@ -479,7 +484,7 @@
+ */
+ void Con_DrawInput (void)
+ {
+-	int		y;
++	int		y __attribute__((unused));
+ 	int		i;
+ 	char	*text;
+ 
+diff -Naur WinQuake.org/d_edge.c WinQuake/d_edge.c
+--- WinQuake.org/d_edge.c	2021-12-03 22:11:00.620238951 +0200
++++ WinQuake/d_edge.c	2021-12-03 21:35:20.693115607 +0200
+@@ -25,7 +25,7 @@
+ static int	miplevel;
+ 
+ float		scale_for_mip;
+-int			screenwidth;
++extern int			screenwidth;
+ int			ubasestep, errorterm, erroradjustup, erroradjustdown;
+ int			vstartscan;
+ 
+diff -Naur WinQuake.org/d_local.h WinQuake/d_local.h
+--- WinQuake.org/d_local.h	2021-12-03 22:11:00.620238951 +0200
++++ WinQuake/d_local.h	2021-11-10 03:01:52.814900029 +0200
+@@ -66,8 +66,8 @@
+ extern float	d_sdivzstepv, d_tdivzstepv, d_zistepv;
+ extern float	d_sdivzorigin, d_tdivzorigin, d_ziorigin;
+ 
+-fixed16_t	sadjust, tadjust;
+-fixed16_t	bbextents, bbextentt;
++extern fixed16_t	sadjust, tadjust;
++extern fixed16_t	bbextents, bbextentt;
+ 
+ 
+ void D_DrawSpans8 (espan_t *pspans);
+@@ -80,7 +80,7 @@
+ void D_DrawSkyScans16 (espan_t *pspan);
+ 
+ void R_ShowSubDiv (void);
+-void (*prealspandrawer)(void);
++//void (*prealspandrawer)(void);
+ surfcache_t	*D_CacheSurface (msurface_t *surface, int miplevel);
+ 
+ extern int D_MipLevelForScale (float scale);
+diff -Naur WinQuake.org/d_vars.c WinQuake/d_vars.c
+--- WinQuake.org/d_vars.c	2021-12-03 22:11:00.621238951 +0200
++++ WinQuake/d_vars.c	2021-12-03 21:33:17.845108526 +0200
+@@ -33,6 +33,7 @@
+ // FIXME: make into one big structure, like cl or sv
+ // FIXME: do separately for refresh engine and driver
+ 
++/*
+ float	d_sdivzstepu, d_tdivzstepu, d_zistepu;
+ float	d_sdivzstepv, d_tdivzstepv, d_zistepv;
+ float	d_sdivzorigin, d_tdivzorigin, d_ziorigin;
+@@ -45,6 +46,6 @@
+ short			*d_pzbuffer;
+ unsigned int	d_zrowbytes;
+ unsigned int	d_zwidth;
+-
++*/
+ #endif	// !id386
+ 
+diff -Naur WinQuake.org/gl_vidlinux.c WinQuake/gl_vidlinux.c
+--- WinQuake.org/gl_vidlinux.c	2021-12-03 22:11:00.624238951 +0200
++++ WinQuake/gl_vidlinux.c	2021-05-17 03:41:30.574119381 +0300
+@@ -25,7 +25,7 @@
+ #include <stdio.h>
+ #include <signal.h>
+ 
+-#include <asm/io.h>
++#include <sys/io.h>
+ #include <dlfcn.h>
+ 
+ /*#include "vga.h" */
+ 
+diff -Naur WinQuake.org/screen.c WinQuake/screen.c
+--- WinQuake.org/screen.c	2021-12-03 22:11:00.633238952 +0200
++++ WinQuake/screen.c	2021-12-03 21:35:53.598117503 +0200
+@@ -50,7 +50,7 @@
+ int			clearconsole;
+ int			clearnotify;
+ 
+-viddef_t	vid;				// global video state
++extern viddef_t	vid;				// global video state
+ 
+ vrect_t		*pconupdate;
+ vrect_t		scr_vrect;
+diff -Naur WinQuake.org/snd_linux.c WinQuake/snd_linux.c
+--- WinQuake.org/snd_linux.c	2021-12-03 22:11:00.634238952 +0200
++++ WinQuake/snd_linux.c	2021-05-23 23:12:09.982460999 +0300
+@@ -130,7 +130,7 @@
+ // memory map the dma buffer
+ 
+ 	shm->buffer = (unsigned char *) mmap(NULL, info.fragstotal
+-		* info.fragsize, PROT_WRITE, MAP_FILE|MAP_SHARED, audio_fd, 0);
++		* info.fragsize, PROT_WRITE, MAP_SHARED, audio_fd, 0);
+ 	if (!shm->buffer || shm->buffer == (unsigned char *)-1)
+ 	{
+ 		perror("/dev/dsp");
+diff -Naur WinQuake.org/sys_linux.c WinQuake/sys_linux.c
+--- WinQuake.org/sys_linux.c	2021-12-03 22:11:00.634238952 +0200
++++ WinQuake/sys_linux.c	2021-05-23 23:08:29.134448269 +0300
+@@ -118,7 +118,7 @@
+ void Sys_Quit (void)
+ {
+ 	Host_Shutdown();
+-    fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
++    fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NDELAY);
+ #if 0
+ 	if (registered.value)
+ 		printf("%s", end2);
+@@ -142,7 +142,7 @@
+     char        string[1024];
+ 
+ // change stdin to non blocking
+-    fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
++    fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NDELAY);
+     
+     va_start (argptr,error);
+     vsprintf (string,error,argptr);
+@@ -281,10 +281,9 @@
+ double Sys_FloatTime (void)
+ {
+     struct timeval tp;
+-    struct timezone tzp; 
+     static int      secbase; 
+     
+-    gettimeofday(&tp, &tzp);  
++    gettimeofday(&tp, NULL);  
+ 
+     if (!secbase)
+     {
+@@ -386,7 +385,7 @@
+ // caching is disabled by default, use -cachedir to enable
+ //	parms.cachedir = cachedir;
+ 
+-	fcntl(0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
++	fcntl(0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NDELAY);
+ 
+     Host_Init(&parms);
+ 
+@@ -395,7 +394,7 @@
+ 	if (COM_CheckParm("-nostdout"))
+ 		nostdout = 1;
+ 	else {
+-		fcntl(0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
++		fcntl(0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NDELAY);
+ 		printf ("Linux Quake -- Version %0.3f\n", LINUX_VERSION);
+ 	}
+ 

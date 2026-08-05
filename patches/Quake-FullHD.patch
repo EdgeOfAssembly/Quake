@@ -1,0 +1,24 @@
+--- WinQuake.org/d_ifacea.h	2021-12-03 22:11:00.620238951 +0200
++++ WinQuake/d_ifacea.h	2021-05-19 23:35:08.986625156 +0300
+@@ -38,7 +38,7 @@
+ #define	CYCLE	128
+ 
+ // !!! if this is changed, it must be changed in r_shared.h too !!!
+-#define	MAXHEIGHT	1024
++#define	MAXHEIGHT	1080
+ 
+ // !!! if this is changed, it must be changed in quakedef.h too !!!
+ #define CACHE_SIZE	32		// used to align key data structures
+--- WinQuake.org/r_shared.h	2021-12-03 22:11:00.631238952 +0200
++++ WinQuake/r_shared.h	2021-05-19 23:35:26.994626194 +0300
+@@ -30,8 +30,8 @@
+ #define MAXWORKINGVERTS	(MAXVERTS+4)	// max points in an intermediate
+ 										//  polygon (while processing)
+ // !!! if this is changed, it must be changed in d_ifacea.h too !!!
+-#define	MAXHEIGHT		1024
+-#define	MAXWIDTH		1280
++#define	MAXHEIGHT		1080
++#define	MAXWIDTH		1920
+ #define MAXDIMENSION	((MAXHEIGHT > MAXWIDTH) ? MAXHEIGHT : MAXWIDTH)
+ 
+ #define SIN_BUFFER_SIZE	(MAXDIMENSION+CYCLE)

@@ -11,11 +11,15 @@
 
 # Compiled binaries
 glquake
+quake.x11
 qwcl
 qwsv
 quake
 quake.exe
 glquake.exe
+WinQuake/glquake
+WinQuake/quake.x11
+WinQuake/build/
 
 # Temporary files
 *~

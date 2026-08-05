@@ -1,0 +1,334 @@
+diff -Naur WinQuake.org/gl_rsurf.c WinQuake/gl_rsurf.c
+--- WinQuake.org/gl_rsurf.c	2021-12-03 22:11:00.624238951 +0200
++++ WinQuake/gl_rsurf.c	2021-12-04 03:04:21.125253435 +0200
+@@ -21,7 +21,7 @@
+ 
+ #include "quakedef.h"
+ 
+-int			skytexturenum;
++extern int			skytexturenum;
+ 
+ #ifndef GL_RGBA4
+ #define	GL_RGBA4	0
+diff -Naur WinQuake.org/gl_screen.c WinQuake/gl_screen.c
+--- WinQuake.org/gl_screen.c	2021-12-03 22:11:00.624238951 +0200
++++ WinQuake/gl_screen.c	2021-12-04 03:02:12.892246043 +0200
+@@ -103,7 +103,7 @@
+ int			clearconsole;
+ int			clearnotify;
+ 
+-int			sb_lines;
++extern int			sb_lines;
+ 
+ viddef_t	vid;				// global video state
+ 
+diff -Naur WinQuake.org/Makefile.linuxi386 WinQuake/Makefile.linuxi386
+--- WinQuake.org/Makefile.linuxi386	2021-12-04 02:28:53.476130798 +0200
++++ WinQuake/Makefile.linuxi386	2021-12-04 02:58:44.403234026 +0200
+@@ -450,241 +450,85 @@
+ # GLQuake
+ #############################################################################
+ 
+-GLQUAKE_OBJS= \
+-	glquake/cl_demo.o \
+-	glquake/cl_input.o \
+-	glquake/cl_main.o \
+-	glquake/cl_parse.o \
+-	glquake/cl_tent.o \
+-	glquake/chase.o \
+-	glquake/cmd.o \
+-	glquake/common.o \
+-	glquake/console.o \
+-	glquake/crc.o \
+-	glquake/cvar.o \
++GLQUAKE_SOURCES = \
++	cl_demo.c \
++	cl_input.c \
++	cl_main.c \
++	cl_parse.c \
++	cl_tent.c \
++	chase.c \
++	cmd.c \
++	common.c \
++	console.c \
++	crc.c \
++	cvar.c \
+ 	\
+-	glquake/gl_draw.o \
+-	glquake/gl_mesh.o \
+-	glquake/gl_model.o \
+-	glquake/gl_refrag.o \
+-	glquake/gl_rlight.o \
+-	glquake/gl_rmain.o \
+-	glquake/gl_rmisc.o \
+-	glquake/gl_rsurf.o \
+-	glquake/gl_screen.o \
+-	glquake/gl_test.o \
+-	glquake/gl_warp.o \
+-	\
+-	glquake/host.o \
+-	glquake/host_cmd.o \
+-	glquake/keys.o \
+-	glquake/menu.o \
+-	glquake/mathlib.o \
+-	glquake/net_dgrm.o \
+-	glquake/net_loop.o \
+-	glquake/net_main.o \
+-	glquake/net_vcr.o \
+-	glquake/net_udp.o \
+-	glquake/net_bsd.o \
+-	glquake/pr_cmds.o \
+-	glquake/pr_edict.o \
+-	glquake/pr_exec.o \
+-	glquake/r_part.o \
+-	glquake/sbar.o \
+-	glquake/sv_main.o \
+-	glquake/sv_phys.o \
+-	glquake/sv_move.o \
+-	glquake/sv_user.o \
+-	glquake/zone.o	\
+-	glquake/view.o	\
+-	glquake/wad.o \
+-	glquake/world.o \
+-	glquake/cd_linux.o \
+-	glquake/sys_linux.o \
+-	glquake/snd_dma.o \
+-	glquake/snd_mem.o \
+-	glquake/snd_mix.o \
+-	glquake/snd_linux.o \
++	gl_draw.c \
++	gl_mesh.c \
++	gl_model.c \
++	gl_refrag.c \
++	gl_rlight.c \
++	gl_rmain.c \
++	gl_rmisc.c \
++	gl_rsurf.c \
++	gl_screen.c \
++	gl_test.c \
++	gl_warp.c \
+ 	\
++	host.c \
++	host_cmd.c \
++	keys.c \
++	menu.c \
++	mathlib.c \
++	net_dgrm.c \
++	net_loop.c \
++	net_main.c \
++	net_vcr.c \
++	net_udp.c \
++	net_bsd.c \
++	pr_cmds.c \
++	pr_edict.c \
++	pr_exec.c \
++	r_part.c \
++	sbar.c \
++	sv_main.c \
++	sv_phys.c \
++	sv_move.c \
++	sv_user.c \
++	zone.c	\
++	view.c	\
++	wad.c \
++	world.c \
++	cd_linux.c \
++	sys_linux.c \
++	snd_dma.c \
++	snd_mem.c \
++	snd_mix.c \
++	snd_linux.c
++
++GLQUAKE_OBJS = \
+ 	glquake/math.o \
+ 	glquake/worlda.o \
+ 	glquake/snd_mixa.o \
+ 	glquake/sys_dosa.o
+ 
+-GLSVGA_OBJS=glquake/gl_vidlinux.o
+-
+-GLX_OBJS=glquake/gl_vidlinuxglx.o
+-
+-glquake : $(GLQUAKE_OBJS) $(GLSVGA_OBJS)
+-	$(CC) $(CFLAGS) -o bin/$@ $(GLQUAKE_OBJS) $(GLSVGA_OBJS) $(MESAGLLDFLAGS) $(SVGALDFLAGS) $(LDFLAGS)
+-
+-glquake.glx : $(GLQUAKE_OBJS) $(GLX_OBJS)
+-	$(CC) $(CFLAGS) -o bin/$@ $(GLQUAKE_OBJS) $(GLX_OBJS) $(GLLDFLAGS) $(LDFLAGS)
+-
+-glquake.3dfxgl : $(GLQUAKE_OBJS) $(GLSVGA_OBJS)
+-	$(CC) $(CFLAGS) -o bin/$@ $(GLQUAKE_OBJS) $(GLSVGA_OBJS) $(TDFXGLLDFLAGS) $(SVGALDFLAGS) $(LDFLAGS)
+-
+-glquake/cl_demo.o :      cl_demo.c
+-	$(DO_GL_CC)
+-
+-glquake/cl_input.o :     cl_input.c
+-	$(DO_GL_CC)
+-
+-glquake/cl_main.o :      cl_main.c
+-	$(DO_GL_CC)
+-
+-glquake/cl_parse.o :     cl_parse.c
+-	$(DO_GL_CC)
+-
+-glquake/cl_tent.o :      cl_tent.c
+-	$(DO_GL_CC)
+-
+-glquake/chase.o :        chase.c
+-	$(DO_GL_CC)
+-
+-glquake/cmd.o :          cmd.c
+-	$(DO_GL_CC)
+-
+-glquake/common.o :       common.c
+-	$(DO_GL_DEBUG_CC)
+-
+-glquake/console.o :      console.c
+-	$(DO_GL_CC)
+-
+-glquake/crc.o :          crc.c
+-	$(DO_GL_CC)
+-
+-glquake/cvar.o :         cvar.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_draw.o :      gl_draw.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_mesh.o :      gl_mesh.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_model.o :     gl_model.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_refrag.o :    gl_refrag.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_rlight.o :    gl_rlight.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_rmain.o :     gl_rmain.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_rmisc.o :     gl_rmisc.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_rsurf.o :     gl_rsurf.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_screen.o :    gl_screen.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_test.o :      gl_test.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_vidlinux.o :  gl_vidlinux.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_vidlinuxglx.o :  gl_vidlinuxglx.c
+-	$(DO_GL_CC)
+-
+-glquake/gl_warp.o :      gl_warp.c
+-	$(DO_GL_CC)
+-
+-glquake/host.o :         host.c
+-	$(DO_GL_CC)
+-
+-glquake/host_cmd.o :     host_cmd.c
+-	$(DO_GL_CC)
+-
+-glquake/keys.o :         keys.c
+-	$(DO_GL_CC)
+-
+-glquake/menu.o :         menu.c
+-	$(DO_GL_CC)
+-
+-glquake/mathlib.o :      mathlib.c
+-	$(DO_GL_CC)
+-
+-glquake/net_dgrm.o :     net_dgrm.c
+-	$(DO_GL_CC)
+-
+-glquake/net_loop.o :     net_loop.c
+-	$(DO_GL_CC)
+-
+-glquake/net_main.o :     net_main.c
+-	$(DO_GL_CC)
+-
+-glquake/net_vcr.o :      net_vcr.c
+-	$(DO_GL_CC)
+-
+-glquake/net_udp.o :      net_udp.c
+-	$(DO_GL_CC)
+-
+-glquake/net_bsd.o :      net_bsd.c
+-	$(DO_GL_CC)
+-
+-glquake/pr_cmds.o :      pr_cmds.c
+-	$(DO_GL_CC)
+-
+-glquake/pr_edict.o :     pr_edict.c
+-	$(DO_GL_CC)
+-
+-glquake/pr_exec.o :      pr_exec.c
+-	$(DO_GL_CC)
+-
+-glquake/r_part.o :       r_part.c
+-	$(DO_GL_CC)
+-
+-glquake/sbar.o :         sbar.c
+-	$(DO_GL_CC)
+-
+-glquake/sv_main.o :      sv_main.c
+-	$(DO_GL_CC)
+-
+-glquake/sv_phys.o :      sv_phys.c
+-	$(DO_GL_CC)
+-
+-glquake/sv_move.o :      sv_move.c
+-	$(DO_GL_CC)
+-
+-glquake/sv_user.o :      sv_user.c
+-	$(DO_GL_CC)
+-
+-glquake/zone.o	:        zone.c
+-	$(DO_GL_CC)
+-
+-glquake/view.o	:        view.c
+-	$(DO_GL_CC)
+-
+-glquake/wad.o :          wad.c
+-	$(DO_GL_CC)
++#GLSVGA_OBJS=glquake/gl_vidlinux.c
++#GLX_OBJS=glquake/gl_vidlinuxglx.c
+ 
+-glquake/world.o :        world.c
+-	$(DO_GL_CC)
++GLSVGA_OBJS=gl_vidlinux.c
++GLX_OBJS=gl_vidlinuxglx.c
+ 
+-glquake/cd_linux.o :     cd_linux.c
+-	$(DO_GL_CC)
++glquake : $(GLQUAKE_SOURCES) $(GLQUAKE_OBJS) $(GLSVGA_OBJS)
++	$(CC) $(CFLAGS) $(GLCFLAGS) -o bin/$@ $(GLQUAKE_SOURCES) $(GLQUAKE_OBJS) $(GLSVGA_OBJS) $(MESAGLLDFLAGS) $(SVGALDFLAGS) $(LDFLAGS)
+ 
+-glquake/sys_linux.o :    sys_linux.c
+-	$(DO_GL_CC)
+ 
+-glquake/snd_dma.o :      snd_dma.c
+-	$(DO_GL_CC)
++glquake.glx : $(GLQUAKE_SOURCES) $(GLQUAKE_OBJS) $(GLX_OBJS)
++	$(CC) $(CFLAGS) $(GLCFLAGS) -o bin/$@ $(GLQUAKE_SOURCES) $(GLQUAKE_OBJS) $(GLX_OBJS) $(GLLDFLAGS) $(LDFLAGS)
+ 
+-glquake/snd_mem.o :      snd_mem.c
+-	$(DO_GL_CC)
++glquake.3dfxgl : $(GLQUAKE_SOURCES) $(GLQUAKE_OBJS) $(GLSVGA_OBJS)
++	$(CC) $(CFLAGS) $(GLCFLAGS) -o bin/$@ $(GLQUAKE_SOURCES) $(GLQUAKE_OBJS) $(GLSVGA_OBJS) $(TDFXGLLDFLAGS) $(SVGALDFLAGS) $(LDFLAGS)
+ 
+-glquake/snd_mix.o :      snd_mix.c
+-	$(DO_GL_CC)
+ 
+-glquake/snd_linux.o :    snd_linux.c
+-	$(DO_GL_CC)
+ 
+ glquake/math.o :         math.s
+ 	$(DO_GL_AS)

@@ -371,10 +371,11 @@ int main (int c, char **v)
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
+/* Full HD software needs more hunk; GL textures also benefit. */
 #ifdef GLQUAKE
-	parms.memsize = 16*1024*1024;
+	parms.memsize = 64*1024*1024;
 #else
-	parms.memsize = 8*1024*1024;
+	parms.memsize = 32*1024*1024;
 #endif
 
 	j = COM_CheckParm("-mem");

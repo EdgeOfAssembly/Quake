@@ -1,0 +1,11 @@
+--- WinQuake.org/vid_svgalib.c	2021-12-04 02:28:34.123129683 +0200
++++ WinQuake/vid_svgalib.c	2021-12-04 02:39:32.746167645 +0200
+@@ -36,6 +36,8 @@
+ 
+ #define stringify(m) { #m, m }
+ 
++viddef_t vid; // global video state
++
+ unsigned short       d_8to16table[256];
+ static byte		*vid_surfcache;
+ static int		VID_highhunkmark;
