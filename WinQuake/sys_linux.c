@@ -86,15 +86,14 @@ void Sys_Printf (char *fmt, ...)
 void Sys_Printf (char *fmt, ...)
 {
 	va_list		argptr;
-	char		text[1024];
+	/* Must be >= Con_Printf MAXPRINTMSG; fortify aborts on vsprintf overflow. */
+	char		text[16384];
 	unsigned char		*p;
 
 	va_start (argptr,fmt);
-	vsprintf (text,fmt,argptr);
+	vsnprintf (text, sizeof(text), fmt, argptr);
 	va_end (argptr);
-
-	if (strlen(text) > sizeof(text))
-		Sys_Error("memory overwrite in Sys_Printf");
+	text[sizeof(text) - 1] = '\0';
 
     if (nostdout)
         return;
@@ -139,14 +138,15 @@ void Sys_Init(void)
 void Sys_Error (char *error, ...)
 { 
     va_list     argptr;
-    char        string[1024];
+    char        string[16384];
 
 // change stdin to non blocking
     fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
     
     va_start (argptr,error);
-    vsprintf (string,error,argptr);
+    vsnprintf (string, sizeof(string), error, argptr);
     va_end (argptr);
+	string[sizeof(string) - 1] = '\0';
 	fprintf(stderr, "Error: %s\n", string);
 
 	Host_Shutdown ();

@@ -747,26 +747,26 @@ int XLateKey(XKeyEvent *ev)
 
 	switch(keysym)
 	{
-		case XK_KP_Page_Up:
-		case XK_Page_Up:	 key = K_PGUP; break;
+		case XK_KP_Page_Up: key = K_KP_PGUP; break;
+		case XK_Page_Up: key = K_PGUP; break;
 
-		case XK_KP_Page_Down:
-		case XK_Page_Down:	 key = K_PGDN; break;
+		case XK_KP_Page_Down: key = K_KP_PGDN; break;
+		case XK_Page_Down: key = K_PGDN; break;
 
-		case XK_KP_Home:
-		case XK_Home:	 key = K_HOME; break;
+		case XK_KP_Home: key = K_KP_HOME; break;
+		case XK_Home: key = K_HOME; break;
 
-		case XK_KP_End:
-		case XK_End:	 key = K_END; break;
+		case XK_KP_End: key = K_KP_END; break;
+		case XK_End: key = K_END; break;
 
-		case XK_KP_Left:
-		case XK_Left:	 key = K_LEFTARROW; break;
+		case XK_KP_Left: key = K_KP_LEFTARROW; break;
+		case XK_Left: key = K_LEFTARROW; break;
 
 		case XK_KP_Right:
 		case XK_Right:	key = K_RIGHTARROW;		break;
 
-		case XK_KP_Down:
-		case XK_Down:	 key = K_DOWNARROW; break;
+		case XK_KP_Down: key = K_KP_DOWNARROW; break;
+		case XK_Down: key = K_DOWNARROW; break;
 
 		case XK_KP_Up:
 		case XK_Up:		 key = K_UPARROW;	 break;
@@ -804,7 +804,7 @@ int XLateKey(XKeyEvent *ev)
 
 		case XK_BackSpace: key = K_BACKSPACE; break;
 
-		case XK_KP_Delete:
+		case XK_KP_Delete: key = K_KP_DEL; break;
 		case XK_Delete: key = K_DEL; break;
 
 		case XK_Pause:	key = K_PAUSE;		 break;
@@ -823,11 +823,11 @@ int XLateKey(XKeyEvent *ev)
 
 		case XK_KP_Begin: key = K_AUX30;	break;
 
-		case XK_Insert:
-		case XK_KP_Insert: key = K_INS; break;
+		case XK_KP_Insert: key = K_KP_INS; break;
+		case XK_Insert: key = K_INS; break;
 
-		case XK_KP_Multiply: key = '*'; break;
-		case XK_KP_Add: key = '+'; break;
+		case XK_KP_Multiply: key = K_KP_STAR; break;
+		case XK_KP_Add: key = K_KP_PLUS; break;
 		case XK_KP_Subtract: key = '-'; break;
 		case XK_KP_Divide: key = '/'; break;
 

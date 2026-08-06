@@ -127,91 +127,84 @@ static int XLateKey(XKeyEvent *ev)
 
 	XLookupString(ev, buf, sizeof buf, &keysym, 0);
 
+	/* KeySym → K_* (QuakeSpasm / Quake2 X11 mapping; KP distinct for binds). */
 	switch(keysym)
 	{
-		case XK_KP_Page_Up:	 
+		case XK_KP_Page_Up:	 key = K_KP_PGUP; break;
 		case XK_Page_Up:	 key = K_PGUP; break;
 
-		case XK_KP_Page_Down: 
+		case XK_KP_Page_Down: key = K_KP_PGDN; break;
 		case XK_Page_Down:	 key = K_PGDN; break;
 
-		case XK_KP_Home: 
-		case XK_Home:	 key = K_HOME; break;
+		case XK_KP_Home:	 key = K_KP_HOME; break;
+		case XK_Home:		 key = K_HOME; break;
 
-		case XK_KP_End:  
-		case XK_End:	 key = K_END; break;
+		case XK_KP_End:		 key = K_KP_END; break;
+		case XK_End:		 key = K_END; break;
 
-		case XK_KP_Left: 
-		case XK_Left:	 key = K_LEFTARROW; break;
+		case XK_KP_Left:	 key = K_KP_LEFTARROW; break;
+		case XK_Left:		 key = K_LEFTARROW; break;
 
-		case XK_KP_Right: 
-		case XK_Right:	key = K_RIGHTARROW;		break;
+		case XK_KP_Right:	 key = K_KP_RIGHTARROW; break;
+		case XK_Right:		 key = K_RIGHTARROW; break;
 
-		case XK_KP_Down: 
-		case XK_Down:	 key = K_DOWNARROW; break;
+		case XK_KP_Down:	 key = K_KP_DOWNARROW; break;
+		case XK_Down:		 key = K_DOWNARROW; break;
 
-		case XK_KP_Up:   
-		case XK_Up:		 key = K_UPARROW;	 break;
+		case XK_KP_Up:		 key = K_KP_UPARROW; break;
+		case XK_Up:		 key = K_UPARROW; break;
 
-		case XK_Escape: key = K_ESCAPE;		break;
+		case XK_Escape:		 key = K_ESCAPE; break;
 
-		case XK_KP_Enter: 
-		case XK_Return: key = K_ENTER;		 break;
+		case XK_KP_Enter:	 key = K_KP_ENTER; break;
+		case XK_Return:		 key = K_ENTER; break;
 
-		case XK_Tab:		key = K_TAB;			 break;
+		case XK_Tab:		 key = K_TAB; break;
 
-		case XK_F1:		 key = K_F1;				break;
+		case XK_F1: key = K_F1; break;
+		case XK_F2: key = K_F2; break;
+		case XK_F3: key = K_F3; break;
+		case XK_F4: key = K_F4; break;
+		case XK_F5: key = K_F5; break;
+		case XK_F6: key = K_F6; break;
+		case XK_F7: key = K_F7; break;
+		case XK_F8: key = K_F8; break;
+		case XK_F9: key = K_F9; break;
+		case XK_F10: key = K_F10; break;
+		case XK_F11: key = K_F11; break;
+		case XK_F12: key = K_F12; break;
 
-		case XK_F2:		 key = K_F2;				break;
+		case XK_BackSpace:	 key = K_BACKSPACE; break;
 
-		case XK_F3:		 key = K_F3;				break;
+		case XK_KP_Delete:	 key = K_KP_DEL; break;
+		case XK_Delete:		 key = K_DEL; break;
 
-		case XK_F4:		 key = K_F4;				break;
-
-		case XK_F5:		 key = K_F5;				break;
-
-		case XK_F6:		 key = K_F6;				break;
-
-		case XK_F7:		 key = K_F7;				break;
-
-		case XK_F8:		 key = K_F8;				break;
-
-		case XK_F9:		 key = K_F9;				break;
-
-		case XK_F10:		key = K_F10;			 break;
-
-		case XK_F11:		key = K_F11;			 break;
-
-		case XK_F12:		key = K_F12;			 break;
-
-		case XK_BackSpace: key = K_BACKSPACE; break;
-
-		case XK_KP_Delete: 
-		case XK_Delete: key = K_DEL; break;
-
-		case XK_Pause:	key = K_PAUSE;		 break;
+		case XK_Pause:		 key = K_PAUSE; break;
 
 		case XK_Shift_L:
-		case XK_Shift_R:	key = K_SHIFT;		break;
+		case XK_Shift_R:	 key = K_SHIFT; break;
 
-		case XK_Execute: 
-		case XK_Control_L: 
-		case XK_Control_R:	key = K_CTRL;		 break;
+		case XK_Execute:
+		case XK_Control_L:
+		case XK_Control_R:	 key = K_CTRL; break;
 
-		case XK_Alt_L:	
-		case XK_Meta_L: 
-		case XK_Alt_R:	
-		case XK_Meta_R: key = K_ALT;			break;
+		case XK_Alt_L:
+		case XK_Meta_L:
+		case XK_Alt_R:
+		case XK_Meta_R:		 key = K_ALT; break;
 
-		case XK_KP_Begin: key = '5';	break;
+		case XK_KP_Begin:	 key = K_KP_5; break;
 
-		case XK_KP_Insert: 
-		case XK_Insert:key = K_INS; break;
+		case XK_KP_Insert:	 key = K_KP_INS; break;
+		case XK_Insert:		 key = K_INS; break;
 
-		case XK_KP_Multiply: key = '*'; break;
-		case XK_KP_Add:  key = '+'; break;
-		case XK_KP_Subtract: key = '-'; break;
-		case XK_KP_Divide: key = '/'; break;
+		case XK_KP_Multiply: key = K_KP_STAR; break;
+		case XK_KP_Add:		 key = K_KP_PLUS; break;
+		case XK_KP_Subtract: key = K_KP_MINUS; break;
+		case XK_KP_Divide:	 key = K_KP_SLASH; break;
+#ifdef XK_Num_Lock
+		case XK_Num_Lock:	 key = K_KP_NUMLOCK; break;
+#endif
 
 #if 0
 		case 0x021: key = '1';break;/* [!] */
@@ -579,29 +572,14 @@ void GL_Init (void)
 	gl_version = glGetString (GL_VERSION);
 	Con_Printf ("GL_VERSION: %s\n", gl_version);
 	gl_extensions = glGetString (GL_EXTENSIONS);
-	
-	// Print GL_EXTENSIONS safely - modern GPUs can have very long extension strings
-	// that would overflow the console print buffer
-	if (gl_extensions) {
-		int ext_len = strlen(gl_extensions);
-		if (ext_len > 0) {
-			Con_Printf ("GL_EXTENSIONS: ");
-			// Print extensions in chunks to avoid buffer overflow
-			const char *ext = gl_extensions;
-			const int chunk_size = 1024;
-			while (*ext) {
-				char chunk[1025];
-				int i;
-				for (i = 0; i < chunk_size && ext[i] != '\0'; i++) {
-					chunk[i] = ext[i];
-				}
-				chunk[i] = '\0';
-				Con_Printf ("%s", chunk);
-				ext += i;
-			}
-			Con_Printf ("\n");
-		}
-	}
+	/* Do not dump the full extension list into Con_Printf — modern NVIDIA
+	 * strings are huge and used to fortify-abort via Sys_Printf's small buffer.
+	 * Keep the string for strstr() checks; log length only. */
+	if (gl_extensions)
+		Con_Printf ("GL_EXTENSIONS: %d bytes (list suppressed)\n",
+			(int)strlen(gl_extensions));
+	else
+		Con_Printf ("GL_EXTENSIONS: (null)\n");
 
 //	Con_Printf ("%s %s\n", gl_renderer, gl_version);
 

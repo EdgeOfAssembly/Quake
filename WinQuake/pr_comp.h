@@ -19,9 +19,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 // this file is shared by quake and qcc
+//
+// string_t / func_t are 32-bit *offsets* into progs tables, never host pointers.
+// On LP64, bare `long` is 64-bit — always use fixed-width types here.
 
-typedef int	func_t;
-typedef int	string_t;
+#include "q_stdint.h"
+
+typedef int32_t	func_t;
+typedef int32_t	string_t;
 
 typedef enum {ev_void, ev_string, ev_float, ev_vector, ev_entity, ev_field, ev_function, ev_pointer} etype_t;
 

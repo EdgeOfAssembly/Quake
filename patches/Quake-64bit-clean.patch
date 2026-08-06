@@ -1,0 +1,1049 @@
+diff --git a/WinQuake/gl_vidlinuxglx.c b/WinQuake/gl_vidlinuxglx.c
+index 20337d2..6ae8d70 100644
+--- a/WinQuake/gl_vidlinuxglx.c
++++ b/WinQuake/gl_vidlinuxglx.c
+@@ -127,91 +127,84 @@ static int XLateKey(XKeyEvent *ev)
+ 
+ 	XLookupString(ev, buf, sizeof buf, &keysym, 0);
+ 
++	/* KeySym → K_* (QuakeSpasm / Quake2 X11 mapping; KP distinct for binds). */
+ 	switch(keysym)
+ 	{
+-		case XK_KP_Page_Up:	 
++		case XK_KP_Page_Up:	 key = K_KP_PGUP; break;
+ 		case XK_Page_Up:	 key = K_PGUP; break;
+ 
+-		case XK_KP_Page_Down: 
++		case XK_KP_Page_Down: key = K_KP_PGDN; break;
+ 		case XK_Page_Down:	 key = K_PGDN; break;
+ 
+-		case XK_KP_Home: 
+-		case XK_Home:	 key = K_HOME; break;
++		case XK_KP_Home:	 key = K_KP_HOME; break;
++		case XK_Home:		 key = K_HOME; break;
+ 
+-		case XK_KP_End:  
+-		case XK_End:	 key = K_END; break;
++		case XK_KP_End:		 key = K_KP_END; break;
++		case XK_End:		 key = K_END; break;
+ 
+-		case XK_KP_Left: 
+-		case XK_Left:	 key = K_LEFTARROW; break;
++		case XK_KP_Left:	 key = K_KP_LEFTARROW; break;
++		case XK_Left:		 key = K_LEFTARROW; break;
+ 
+-		case XK_KP_Right: 
+-		case XK_Right:	key = K_RIGHTARROW;		break;
++		case XK_KP_Right:	 key = K_KP_RIGHTARROW; break;
++		case XK_Right:		 key = K_RIGHTARROW; break;
+ 
+-		case XK_KP_Down: 
+-		case XK_Down:	 key = K_DOWNARROW; break;
++		case XK_KP_Down:	 key = K_KP_DOWNARROW; break;
++		case XK_Down:		 key = K_DOWNARROW; break;
+ 
+-		case XK_KP_Up:   
+-		case XK_Up:		 key = K_UPARROW;	 break;
++		case XK_KP_Up:		 key = K_KP_UPARROW; break;
++		case XK_Up:		 key = K_UPARROW; break;
+ 
+-		case XK_Escape: key = K_ESCAPE;		break;
++		case XK_Escape:		 key = K_ESCAPE; break;
+ 
+-		case XK_KP_Enter: 
+-		case XK_Return: key = K_ENTER;		 break;
++		case XK_KP_Enter:	 key = K_KP_ENTER; break;
++		case XK_Return:		 key = K_ENTER; break;
+ 
+-		case XK_Tab:		key = K_TAB;			 break;
++		case XK_Tab:		 key = K_TAB; break;
+ 
+-		case XK_F1:		 key = K_F1;				break;
++		case XK_F1: key = K_F1; break;
++		case XK_F2: key = K_F2; break;
++		case XK_F3: key = K_F3; break;
++		case XK_F4: key = K_F4; break;
++		case XK_F5: key = K_F5; break;
++		case XK_F6: key = K_F6; break;
++		case XK_F7: key = K_F7; break;
++		case XK_F8: key = K_F8; break;
++		case XK_F9: key = K_F9; break;
++		case XK_F10: key = K_F10; break;
++		case XK_F11: key = K_F11; break;
++		case XK_F12: key = K_F12; break;
+ 
+-		case XK_F2:		 key = K_F2;				break;
++		case XK_BackSpace:	 key = K_BACKSPACE; break;
+ 
+-		case XK_F3:		 key = K_F3;				break;
++		case XK_KP_Delete:	 key = K_KP_DEL; break;
++		case XK_Delete:		 key = K_DEL; break;
+ 
+-		case XK_F4:		 key = K_F4;				break;
+-
+-		case XK_F5:		 key = K_F5;				break;
+-
+-		case XK_F6:		 key = K_F6;				break;
+-
+-		case XK_F7:		 key = K_F7;				break;
+-
+-		case XK_F8:		 key = K_F8;				break;
+-
+-		case XK_F9:		 key = K_F9;				break;
+-
+-		case XK_F10:		key = K_F10;			 break;
+-
+-		case XK_F11:		key = K_F11;			 break;
+-
+-		case XK_F12:		key = K_F12;			 break;
+-
+-		case XK_BackSpace: key = K_BACKSPACE; break;
+-
+-		case XK_KP_Delete: 
+-		case XK_Delete: key = K_DEL; break;
+-
+-		case XK_Pause:	key = K_PAUSE;		 break;
++		case XK_Pause:		 key = K_PAUSE; break;
+ 
+ 		case XK_Shift_L:
+-		case XK_Shift_R:	key = K_SHIFT;		break;
++		case XK_Shift_R:	 key = K_SHIFT; break;
+ 
+-		case XK_Execute: 
+-		case XK_Control_L: 
+-		case XK_Control_R:	key = K_CTRL;		 break;
++		case XK_Execute:
++		case XK_Control_L:
++		case XK_Control_R:	 key = K_CTRL; break;
+ 
+-		case XK_Alt_L:	
+-		case XK_Meta_L: 
+-		case XK_Alt_R:	
+-		case XK_Meta_R: key = K_ALT;			break;
++		case XK_Alt_L:
++		case XK_Meta_L:
++		case XK_Alt_R:
++		case XK_Meta_R:		 key = K_ALT; break;
+ 
+-		case XK_KP_Begin: key = '5';	break;
++		case XK_KP_Begin:	 key = K_KP_5; break;
+ 
+-		case XK_KP_Insert: 
+-		case XK_Insert:key = K_INS; break;
++		case XK_KP_Insert:	 key = K_KP_INS; break;
++		case XK_Insert:		 key = K_INS; break;
+ 
+-		case XK_KP_Multiply: key = '*'; break;
+-		case XK_KP_Add:  key = '+'; break;
+-		case XK_KP_Subtract: key = '-'; break;
+-		case XK_KP_Divide: key = '/'; break;
++		case XK_KP_Multiply: key = K_KP_STAR; break;
++		case XK_KP_Add:		 key = K_KP_PLUS; break;
++		case XK_KP_Subtract: key = K_KP_MINUS; break;
++		case XK_KP_Divide:	 key = K_KP_SLASH; break;
++#ifdef XK_Num_Lock
++		case XK_Num_Lock:	 key = K_KP_NUMLOCK; break;
++#endif
+ 
+ #if 0
+ 		case 0x021: key = '1';break;/* [!] */
+@@ -579,29 +572,14 @@ void GL_Init (void)
+ 	gl_version = glGetString (GL_VERSION);
+ 	Con_Printf ("GL_VERSION: %s\n", gl_version);
+ 	gl_extensions = glGetString (GL_EXTENSIONS);
+-	
+-	// Print GL_EXTENSIONS safely - modern GPUs can have very long extension strings
+-	// that would overflow the console print buffer
+-	if (gl_extensions) {
+-		int ext_len = strlen(gl_extensions);
+-		if (ext_len > 0) {
+-			Con_Printf ("GL_EXTENSIONS: ");
+-			// Print extensions in chunks to avoid buffer overflow
+-			const char *ext = gl_extensions;
+-			const int chunk_size = 1024;
+-			while (*ext) {
+-				char chunk[1025];
+-				int i;
+-				for (i = 0; i < chunk_size && ext[i] != '\0'; i++) {
+-					chunk[i] = ext[i];
+-				}
+-				chunk[i] = '\0';
+-				Con_Printf ("%s", chunk);
+-				ext += i;
+-			}
+-			Con_Printf ("\n");
+-		}
+-	}
++	/* Do not dump the full extension list into Con_Printf — modern NVIDIA
++	 * strings are huge and used to fortify-abort via Sys_Printf's small buffer.
++	 * Keep the string for strstr() checks; log length only. */
++	if (gl_extensions)
++		Con_Printf ("GL_EXTENSIONS: %d bytes (list suppressed)\n",
++			(int)strlen(gl_extensions));
++	else
++		Con_Printf ("GL_EXTENSIONS: (null)\n");
+ 
+ //	Con_Printf ("%s %s\n", gl_renderer, gl_version);
+ 
+diff --git a/WinQuake/host_cmd.c b/WinQuake/host_cmd.c
+index e658cd4..a7e5696 100644
+--- a/WinQuake/host_cmd.c
++++ b/WinQuake/host_cmd.c
+@@ -936,7 +936,7 @@ void Host_Name_f (void)
+ 		if (Q_strcmp(host_client->name, newName) != 0)
+ 			Con_Printf ("%s renamed to %s\n", host_client->name, newName);
+ 	Q_strcpy (host_client->name, newName);
+-	host_client->edict->v.netname = host_client->name - pr_strings;
++	host_client->edict->v.netname = PR_SetEngineString(host_client->name);
+ 	
+ // send notification to all clients
+ 	
+@@ -1230,11 +1230,11 @@ void Host_Pause_f (void)
+ 
+ 		if (sv.paused)
+ 		{
+-			SV_BroadcastPrintf ("%s paused the game\n", pr_strings + sv_player->v.netname);
++			SV_BroadcastPrintf ("%s paused the game\n", PR_GetString(sv_player->v.netname));
+ 		}
+ 		else
+ 		{
+-			SV_BroadcastPrintf ("%s unpaused the game\n",pr_strings + sv_player->v.netname);
++			SV_BroadcastPrintf ("%s unpaused the game\n", PR_GetString(sv_player->v.netname));
+ 		}
+ 
+ 	// send notification to all clients
+@@ -1308,7 +1308,7 @@ void Host_Spawn_f (void)
+ 		memset (&ent->v, 0, progs->entityfields * 4);
+ 		ent->v.colormap = NUM_FOR_EDICT(ent);
+ 		ent->v.team = (host_client->colors & 15) + 1;
+-		ent->v.netname = host_client->name - pr_strings;
++		ent->v.netname = PR_SetEngineString(host_client->name);
+ 
+ 		// copy spawn parms out of the client_t
+ 
+@@ -1675,7 +1675,7 @@ edict_t	*FindViewthing (void)
+ 	for (i=0 ; i<sv.num_edicts ; i++)
+ 	{
+ 		e = EDICT_NUM(i);
+-		if ( !strcmp (pr_strings + e->v.classname, "viewthing") )
++		if ( !strcmp (PR_GetString(e->v.classname), "viewthing") )
+ 			return e;
+ 	}
+ 	Con_Printf ("No viewthing on map\n");
+diff --git a/WinQuake/keys.h b/WinQuake/keys.h
+index 3fbefd0..4c35b6b 100644
+--- a/WinQuake/keys.h
++++ b/WinQuake/keys.h
+@@ -56,6 +56,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ #define	K_HOME			151
+ #define	K_END			152
+ 
++/* Keypad (from QuakeSpasm / Quake2 X11 mapping — layout-independent KeySyms). */
++#define	K_KP_NUMLOCK		153
++#define	K_KP_SLASH		154
++#define	K_KP_STAR		155
++#define	K_KP_MINUS		156
++#define	K_KP_HOME		157
++#define	K_KP_UPARROW		158
++#define	K_KP_PGUP		159
++#define	K_KP_PLUS		160
++#define	K_KP_LEFTARROW		161
++#define	K_KP_5			162
++#define	K_KP_RIGHTARROW		163
++#define	K_KP_END		164
++#define	K_KP_DOWNARROW		165
++#define	K_KP_PGDN		166
++#define	K_KP_ENTER		167
++#define	K_KP_INS		168
++#define	K_KP_DEL		169
++
+ #define K_PAUSE			255
+ 
+ //
+diff --git a/WinQuake/pr_cmds.c b/WinQuake/pr_cmds.c
+index 3593bb9..0e5dea7 100644
+--- a/WinQuake/pr_cmds.c
++++ b/WinQuake/pr_cmds.c
+@@ -61,7 +61,7 @@ void PF_error (void)
+ 	
+ 	s = PF_VarString(0);
+ 	Con_Printf ("======SERVER ERROR in %s:\n%s\n"
+-	,pr_strings + pr_xfunction->s_name,s);
++	,PR_GetString(pr_xfunction->s_name),s);
+ 	ed = PROG_TO_EDICT(pr_global_struct->self);
+ 	ED_Print (ed);
+ 
+@@ -85,7 +85,7 @@ void PF_objerror (void)
+ 	
+ 	s = PF_VarString(0);
+ 	Con_Printf ("======OBJECT ERROR in %s:\n%s\n"
+-	,pr_strings + pr_xfunction->s_name,s);
++	,PR_GetString(pr_xfunction->s_name),s);
+ 	ed = PROG_TO_EDICT(pr_global_struct->self);
+ 	ED_Print (ed);
+ 	ED_Free (ed);
+@@ -250,7 +250,7 @@ void PF_setmodel (void)
+ 		PR_RunError ("no precache: %s\n", m);
+ 		
+ 
+-	e->v.model = m - pr_strings;
++	e->v.model = PR_SetEngineString(m);
+ 	e->v.modelindex = i; //SV_ModelIndex (m);
+ 
+ 	mod = sv.models[ (int)e->v.modelindex];  // Mod_ForName (m, true);
+@@ -920,18 +920,30 @@ void PF_dprint (void)
+ 	Con_DPrintf ("%s",PF_VarString(0));
+ }
+ 
+-char	pr_string_temp[128];
++/* Rotating temp buffers — host C strings registered via PR_SetEngineString. */
++#define STRINGTEMP_BUFFERS	16
++#define STRINGTEMP_LENGTH	1024
++static char	pr_string_temp[STRINGTEMP_BUFFERS][STRINGTEMP_LENGTH];
++static int	pr_string_tempindex;
++
++static char *PR_GetTempString (void)
++{
++	pr_string_tempindex = (pr_string_tempindex + 1) % STRINGTEMP_BUFFERS;
++	return pr_string_temp[pr_string_tempindex];
++}
+ 
+ void PF_ftos (void)
+ {
+ 	float	v;
++	char	*s;
++
+ 	v = G_FLOAT(OFS_PARM0);
+-	
++	s = PR_GetTempString();
+ 	if (v == (int)v)
+-		sprintf (pr_string_temp, "%d",(int)v);
++		sprintf (s, "%d", (int)v);
+ 	else
+-		sprintf (pr_string_temp, "%5.1f",v);
+-	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
++		sprintf (s, "%5.1f", v);
++	G_INT(OFS_RETURN) = PR_SetEngineString(s);
+ }
+ 
+ void PF_fabs (void)
+@@ -943,15 +955,22 @@ void PF_fabs (void)
+ 
+ void PF_vtos (void)
+ {
+-	sprintf (pr_string_temp, "'%5.1f %5.1f %5.1f'", G_VECTOR(OFS_PARM0)[0], G_VECTOR(OFS_PARM0)[1], G_VECTOR(OFS_PARM0)[2]);
+-	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
++	char	*s;
++
++	s = PR_GetTempString();
++	sprintf (s, "'%5.1f %5.1f %5.1f'",
++		G_VECTOR(OFS_PARM0)[0], G_VECTOR(OFS_PARM0)[1], G_VECTOR(OFS_PARM0)[2]);
++	G_INT(OFS_RETURN) = PR_SetEngineString(s);
+ }
+ 
+ #ifdef QUAKE2
+ void PF_etos (void)
+ {
+-	sprintf (pr_string_temp, "entity %i", G_EDICTNUM(OFS_PARM0));
+-	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
++	char	*s;
++
++	s = PR_GetTempString();
++	sprintf (s, "entity %i", G_EDICTNUM(OFS_PARM0));
++	G_INT(OFS_RETURN) = PR_SetEngineString(s);
+ }
+ #endif
+ 
+@@ -1590,7 +1609,7 @@ void PF_makestatic (void)
+ 
+ 	MSG_WriteByte (&sv.signon,svc_spawnstatic);
+ 
+-	MSG_WriteByte (&sv.signon, SV_ModelIndex(pr_strings + ent->v.model));
++	MSG_WriteByte (&sv.signon, SV_ModelIndex(PR_GetString(ent->v.model)));
+ 
+ 	MSG_WriteByte (&sv.signon, ent->v.frame);
+ 	MSG_WriteByte (&sv.signon, ent->v.colormap);
+diff --git a/WinQuake/pr_comp.h b/WinQuake/pr_comp.h
+index b237ed5..f2b18b0 100644
+--- a/WinQuake/pr_comp.h
++++ b/WinQuake/pr_comp.h
+@@ -19,9 +19,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+ 
+ // this file is shared by quake and qcc
++//
++// string_t / func_t are 32-bit *offsets* into progs tables, never host pointers.
++// On LP64, bare `long` is 64-bit — always use fixed-width types here.
+ 
+-typedef int	func_t;
+-typedef int	string_t;
++#include "q_stdint.h"
++
++typedef int32_t	func_t;
++typedef int32_t	string_t;
+ 
+ typedef enum {ev_void, ev_string, ev_float, ev_vector, ev_entity, ev_field, ev_function, ev_pointer} etype_t;
+ 
+diff --git a/WinQuake/pr_edict.c b/WinQuake/pr_edict.c
+index 544e01a..57f9d4f 100644
+--- a/WinQuake/pr_edict.c
++++ b/WinQuake/pr_edict.c
+@@ -33,7 +33,24 @@ int				pr_edict_size;	// in bytes
+ 
+ unsigned short		pr_crc;
+ 
+-int		type_size[8] = {1,sizeof(string_t)/4,1,3,1,1,sizeof(func_t)/4,sizeof(void *)/4};
++/* Engine-owned strings (negative string_t). Required on LP64: static/hunk
++ * pointer differences do not fit in 32-bit string_t. */
++static int		pr_stringssize;
++static const char	**pr_knownstrings;
++static int		pr_maxknownstrings;
++static int		pr_numknownstrings;
++
++/* QC type sizes in 32-bit words — never use sizeof(void*) here (LP64 = 2). */
++int		type_size[8] = {
++	1,				/* ev_void */
++	1,				/* ev_string  (string_t = int32) */
++	1,				/* ev_float */
++	3,				/* ev_vector */
++	1,				/* ev_entity */
++	1,				/* ev_field */
++	1,				/* ev_function (func_t = int32) */
++	1				/* ev_pointer (progs pointer is 32-bit offset) */
++};
+ 
+ ddef_t *ED_FieldAtOfs (int ofs);
+ qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s);
+@@ -191,7 +208,7 @@ ddef_t *ED_FindField (char *name)
+ 	for (i=0 ; i<progs->numfielddefs ; i++)
+ 	{
+ 		def = &pr_fielddefs[i];
+-		if (!strcmp(pr_strings + def->s_name,name) )
++		if (!strcmp(PR_GetString(def->s_name),name) )
+ 			return def;
+ 	}
+ 	return NULL;
+@@ -211,7 +228,7 @@ ddef_t *ED_FindGlobal (char *name)
+ 	for (i=0 ; i<progs->numglobaldefs ; i++)
+ 	{
+ 		def = &pr_globaldefs[i];
+-		if (!strcmp(pr_strings + def->s_name,name) )
++		if (!strcmp(PR_GetString(def->s_name),name) )
+ 			return def;
+ 	}
+ 	return NULL;
+@@ -231,7 +248,7 @@ dfunction_t *ED_FindFunction (char *name)
+ 	for (i=0 ; i<progs->numfunctions ; i++)
+ 	{
+ 		func = &pr_functions[i];
+-		if (!strcmp(pr_strings + func->s_name,name) )
++		if (!strcmp(PR_GetString(func->s_name),name) )
+ 			return func;
+ 	}
+ 	return NULL;
+@@ -288,18 +305,18 @@ char *PR_ValueString (etype_t type, eval_t *val)
+ 	switch (type)
+ 	{
+ 	case ev_string:
+-		sprintf (line, "%s", pr_strings + val->string);
++		sprintf (line, "%s", PR_GetString(val->string));
+ 		break;
+ 	case ev_entity:	
+ 		sprintf (line, "entity %i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)) );
+ 		break;
+ 	case ev_function:
+ 		f = pr_functions + val->function;
+-		sprintf (line, "%s()", pr_strings + f->s_name);
++		sprintf (line, "%s()", PR_GetString(f->s_name));
+ 		break;
+ 	case ev_field:
+ 		def = ED_FieldAtOfs ( val->_int );
+-		sprintf (line, ".%s", pr_strings + def->s_name);
++		sprintf (line, ".%s", PR_GetString(def->s_name));
+ 		break;
+ 	case ev_void:
+ 		sprintf (line, "void");
+@@ -340,18 +357,18 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
+ 	switch (type)
+ 	{
+ 	case ev_string:
+-		sprintf (line, "%s", pr_strings + val->string);
++		sprintf (line, "%s", PR_GetString(val->string));
+ 		break;
+ 	case ev_entity:	
+ 		sprintf (line, "%i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)));
+ 		break;
+ 	case ev_function:
+ 		f = pr_functions + val->function;
+-		sprintf (line, "%s", pr_strings + f->s_name);
++		sprintf (line, "%s", PR_GetString(f->s_name));
+ 		break;
+ 	case ev_field:
+ 		def = ED_FieldAtOfs ( val->_int );
+-		sprintf (line, "%s", pr_strings + def->s_name);
++		sprintf (line, "%s", PR_GetString(def->s_name));
+ 		break;
+ 	case ev_void:
+ 		sprintf (line, "void");
+@@ -393,7 +410,7 @@ char *PR_GlobalString (int ofs)
+ 	else
+ 	{
+ 		s = PR_ValueString (def->type, val);
+-		sprintf (line,"%i(%s)%s", ofs, pr_strings + def->s_name, s);
++		sprintf (line,"%i(%s)%s", ofs, PR_GetString(def->s_name), s);
+ 	}
+ 	
+ 	i = strlen(line);
+@@ -414,7 +431,7 @@ char *PR_GlobalStringNoContents (int ofs)
+ 	if (!def)
+ 		sprintf (line,"%i(???)", ofs);
+ 	else
+-		sprintf (line,"%i(%s)", ofs, pr_strings + def->s_name);
++		sprintf (line,"%i(%s)", ofs, PR_GetString(def->s_name));
+ 	
+ 	i = strlen(line);
+ 	for ( ; i<20 ; i++)
+@@ -451,7 +468,7 @@ void ED_Print (edict_t *ed)
+ 	for (i=1 ; i<progs->numfielddefs ; i++)
+ 	{
+ 		d = &pr_fielddefs[i];
+-		name = pr_strings + d->s_name;
++		name = PR_GetString(d->s_name);
+ 		if (name[strlen(name)-2] == '_')
+ 			continue;	// skip _x, _y, _z vars
+ 			
+@@ -501,7 +518,7 @@ void ED_Write (FILE *f, edict_t *ed)
+ 	for (i=1 ; i<progs->numfielddefs ; i++)
+ 	{
+ 		d = &pr_fielddefs[i];
+-		name = pr_strings + d->s_name;
++		name = PR_GetString(d->s_name);
+ 		if (name[strlen(name)-2] == '_')
+ 			continue;	// skip _x, _y, _z vars
+ 			
+@@ -634,7 +651,7 @@ void ED_WriteGlobals (FILE *f)
+ 		&& type != ev_entity)
+ 			continue;
+ 
+-		name = pr_strings + def->s_name;		
++		name = PR_GetString(def->s_name);		
+ 		fprintf (f,"\"%s\" ", name);
+ 		fprintf (f,"\"%s\"\n", PR_UglyValueString(type, (eval_t *)&pr_globals[def->ofs]));		
+ 	}
+@@ -688,20 +705,22 @@ void ED_ParseGlobals (char *data)
+ /*
+ =============
+ ED_NewString
++
++Returns a string_t (engine string slot). Never return host pointer - pr_strings.
+ =============
+ */
+-char *ED_NewString (char *string)
++string_t ED_NewString (char *string)
+ {
+-	char	*new, *new_p;
+-	int		i,l;
+-	
+-	l = strlen(string) + 1;
+-	new = Hunk_Alloc (l);
+-	new_p = new;
++	char	*new_p;
++	int		i, l;
++	string_t	num;
++
++	l = (int)strlen(string) + 1;
++	num = PR_AllocString(l, &new_p);
+ 
+-	for (i=0 ; i< l ; i++)
++	for (i = 0; i < l; i++)
+ 	{
+-		if (string[i] == '\\' && i < l-1)
++		if (string[i] == '\\' && i < l - 1)
+ 		{
+ 			i++;
+ 			if (string[i] == 'n')
+@@ -712,8 +731,8 @@ char *ED_NewString (char *string)
+ 		else
+ 			*new_p++ = string[i];
+ 	}
+-	
+-	return new;
++
++	return num;
+ }
+ 
+ 
+@@ -739,7 +758,7 @@ qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
+ 	switch (key->type & ~DEF_SAVEGLOBAL)
+ 	{
+ 	case ev_string:
+-		*(string_t *)d = ED_NewString (s) - pr_strings;
++		*(string_t *)d = ED_NewString (s);
+ 		break;
+ 		
+ 	case ev_float:
+@@ -959,7 +978,7 @@ void ED_LoadFromFile (char *data)
+ 		}
+ 
+ 	// look for the spawn function
+-		func = ED_FindFunction ( pr_strings + ent->v.classname );
++		func = ED_FindFunction ( PR_GetString(ent->v.classname) );
+ 
+ 		if (!func)
+ 		{
+@@ -1017,9 +1036,23 @@ void PR_LoadProgs (void)
+ 
+ 	pr_global_struct = (globalvars_t *)((byte *)progs + progs->ofs_globals);
+ 	pr_globals = (float *)pr_global_struct;
+-	
+-	pr_edict_size = progs->entityfields * 4 + sizeof (edict_t) - sizeof(entvars_t);
+-	
++
++	/* Reset engine string table for this progs load (LP64-safe). */
++	pr_numknownstrings = 0;
++	pr_maxknownstrings = 0;
++	pr_stringssize = progs->numstrings;
++	if (pr_knownstrings)
++	{
++		free((void *)pr_knownstrings);
++		pr_knownstrings = NULL;
++	}
++	PR_SetEngineString("");
++
++	pr_edict_size = progs->entityfields * 4 + (int)sizeof(edict_t) - (int)sizeof(entvars_t);
++	/* Align so host pointers inside edict_t are naturally aligned on LP64. */
++	pr_edict_size += (int)sizeof(void *) - 1;
++	pr_edict_size &= ~((int)sizeof(void *) - 1);
++
+ // byte swap the lumps
+ 	for (i=0 ; i<progs->numstatements ; i++)
+ 	{
+@@ -1097,10 +1130,87 @@ int NUM_FOR_EDICT(edict_t *e)
+ {
+ 	int		b;
+ 	
+-	b = (byte *)e - (byte *)sv.edicts;
++	b = (int)((byte *)e - (byte *)sv.edicts);
+ 	b = b / pr_edict_size;
+ 	
+ 	if (b < 0 || b >= sv.num_edicts)
+ 		Sys_Error ("NUM_FOR_EDICT: bad pointer");
+ 	return b;
+ }
++
++//===========================================================================
++// Engine string table — LP64-safe string_t handling
++//
++// Positive string_t: offset into progs.dat string lump (pr_strings).
++// Negative string_t: index into pr_knownstrings[] (host C strings / temps).
++// Zero: empty string.
++//===========================================================================
++
++#define PR_STRING_ALLOCSLOTS	256
++
++static void PR_AllocStringSlots (void)
++{
++	pr_maxknownstrings += PR_STRING_ALLOCSLOTS;
++	pr_knownstrings = (const char **)realloc(
++		(void *)pr_knownstrings,
++		(size_t)pr_maxknownstrings * sizeof(char *));
++	if (!pr_knownstrings)
++		Sys_Error("PR_AllocStringSlots: out of memory");
++	/* Zero new slots */
++	memset((void *)(pr_knownstrings + pr_maxknownstrings - PR_STRING_ALLOCSLOTS),
++		0, PR_STRING_ALLOCSLOTS * sizeof(char *));
++}
++
++const char *PR_GetString (string_t num)
++{
++	if (num >= 0 && num < pr_stringssize)
++		return pr_strings + num;
++	if (num < 0 && num >= -pr_numknownstrings)
++	{
++		if (!pr_knownstrings[-1 - num])
++		{
++			Con_Printf("PR_GetString: missing engine string %d\n", num);
++			return "";
++		}
++		return pr_knownstrings[-1 - num];
++	}
++	Con_Printf("PR_GetString: invalid string offset %d\n", num);
++	return "";
++}
++
++string_t PR_SetEngineString (const char *s)
++{
++	int	i;
++
++	if (!s)
++		return 0;
++	/* Already inside progs string lump? */
++	if (s >= pr_strings && s < pr_strings + pr_stringssize)
++		return (string_t)(s - pr_strings);
++
++	for (i = 0; i < pr_numknownstrings; i++)
++	{
++		if (pr_knownstrings[i] == s)
++			return (string_t)(-1 - i);
++	}
++	if (i >= pr_maxknownstrings)
++		PR_AllocStringSlots();
++	pr_numknownstrings++;
++	pr_knownstrings[i] = s;
++	return (string_t)(-1 - i);
++}
++
++string_t PR_AllocString (int size, char **ptr)
++{
++	int	i;
++
++	if (!size)
++		return 0;
++	if (pr_numknownstrings >= pr_maxknownstrings)
++		PR_AllocStringSlots();
++	i = pr_numknownstrings++;
++	pr_knownstrings[i] = (char *)Hunk_AllocName(size, "string");
++	if (ptr)
++		*ptr = (char *)pr_knownstrings[i];
++	return (string_t)(-1 - i);
++}
+diff --git a/WinQuake/pr_exec.c b/WinQuake/pr_exec.c
+index 4f2aa36..14403c7 100644
+--- a/WinQuake/pr_exec.c
++++ b/WinQuake/pr_exec.c
+@@ -208,7 +208,7 @@ void PR_StackTrace (void)
+ 			Con_Printf ("<NO FUNCTION>\n");
+ 		}
+ 		else
+-			Con_Printf ("%12s : %s\n", pr_strings + f->s_file, pr_strings + f->s_name);		
++			Con_Printf ("%12s : %s\n", PR_GetString(f->s_file), PR_GetString(f->s_name));		
+ 	}
+ }
+ 
+@@ -243,7 +243,7 @@ void PR_Profile_f (void)
+ 		if (best)
+ 		{
+ 			if (num < 10)
+-				Con_Printf ("%7i %s\n", best->profile, pr_strings+best->s_name);
++				Con_Printf ("%7i %s\n", best->profile, PR_GetString(best->s_name));
+ 			num++;
+ 			best->profile = 0;
+ 		}
+@@ -483,7 +483,7 @@ while (1)
+ 		c->_float = !a->vector[0] && !a->vector[1] && !a->vector[2];
+ 		break;
+ 	case OP_NOT_S:
+-		c->_float = !a->string || !pr_strings[a->string];
++		c->_float = !a->string || !PR_GetString(a->string)[0];
+ 		break;
+ 	case OP_NOT_FNC:
+ 		c->_float = !a->function;
+@@ -501,7 +501,7 @@ while (1)
+ 					(a->vector[2] == b->vector[2]);
+ 		break;
+ 	case OP_EQ_S:
+-		c->_float = !strcmp(pr_strings+a->string,pr_strings+b->string);
++		c->_float = !strcmp(PR_GetString(a->string), PR_GetString(b->string));
+ 		break;
+ 	case OP_EQ_E:
+ 		c->_float = a->_int == b->_int;
+@@ -520,7 +520,7 @@ while (1)
+ 					(a->vector[2] != b->vector[2]);
+ 		break;
+ 	case OP_NE_S:
+-		c->_float = strcmp(pr_strings+a->string,pr_strings+b->string);
++		c->_float = !!strcmp(PR_GetString(a->string), PR_GetString(b->string));
+ 		break;
+ 	case OP_NE_E:
+ 		c->_float = a->_int != b->_int;
+diff --git a/WinQuake/progs.h b/WinQuake/progs.h
+index 6d3aa8a..2feeef1 100644
+--- a/WinQuake/progs.h
++++ b/WinQuake/progs.h
+@@ -73,8 +73,8 @@ void PR_Profile_f (void);
+ edict_t *ED_Alloc (void);
+ void ED_Free (edict_t *ed);
+ 
+-char	*ED_NewString (char *string);
+-// returns a copy of the string allocated from the server's string heap
++string_t ED_NewString (char *string);
++/* returns string_t (engine string slot), not a host pointer */
+ 
+ void ED_Print (edict_t *ed);
+ void ED_Write (FILE *f, edict_t *ed);
+@@ -93,23 +93,29 @@ int NUM_FOR_EDICT(edict_t *e);
+ 
+ #define	NEXT_EDICT(e) ((edict_t *)( (byte *)e + pr_edict_size))
+ 
+-#define	EDICT_TO_PROG(e) ((byte *)e - (byte *)sv.edicts)
+-#define PROG_TO_EDICT(e) ((edict_t *)((byte *)sv.edicts + e))
++/* Edict offsets stored in progs are 32-bit; cast explicitly for LP64. */
++#define	EDICT_TO_PROG(e) ((int32_t)((byte *)(e) - (byte *)sv.edicts))
++#define PROG_TO_EDICT(e) ((edict_t *)((byte *)sv.edicts + (int32_t)(e)))
+ 
+ //============================================================================
+ 
+ #define	G_FLOAT(o) (pr_globals[o])
+-#define	G_INT(o) (*(int *)&pr_globals[o])
+-#define	G_EDICT(o) ((edict_t *)((byte *)sv.edicts+ *(int *)&pr_globals[o]))
++#define	G_INT(o) (*(int32_t *)&pr_globals[o])
++#define	G_EDICT(o) ((edict_t *)((byte *)sv.edicts + *(int32_t *)&pr_globals[o]))
+ #define G_EDICTNUM(o) NUM_FOR_EDICT(G_EDICT(o))
+ #define	G_VECTOR(o) (&pr_globals[o])
+-#define	G_STRING(o) (pr_strings + *(string_t *)&pr_globals[o])
++#define	G_STRING(o) (PR_GetString(*(string_t *)&pr_globals[o]))
+ #define	G_FUNCTION(o) (*(func_t *)&pr_globals[o])
+ 
+ #define	E_FLOAT(e,o) (((float*)&e->v)[o])
+-#define	E_INT(e,o) (*(int *)&((float*)&e->v)[o])
++#define	E_INT(e,o) (*(int32_t *)&((float*)&e->v)[o])
+ #define	E_VECTOR(e,o) (&((float*)&e->v)[o])
+-#define	E_STRING(e,o) (pr_strings + *(string_t *)&((float*)&e->v)[o])
++#define	E_STRING(e,o) (PR_GetString(*(string_t *)&((float*)&e->v)[o]))
++
++/* Engine string table (negative string_t = host C string; see pr_edict.c). */
++const char	*PR_GetString (string_t num);
++string_t	PR_SetEngineString (const char *s);
++string_t	PR_AllocString (int size, char **ptr);
+ 
+ extern	int		type_size[8];
+ 
+diff --git a/WinQuake/q_stdint.h b/WinQuake/q_stdint.h
+new file mode 100644
+index 0000000..548fade
+--- /dev/null
++++ b/WinQuake/q_stdint.h
+@@ -0,0 +1,31 @@
++/*
++ * q_stdint.h — fixed-width types for LP64-clean Quake
++ *
++ * Prefer these over bare `long` (8 bytes on Linux LP64, 4 on Win32 LLP64).
++ * QuakeC / progs.dat values stay 32-bit; host pointers use intptr_t.
++ */
++#ifndef Q_STDINT_H
++#define Q_STDINT_H
++
++#include <stdint.h>
++#include <stddef.h>
++
++/* Progs / network / file format sizes (always 32-bit on disk and in VM). */
++typedef int32_t		qint32_t;
++typedef uint32_t	quint32_t;
++typedef int16_t		qint16_t;
++typedef uint16_t	quint16_t;
++typedef int8_t		qint8_t;
++typedef uint8_t		quint8_t;
++
++/* Host pointer-sized integers for address math (never store in progs fields). */
++typedef intptr_t	qintptr_t;
++typedef uintptr_t	quintptr_t;
++typedef ptrdiff_t	qptrdiff_t;
++typedef size_t		qsize_t;
++
++/* Explicit cast helpers for pointer ↔ 32-bit progs offsets. */
++#define Q_PTR_TO_INT32(p)	((int32_t)(intptr_t)(p))
++#define Q_INT32_TO_PTR(t, i)	((t)(intptr_t)(int32_t)(i))
++
++#endif /* Q_STDINT_H */
+diff --git a/WinQuake/quakedef.h b/WinQuake/quakedef.h
+index e451827..d1257c4 100644
+--- a/WinQuake/quakedef.h
++++ b/WinQuake/quakedef.h
+@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <setjmp.h>
++#include "q_stdint.h"
+ 
+ #if defined(_WIN32) && !defined(WINDED)
+ 
+diff --git a/WinQuake/sv_main.c b/WinQuake/sv_main.c
+index deda690..f6da9b6 100644
+--- a/WinQuake/sv_main.c
++++ b/WinQuake/sv_main.c
+@@ -204,7 +204,7 @@ void SV_SendServerinfo (client_t *client)
+ 	else
+ 		MSG_WriteByte (&client->message, GAME_COOP);
+ 
+-	sprintf (message, pr_strings+sv.edicts->v.message);
++	sprintf (message, "%s", PR_GetString(sv.edicts->v.message));
+ 
+ 	MSG_WriteString (&client->message,message);
+ 
+@@ -451,7 +451,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
+ 		if (ent != clent)	// clent is ALLWAYS sent
+ 		{
+ // ignore ents without visible models
+-			if (!ent->v.modelindex || !pr_strings[ent->v.model])
++			if (!ent->v.modelindex || !PR_GetString(ent->v.model)[0])
+ 				continue;
+ 
+ 			for (i=0 ; i < ent->num_leafs ; i++)
+@@ -686,7 +686,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
+ 	if (bits & SU_ARMOR)
+ 		MSG_WriteByte (msg, ent->v.armorvalue);
+ 	if (bits & SU_WEAPON)
+-		MSG_WriteByte (msg, SV_ModelIndex(pr_strings+ent->v.weaponmodel));
++		MSG_WriteByte (msg, SV_ModelIndex(PR_GetString(ent->v.weaponmodel)));
+ 	
+ 	MSG_WriteShort (msg, ent->v.health);
+ 	MSG_WriteByte (msg, ent->v.currentammo);
+@@ -953,7 +953,7 @@ void SV_CreateBaseline (void)
+ 		{
+ 			svent->baseline.colormap = 0;
+ 			svent->baseline.modelindex =
+-				SV_ModelIndex(pr_strings + svent->v.model);
++				SV_ModelIndex(PR_GetString(svent->v.model));
+ 		}
+ 		
+ 	//
+@@ -1157,7 +1157,7 @@ void SV_SpawnServer (char *server)
+ 	ent = EDICT_NUM(0);
+ 	memset (&ent->v, 0, progs->entityfields * 4);
+ 	ent->free = false;
+-	ent->v.model = sv.worldmodel->name - pr_strings;
++	ent->v.model = PR_SetEngineString(sv.worldmodel->name);
+ 	ent->v.modelindex = 1;		// world model
+ 	ent->v.solid = SOLID_BSP;
+ 	ent->v.movetype = MOVETYPE_PUSH;
+@@ -1167,9 +1167,9 @@ void SV_SpawnServer (char *server)
+ 	else
+ 		pr_global_struct->deathmatch = deathmatch.value;
+ 
+-	pr_global_struct->mapname = sv.name - pr_strings;
++	pr_global_struct->mapname = PR_SetEngineString(sv.name);
+ #ifdef QUAKE2
+-	pr_global_struct->startspot = sv.startspot - pr_strings;
++	pr_global_struct->startspot = PR_SetEngineString(sv.startspot);
+ #endif
+ 
+ // serverflags are for cross level information (sigils)
+diff --git a/WinQuake/sv_phys.c b/WinQuake/sv_phys.c
+index e13c0e4..52ebe3d 100644
+--- a/WinQuake/sv_phys.c
++++ b/WinQuake/sv_phys.c
+@@ -98,12 +98,12 @@ void SV_CheckVelocity (edict_t *ent)
+ 	{
+ 		if (IS_NAN(ent->v.velocity[i]))
+ 		{
+-			Con_Printf ("Got a NaN velocity on %s\n", pr_strings + ent->v.classname);
++			Con_Printf ("Got a NaN velocity on %s\n", PR_GetString(ent->v.classname));
+ 			ent->v.velocity[i] = 0;
+ 		}
+ 		if (IS_NAN(ent->v.origin[i]))
+ 		{
+-			Con_Printf ("Got a NaN origin on %s\n", pr_strings + ent->v.classname);
++			Con_Printf ("Got a NaN origin on %s\n", PR_GetString(ent->v.classname));
+ 			ent->v.origin[i] = 0;
+ 		}
+ 		if (ent->v.velocity[i] > sv_maxvelocity.value)
+diff --git a/WinQuake/sys_linux.c b/WinQuake/sys_linux.c
+index 975eab8..b36fe42 100644
+--- a/WinQuake/sys_linux.c
++++ b/WinQuake/sys_linux.c
+@@ -86,15 +86,14 @@ void Sys_Printf (char *fmt, ...)
+ void Sys_Printf (char *fmt, ...)
+ {
+ 	va_list		argptr;
+-	char		text[1024];
++	/* Must be >= Con_Printf MAXPRINTMSG; fortify aborts on vsprintf overflow. */
++	char		text[16384];
+ 	unsigned char		*p;
+ 
+ 	va_start (argptr,fmt);
+-	vsprintf (text,fmt,argptr);
++	vsnprintf (text, sizeof(text), fmt, argptr);
+ 	va_end (argptr);
+-
+-	if (strlen(text) > sizeof(text))
+-		Sys_Error("memory overwrite in Sys_Printf");
++	text[sizeof(text) - 1] = '\0';
+ 
+     if (nostdout)
+         return;
+@@ -139,14 +138,15 @@ void Sys_Init(void)
+ void Sys_Error (char *error, ...)
+ { 
+     va_list     argptr;
+-    char        string[1024];
++    char        string[16384];
+ 
+ // change stdin to non blocking
+     fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
+     
+     va_start (argptr,error);
+-    vsprintf (string,error,argptr);
++    vsnprintf (string, sizeof(string), error, argptr);
+     va_end (argptr);
++	string[sizeof(string) - 1] = '\0';
+ 	fprintf(stderr, "Error: %s\n", string);
+ 
+ 	Host_Shutdown ();
+diff --git a/WinQuake/vid_x.c b/WinQuake/vid_x.c
+index a69624c..77f80f6 100644
+--- a/WinQuake/vid_x.c
++++ b/WinQuake/vid_x.c
+@@ -747,26 +747,26 @@ int XLateKey(XKeyEvent *ev)
+ 
+ 	switch(keysym)
+ 	{
+-		case XK_KP_Page_Up:
+-		case XK_Page_Up:	 key = K_PGUP; break;
++		case XK_KP_Page_Up: key = K_KP_PGUP; break;
++		case XK_Page_Up: key = K_PGUP; break;
+ 
+-		case XK_KP_Page_Down:
+-		case XK_Page_Down:	 key = K_PGDN; break;
++		case XK_KP_Page_Down: key = K_KP_PGDN; break;
++		case XK_Page_Down: key = K_PGDN; break;
+ 
+-		case XK_KP_Home:
+-		case XK_Home:	 key = K_HOME; break;
++		case XK_KP_Home: key = K_KP_HOME; break;
++		case XK_Home: key = K_HOME; break;
+ 
+-		case XK_KP_End:
+-		case XK_End:	 key = K_END; break;
++		case XK_KP_End: key = K_KP_END; break;
++		case XK_End: key = K_END; break;
+ 
+-		case XK_KP_Left:
+-		case XK_Left:	 key = K_LEFTARROW; break;
++		case XK_KP_Left: key = K_KP_LEFTARROW; break;
++		case XK_Left: key = K_LEFTARROW; break;
+ 
+ 		case XK_KP_Right:
+ 		case XK_Right:	key = K_RIGHTARROW;		break;
+ 
+-		case XK_KP_Down:
+-		case XK_Down:	 key = K_DOWNARROW; break;
++		case XK_KP_Down: key = K_KP_DOWNARROW; break;
++		case XK_Down: key = K_DOWNARROW; break;
+ 
+ 		case XK_KP_Up:
+ 		case XK_Up:		 key = K_UPARROW;	 break;
+@@ -804,7 +804,7 @@ int XLateKey(XKeyEvent *ev)
+ 
+ 		case XK_BackSpace: key = K_BACKSPACE; break;
+ 
+-		case XK_KP_Delete:
++		case XK_KP_Delete: key = K_KP_DEL; break;
+ 		case XK_Delete: key = K_DEL; break;
+ 
+ 		case XK_Pause:	key = K_PAUSE;		 break;
+@@ -823,11 +823,11 @@ int XLateKey(XKeyEvent *ev)
+ 
+ 		case XK_KP_Begin: key = K_AUX30;	break;
+ 
+-		case XK_Insert:
+-		case XK_KP_Insert: key = K_INS; break;
++		case XK_KP_Insert: key = K_KP_INS; break;
++		case XK_Insert: key = K_INS; break;
+ 
+-		case XK_KP_Multiply: key = '*'; break;
+-		case XK_KP_Add: key = '+'; break;
++		case XK_KP_Multiply: key = K_KP_STAR; break;
++		case XK_KP_Add: key = K_KP_PLUS; break;
+ 		case XK_KP_Subtract: key = '-'; break;
+ 		case XK_KP_Divide: key = '/'; break;
+ 
