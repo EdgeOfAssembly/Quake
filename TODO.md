@@ -45,6 +45,12 @@ Prototype loop (not production): `tools/quake_vl_loop.py`
 - [ ] Stricter “enemy/menu” detection (no free-text hallucination boost)
 - [ ] Monitor-based live tick follow (not sleep-poll)
 
+## Tools in-repo
+
+- [x] **`qpaktool/`** — Quake `.pak` CLI + MDL→OBJ/Blender helpers (from `/mnt/qpaktool`)
+  - Build: `make -C qpaktool -s test`
+  - Useful for asset extract before game-model / lighting work
+
 ## Later / eyecandy
 
 - [ ] Dynamic lights from map light entities (torches, etc.) — needs asset/light source pass
