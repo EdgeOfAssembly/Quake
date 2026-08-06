@@ -298,6 +298,9 @@ static void install_grabs(void)
 				  GrabModeAsync, GrabModeAsync,
 				  CurrentTime);
 
+	/* Holding keys must not auto-repeat into Key_Event (breaks +forward). */
+	XAutoRepeatOff(dpy);
+
 	mouse_active = true;
 
 //	XSync(dpy, True);
@@ -315,6 +318,8 @@ static void uninstall_grabs(void)
 
 	XUngrabPointer(dpy, CurrentTime);
 	XUngrabKeyboard(dpy, CurrentTime);
+
+	XAutoRepeatOn(dpy);
 
 // inviso cursor
 	XUndefineCursor(dpy, win);
@@ -340,6 +345,24 @@ static void HandleEvents(void)
 		switch (event.type) {
 		case KeyPress:
 		case KeyRelease:
+			/*
+			 * X11 auto-repeat synthesizes Release+Press while a key is held.
+			 * That toggles +forward/-forward every repeat and makes movement
+			 * feel laggy/stuttery. Drop the synthetic pair.
+			 */
+			if (event.type == KeyRelease && XEventsQueued(dpy, QueuedAfterReading))
+			{
+				XEvent nev;
+				XPeekEvent(dpy, &nev);
+				if (nev.type == KeyPress
+				    && nev.xkey.time == event.xkey.time
+				    && nev.xkey.keycode == event.xkey.keycode)
+				{
+					/* consume the repeat press; keep key logically down */
+					XNextEvent(dpy, &nev);
+					break;
+				}
+			}
 			Key_Event(XLateKey(&event.xkey), event.type == KeyPress);
 			break;
 
@@ -437,6 +460,7 @@ void VID_Shutdown(void)
 		return;
 	IN_DeactivateMouse();
 	if (dpy) {
+		XAutoRepeatOn(dpy);
 		if (ctx)
 			glXDestroyContext(dpy, ctx);
 		if (win)
@@ -629,7 +653,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 
 void GL_EndRendering (void)
 {
-	glFlush();
+	/* SwapBuffers flushes; extra glFlush only adds CPU/GPU sync cost. */
 	glXSwapBuffers(dpy, win);
 }
 
@@ -877,7 +901,16 @@ void VID_Init(unsigned char *palette)
 	win = XCreateWindow(dpy, root, 0, 0, width, height,
 						0, visinfo->depth, InputOutput,
 						visinfo->visual, mask, &attr);
+	{
+		XClassHint ch;
+		ch.res_name = "glquake";
+		ch.res_class = "glquake";
+		XSetClassHint(dpy, win, &ch);
+		XStoreName(dpy, win, "glquake");
+	}
 	XMapWindow(dpy, win);
+	/* Off for whole session; restored in VID_Shutdown / uninstall_grabs. */
+	XAutoRepeatOff(dpy);
 
 	if (vidmode_active) {
 		XMoveWindow(dpy, win, 0, 0);

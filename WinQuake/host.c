@@ -642,16 +642,18 @@ void _Host_Frame (float time)
 
 // keep the random time dependent
 	rand ();
-	
+
+	/*
+	 * Always pump input, even on frames we skip for framerate limiting.
+	 * Otherwise key down/up latency tracks Host_FilterTime (was 72 Hz only
+	 * when a frame ran) and feels sluggish under load.
+	 */
+	Sys_SendKeyEvents ();
+	IN_Commands ();
+
 // decide the simulation time
 	if (!Host_FilterTime (time))
 		return;			// don't run too fast, or packets will flood out
-		
-// get new key events
-	Sys_SendKeyEvents ();
-
-// allow mice or other external controllers to add commands
-	IN_Commands ();
 
 // process console commands
 	Cbuf_Execute ();

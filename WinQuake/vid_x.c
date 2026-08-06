@@ -486,8 +486,8 @@ void	VID_Init (unsigned char *palette)
 
 	XAutoRepeatOff(x_disp);
 
-// for debugging only
-	XSynchronize(x_disp, True);
+// XSynchronize makes every X call round-trip — kills performance. Keep off.
+	XSynchronize(x_disp, False);
 
 // check for command-line window size
 	if ((pnum=COM_CheckParm("-winsize")))
