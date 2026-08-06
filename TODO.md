@@ -1,9 +1,9 @@
 # Quake Linux ports — TODO
 
-Branch: `feature/linux-x11-gl`  
+Branch: `feature/dynlights` (dynlights) / `feature/linux-x11-gl` (base ports)  
 Last updated: 2026-08-06
 
-## Done (this branch)
+## Done
 
 - [x] Modern `WinQuake/Makefile.linux` → `quake.x11` + `glquake` (x86_64)
 - [x] Full HD limits (1920×1080), auto-detect resolution, larger hunk
@@ -12,8 +12,33 @@ Last updated: 2026-08-06
 - [x] ALSA sound backend (`snd_linux.c`, `-lasound`)
 - [x] Keypad `K_KP_*` + GLX/X11 KeySym map
 - [x] Experimental local VL play loop: `tools/quake_vl_loop.py` (Xmux + Ollama)
+- [x] Light catalogue: `docs/LIGHT_SOURCES.md`, e1m1 `tlight*` PNGs / face list
+- [x] **Dynamic lights v1 (GL)** — `feature/dynlights`: `tlight*` face probes, noflash surface pools, quadratic falloff (`gl_dynlights.c`); FIXUP removed onion-ring flashblend on map lamps
 
-## High priority
+## Next priority — lighting quality (do these next)
+
+### 1. Disable baked / sector lightmaps (see dyn sources clearly)
+
+Goal: start of **e1m1** (and generally) should **not** use precomputed lightmaps so only auto dynlights show what fixtures illuminate.
+
+- [ ] Cvar e.g. `r_fullbright` / `r_lightmap 0` / new **`r_dynlights_only 1`**: skip or zero baked lightmap contribution in `R_BuildLightMap`
+- [ ] Optional ambient floor so pitch-black voids are navigable (`r_ambient` or small constant)
+- [ ] Default or map-load hook for e1m1 testing: dynlights on + bake off
+- [ ] Screenshot proof: dark room except pools under `tlight*` / torches
+
+### 2. Higher-quality light rays / falloff
+
+Current: mono lightmap luxels (16-unit) + quadratic dlight — better than flashblend rings, still blocky.
+
+- [ ] Higher-res or filtered lightmap sampling (reduce luxel banding on walls)
+- [ ] **RGB lightmaps** or colored additive surface pass (true warm yellow from `tlight*`, not luminance-only)
+- [ ] Smoother falloff (inverse-square / multi-tap) and optional soft corona without onion rings
+- [ ] Prefer face probes only; keep `r_dynlights_entities 0|1|2` as now
+- [ ] Optional later: small GL shader or light volumes — still GL first (GTX 1050); CUDA bake offline only if useful
+
+See `docs/LIGHT_SOURCES.md` (e1m1 ceilings, `sky4`, `tlight*` table).
+
+## High priority (other)
 
 ### Game model (weekend) — **planned**
 
@@ -53,7 +78,6 @@ Prototype loop (not production): `tools/quake_vl_loop.py`
 
 ## Later / eyecandy
 
-- [x] **Dynamic lights (GL)** — `feature/dynlights`: auto dlights from `tlight*` faces, `light*` ents, flame models (`gl_dynlights.c`, `r_dynlights*`); see `docs/LIGHT_SOURCES.md`
 - [ ] Vulkan path only if clearly faster than GLX on this machine
 - [ ] Formal/`make verify` not applicable to full engine; keep `make test` smoke
 
@@ -63,8 +87,9 @@ Prototype loop (not production): `tools/quake_vl_loop.py`
 # Build
 make -C WinQuake -f Makefile.linux -j$(nproc) install
 
-# Play (repo root, id1 data)
-./glquake -basedir . -window -width 1280 -height 720 +map e1m1
+# Play dynlights (feature/dynlights)
+./glquake -basedir . -window -width 1280 -height 720 +map e1m1 +r_dynlights 1
+# r_dynlights_entities 0 = tlight faces only; 1 = +torch/flame; 2 = +all bake lights
 
 # Spectator
 xmux start quake-gl --geometry 1280x800 --gl nvidia --no-attach

@@ -137,3 +137,8 @@ Most ceilings are **tech metal** (`tech04_1`, `tech04_3`, `tech01_*`, …), not 
 | sliplite | 4 | 0 | 8 | Slipgate red |
 
 **Dynamic light placement:** ceiling `tlight*` → offset along −normal (into room); wall → offset along outward normal into room; skip pure `sky4` for yellow lamps (use ambient/outdoor instead).
+
+## Next implementation priority
+
+1. **`r_dynlights_only` (or equivalent)** — turn off baked/sector lightmaps so e1m1 start shows only what `tlight*` / torch probes illuminate (debug + design).
+2. **Higher-quality rays** — RGB lightmaps or colored surface pass, smoother falloff, less 16-luxel banding (see TODO.md).
