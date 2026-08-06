@@ -50,6 +50,40 @@ cvar_t	r_dynlights_models = {"r_dynlights_models", "1"};
 /* 0=tlight faces only, 1=also torch/flame/fluoro ents, 2=+plain light ents */
 cvar_t	r_dynlights_entities = {"r_dynlights_entities", "1"};
 cvar_t	r_dynlights_intensity = {"r_dynlights_intensity", "1.1"};
+/*
+ * r_dynlights_only 1: ignore baked/sector lightmaps — only dyn probes + ambient.
+ * Use to see what tlight faces and torches actually illuminate (e1m1 start).
+ */
+cvar_t	r_dynlights_only = {"r_dynlights_only", "0"};
+/* Ambient floor 0..64 when only-mode (navigable dark, not fullbright) */
+cvar_t	r_dynlights_ambient = {"r_dynlights_ambient", "8"};
+
+static float	r_dynlights_only_prev = -1.0f;
+
+/*
+===============
+R_DynLightsForceLightmapRebuild
+
+Invalidate surface lightmap cache so bake-on/off takes effect immediately.
+===============
+*/
+void R_DynLightsForceLightmapRebuild (void)
+{
+	int		i, m;
+	msurface_t	*fa;
+
+	if (!cl.worldmodel || !cl.worldmodel->surfaces)
+		return;
+
+	fa = cl.worldmodel->surfaces;
+	for (i = 0; i < cl.worldmodel->numsurfaces; i++, fa++)
+	{
+		for (m = 0; m < MAXLIGHTMAPS; m++)
+			fa->cached_light[m] = -1;
+		fa->cached_dlight = true;
+		fa->dlightframe = -1;
+	}
+}
 
 /*
 ===============
@@ -64,6 +98,8 @@ void R_InitDynLights (void)
 	Cvar_RegisterVariable (&r_dynlights_models);
 	Cvar_RegisterVariable (&r_dynlights_entities);
 	Cvar_RegisterVariable (&r_dynlights_intensity);
+	Cvar_RegisterVariable (&r_dynlights_only);
+	Cvar_RegisterVariable (&r_dynlights_ambient);
 }
 
 /*
@@ -582,9 +618,21 @@ Call each frame before R_PushDlights.
 */
 void R_PushMapDynLights (void)
 {
-	if (!r_dynlights.value)
-		return;
 	if (!cl.worldmodel)
+		return;
+
+	/* Toggle bake-off: rebuild all lightmaps next draw */
+	if (r_dynlights_only.value != r_dynlights_only_prev)
+	{
+		r_dynlights_only_prev = r_dynlights_only.value;
+		R_DynLightsForceLightmapRebuild ();
+		Con_Printf ("r_dynlights_only %s (bake %s, ambient %.0f)\n",
+			r_dynlights_only.value ? "ON" : "OFF",
+			r_dynlights_only.value ? "disabled" : "enabled",
+			r_dynlights_ambient.value);
+	}
+
+	if (!r_dynlights.value)
 		return;
 
 	if (r_dynlights_map.value)

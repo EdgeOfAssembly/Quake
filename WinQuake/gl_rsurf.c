@@ -178,21 +178,48 @@ void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
 		goto store;
 	}
 
-// clear to no light
-	for (i=0 ; i<size ; i++)
-		blocklights[i] = 0;
+// clear to no light (or small ambient when dynlights-only / bake off)
+	{
+		unsigned	amb = 0;
+		extern cvar_t	r_dynlights_only;
+		extern cvar_t	r_dynlights_ambient;
 
-// add all the lightmaps
-	if (lightmap)
-		for (maps = 0 ; maps < MAXLIGHTMAPS && surf->styles[maps] != 255 ;
-			 maps++)
+		if (r_dynlights_only.value)
 		{
-			scale = d_lightstylevalue[surf->styles[maps]];
-			surf->cached_light[maps] = scale;	// 8.8 fraction
-			for (i=0 ; i<size ; i++)
-				blocklights[i] += lightmap[i] * scale;
-			lightmap += size;	// skip to next lightmap
+			/* 0..64-ish → 8.8 light units; keeps voids navigable */
+			amb = (unsigned)(r_dynlights_ambient.value * 256.0f);
+			if (amb > 64 * 256)
+				amb = 64 * 256;
 		}
+		for (i=0 ; i<size ; i++)
+			blocklights[i] = amb;
+	}
+
+// add baked/sector lightmaps unless r_dynlights_only (see fixtures only)
+	if (lightmap)
+	{
+		extern cvar_t	r_dynlights_only;
+
+		if (!r_dynlights_only.value)
+		{
+			for (maps = 0 ; maps < MAXLIGHTMAPS && surf->styles[maps] != 255 ;
+				 maps++)
+			{
+				scale = d_lightstylevalue[surf->styles[maps]];
+				surf->cached_light[maps] = scale;	// 8.8 fraction
+				for (i=0 ; i<size ; i++)
+					blocklights[i] += lightmap[i] * scale;
+				lightmap += size;	// skip to next lightmap
+			}
+		}
+		else
+		{
+			/* still update cache so style checks do not thrash every frame */
+			for (maps = 0 ; maps < MAXLIGHTMAPS && surf->styles[maps] != 255 ;
+				 maps++)
+				surf->cached_light[maps] = d_lightstylevalue[surf->styles[maps]];
+		}
+	}
 
 // add all the dynamic lights
 	if (surf->dlightframe == r_framecount)

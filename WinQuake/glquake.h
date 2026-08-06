@@ -103,6 +103,9 @@ texture_t *R_TextureAnimation (texture_t *base);
 void R_InitDynLights (void);
 void R_ParseMapDynLights (void);
 void R_PushMapDynLights (void);
+void R_DynLightsForceLightmapRebuild (void);
+extern cvar_t r_dynlights_only;
+extern cvar_t r_dynlights_ambient;
 
 typedef struct surfcache_s
 {

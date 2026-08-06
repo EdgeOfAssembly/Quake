@@ -21,10 +21,11 @@ Last updated: 2026-08-06
 
 Goal: start of **e1m1** (and generally) should **not** use precomputed lightmaps so only auto dynlights show what fixtures illuminate.
 
-- [ ] Cvar e.g. `r_fullbright` / `r_lightmap 0` / new **`r_dynlights_only 1`**: skip or zero baked lightmap contribution in `R_BuildLightMap`
-- [ ] Optional ambient floor so pitch-black voids are navigable (`r_ambient` or small constant)
-- [ ] Default or map-load hook for e1m1 testing: dynlights on + bake off
-- [ ] Screenshot proof: dark room except pools under `tlight*` / torches
+- [x] **`r_dynlights_only 1`**: skip baked lightmaps in `R_BuildLightMap` (dyn probes only)
+- [x] **`r_dynlights_ambient`**: ambient floor when only-mode (default 8)
+- [x] Toggle rebuilds lightmaps immediately (`R_DynLightsForceLightmapRebuild`)
+- [ ] Screenshot proof under Xmux: dark room except pools under `tlight*` / torches
+- [ ] Optional: default only-mode on e1m1 for lighting debug
 
 ### 2. Higher-quality light rays / falloff
 
