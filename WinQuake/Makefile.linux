@@ -69,11 +69,18 @@ ifdef DEBUG
                  $(WARNFLAGS) -fcommon -Dstricmp=strcasecmp -D_GNU_SOURCE -I$(SRCDIR)
 endif
 
-X11_CFLAGS  := $(BASE_CFLAGS) -DX11
-GL_CFLAGS   := $(BASE_CFLAGS) -DGLQUAKE
+X11_CFLAGS  := $(BASE_CFLAGS) $(ALSA_CFLAGS) -DX11
+GL_CFLAGS   := $(BASE_CFLAGS) $(ALSA_CFLAGS) -DGLQUAKE
 
-X11_LIBS := -lX11 -lXext -lXxf86dga -lm
-GL_LIBS  := -lGL -lX11 -lXext -lXxf86dga -lXxf86vm -ldl -lm
+# ALSA for snd_linux.c (OSS /dev/dsp is gone on modern systems)
+ALSA_LIBS := $(shell pkg-config --libs alsa 2>/dev/null)
+ifeq ($(ALSA_LIBS),)
+  ALSA_LIBS := -lasound
+endif
+ALSA_CFLAGS := $(shell pkg-config --cflags alsa 2>/dev/null)
+
+X11_LIBS := -lX11 -lXext -lXxf86dga $(ALSA_LIBS) -lm
+GL_LIBS  := -lGL -lX11 -lXext -lXxf86dga -lXxf86vm -ldl $(ALSA_LIBS) -lm
 
 LDFLAGS ?= -Wl,--as-needed -Wl,-O1
 
