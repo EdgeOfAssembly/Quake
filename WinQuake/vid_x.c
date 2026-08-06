@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <X11/Xlib.h>
@@ -107,7 +108,12 @@ void (*vid_menukeyfn)(int key);
 void VID_MenuKey (int key);
 
 typedef unsigned short PIXEL16;
-typedef unsigned long PIXEL24;
+/*
+ * X11 TrueColor depth-24 images almost always use bits_per_pixel=32.
+ * Must NOT use unsigned long — on LP64 that is 8 bytes and st3_fixup
+ * walks off the end of the SHM buffer (segfault on first VID_Update).
+ */
+typedef uint32_t PIXEL24;
 static PIXEL16 st2d_8to16table[256];
 static PIXEL24 st2d_8to24table[256];
 static int shiftmask_fl=0;
@@ -218,21 +224,36 @@ void st2_fixup( XImage *framebuf, int x, int y, int width, int height)
 
 void st3_fixup( XImage *framebuf, int x, int y, int width, int height)
 {
-	int xi,yi;
+	int yi;
 	unsigned char *src;
 	PIXEL24 *dest;
-	register int count, n;
+	int count, n;
+	int bpp;
 
-	if( (x<0)||(y<0) )return;
+	if ((x < 0) || (y < 0) || width <= 0 || height <= 0)
+		return;
 
-	for (yi = y; yi < (y+height); yi++) {
-		src = &framebuf->data [yi * framebuf->bytes_per_line];
+	/*
+	 * In-place 8→24/32 conversion. Quake draws 8-bit into the start of each
+	 * scanline; XImage stride is bits_per_pixel (usually 32) * width.
+	 * Convert back-to-front so we do not clobber unread palette indices.
+	 */
+	bpp = framebuf->bits_per_pixel;
+	if (bpp != 24 && bpp != 32)
+	{
+		/* Unexpected format — skip convert (better than crash). */
+		return;
+	}
 
-		// Duff's Device
+	for (yi = y; yi < (y + height); yi++) {
+		src = (unsigned char *)&framebuf->data[yi * framebuf->bytes_per_line];
+
 		count = width;
 		n = (count + 7) / 8;
-		dest = ((PIXEL24 *)src) + x+width - 1;
-		src += x+width - 1;
+		/* PIXEL24 is uint32_t — matches 32bpp; for rare 24bpp packed still OK
+		 * if bytes_per_line is large enough (X11 pads to 32). */
+		dest = ((PIXEL24 *)src) + x + width - 1;
+		src += x + width - 1;
 
 		switch (count % 8) {
 		case 0:	do {	*dest-- = st2d_8to24table[*src--];
@@ -245,10 +266,6 @@ void st3_fixup( XImage *framebuf, int x, int y, int width, int height)
 		case 1:			*dest-- = st2d_8to24table[*src--];
 				} while (--n > 0);
 		}
-
-//		for(xi = (x+width-1); xi >= x; xi--) {
-//			dest[xi] = st2d_8to16table[src[xi]];
-//		}
 	}
 }
 
