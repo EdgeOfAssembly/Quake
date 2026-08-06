@@ -20,6 +20,9 @@ glquake.exe
 WinQuake/glquake
 WinQuake/quake.x11
 WinQuake/build/
+glquake-dbg
+*.o
+/tmp/
 
 # Temporary files
 *~
