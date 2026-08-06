@@ -53,7 +53,7 @@ Prototype loop (not production): `tools/quake_vl_loop.py`
 
 ## Later / eyecandy
 
-- [ ] Dynamic lights from map light entities (torches, etc.) — needs asset/light source pass
+- [x] **Dynamic lights (GL)** — `feature/dynlights`: auto dlights from `tlight*` faces, `light*` ents, flame models (`gl_dynlights.c`, `r_dynlights*`); see `docs/LIGHT_SOURCES.md`
 - [ ] Vulkan path only if clearly faster than GLX on this machine
 - [ ] Formal/`make verify` not applicable to full engine; keep `make test` smoke
 

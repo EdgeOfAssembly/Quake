@@ -99,6 +99,11 @@ void R_TimeRefresh_f (void);
 void R_ReadPointFile_f (void);
 texture_t *R_TextureAnimation (texture_t *base);
 
+/* automatic colored dynamic lights (gl_dynlights.c) */
+void R_InitDynLights (void);
+void R_ParseMapDynLights (void);
+void R_PushMapDynLights (void);
+
 typedef struct surfcache_s
 {
 	struct surfcache_s	*next;

@@ -329,6 +329,9 @@ dlight_t *CL_AllocDlight (int key)
 			{
 				memset (dl, 0, sizeof(*dl));
 				dl->key = key;
+				dl->color[0] = 1.0f;
+				dl->color[1] = 0.85f;
+				dl->color[2] = 0.5f;
 				return dl;
 			}
 		}
@@ -342,6 +345,9 @@ dlight_t *CL_AllocDlight (int key)
 		{
 			memset (dl, 0, sizeof(*dl));
 			dl->key = key;
+			dl->color[0] = 1.0f;
+			dl->color[1] = 0.85f;
+			dl->color[2] = 0.5f;
 			return dl;
 		}
 	}
@@ -349,6 +355,9 @@ dlight_t *CL_AllocDlight (int key)
 	dl = &cl_dlights[0];
 	memset (dl, 0, sizeof(*dl));
 	dl->key = key;
+	dl->color[0] = 1.0f;
+	dl->color[1] = 0.85f;
+	dl->color[2] = 0.5f;
 	return dl;
 }
 

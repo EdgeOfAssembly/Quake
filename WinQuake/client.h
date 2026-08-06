@@ -68,7 +68,7 @@ typedef struct
 
 #define	SIGNONS		4			// signon messages to receive before connected
 
-#define	MAX_DLIGHTS		32
+#define	MAX_DLIGHTS		32		/* dlightbits is int — keep 32 */
 typedef struct
 {
 	vec3_t	origin;
@@ -77,6 +77,7 @@ typedef struct
 	float	decay;				// drop this each second
 	float	minlight;			// don't add when contributing less
 	int		key;
+	float	color[3];			/* RGB 0..1; warm default if unset */
 #ifdef QUAKE2
 	qboolean	dark;			// subtracts light instead of adding
 #endif

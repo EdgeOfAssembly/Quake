@@ -109,7 +109,7 @@ SOFT_SRCS := \
 	vid_x.c
 
 GL_SRCS := \
-	gl_draw.c gl_mesh.c gl_model.c gl_refrag.c gl_rlight.c \
+	gl_draw.c gl_mesh.c gl_model.c gl_refrag.c gl_rlight.c gl_dynlights.c \
 	gl_rmain.c gl_rmisc.c gl_rsurf.c gl_screen.c gl_test.c gl_warp.c \
 	r_part.c \
 	gl_vidlinuxglx.c

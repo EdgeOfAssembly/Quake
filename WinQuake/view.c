@@ -1015,6 +1015,9 @@ void V_RenderView (void)
 			V_CalcRefdef ();
 	}
 
+#ifdef GLQUAKE
+	R_PushMapDynLights ();
+#endif
 	R_PushDlights ();
 
 	if (lcd_x.value)
@@ -1034,6 +1037,9 @@ void V_RenderView (void)
 
 		vid.buffer += vid.rowbytes>>1;
 
+#ifdef GLQUAKE
+		R_PushMapDynLights ();
+#endif
 		R_PushDlights ();
 
 		r_refdef.viewangles[YAW] += lcd_yaw.value*2;

@@ -78,18 +78,29 @@ void R_RenderDlight (dlight_t *light)
 	float	a;
 	vec3_t	v;
 	float	rad;
+	float	cr, cg, cb;
 
 	rad = light->radius * 0.35;
+
+	cr = light->color[0];
+	cg = light->color[1];
+	cb = light->color[2];
+	if (cr == 0 && cg == 0 && cb == 0)
+	{	/* legacy callers that never set color */
+		cr = 1.0f;
+		cg = 0.85f;
+		cb = 0.5f;
+	}
 
 	VectorSubtract (light->origin, r_origin, v);
 	if (Length (v) < rad)
 	{	// view is inside the dlight
-		AddLightBlend (1, 0.5, 0, light->radius * 0.0003);
+		AddLightBlend (cr, cg, cb, light->radius * 0.0003);
 		return;
 	}
 
 	glBegin (GL_TRIANGLE_FAN);
-	glColor3f (0.2,0.1,0.0);
+	glColor3f (cr * 0.2f, cg * 0.2f, cb * 0.2f);
 	for (i=0 ; i<3 ; i++)
 		v[i] = light->origin[i] - vpn[i]*rad;
 	glVertex3fv (v);

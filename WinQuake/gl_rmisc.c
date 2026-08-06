@@ -211,6 +211,7 @@ void R_Init (void)
 
 	R_InitParticles ();
 	R_InitParticleTexture ();
+	R_InitDynLights ();
 
 #ifdef GLTEST
 	Test_Init ();
@@ -412,6 +413,9 @@ void R_NewMap (void)
 #ifdef QUAKE2
 	R_LoadSkys ();
 #endif
+
+	/* tlight* faces + light* entities → colored dlight probes */
+	R_ParseMapDynLights ();
 }
 
 
