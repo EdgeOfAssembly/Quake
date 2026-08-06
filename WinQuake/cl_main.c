@@ -332,6 +332,8 @@ dlight_t *CL_AllocDlight (int key)
 				dl->color[0] = 1.0f;
 				dl->color[1] = 0.85f;
 				dl->color[2] = 0.5f;
+				dl->intensity = 1.0f;
+				dl->noflash = 0;
 				return dl;
 			}
 		}
@@ -348,6 +350,8 @@ dlight_t *CL_AllocDlight (int key)
 			dl->color[0] = 1.0f;
 			dl->color[1] = 0.85f;
 			dl->color[2] = 0.5f;
+			dl->intensity = 1.0f;
+			dl->noflash = 0;
 			return dl;
 		}
 	}
@@ -358,6 +362,8 @@ dlight_t *CL_AllocDlight (int key)
 	dl->color[0] = 1.0f;
 	dl->color[1] = 0.85f;
 	dl->color[2] = 0.5f;
+	dl->intensity = 1.0f;
+	dl->noflash = 0;
 	return dl;
 }
 

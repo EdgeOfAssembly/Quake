@@ -72,48 +72,67 @@ void AddLightBlend (float r, float g, float b, float a2)
 	v_blend[2] = v_blend[2]*(1-a2) + b*a2;
 }
 
+/*
+=============
+R_RenderDlight
+
+Soft multi-ring corona (weapons / optional). Map lamps use noflash + lightmaps.
+=============
+*/
 void R_RenderDlight (dlight_t *light)
 {
-	int		i, j;
-	float	a;
+	int		i, j, ring, nrings, nseg;
+	float	a, frac, fall, rad, cr, cg, cb, inten;
 	vec3_t	v;
-	float	rad;
-	float	cr, cg, cb;
 
-	rad = light->radius * 0.35;
+	if (light->noflash)
+		return;
 
 	cr = light->color[0];
 	cg = light->color[1];
 	cb = light->color[2];
 	if (cr == 0 && cg == 0 && cb == 0)
-	{	/* legacy callers that never set color */
+	{
 		cr = 1.0f;
 		cg = 0.85f;
 		cb = 0.5f;
 	}
+	inten = light->intensity > 0 ? light->intensity : 1.0f;
 
 	VectorSubtract (light->origin, r_origin, v);
-	if (Length (v) < rad)
-	{	// view is inside the dlight
-		AddLightBlend (cr, cg, cb, light->radius * 0.0003);
+	if (Length (v) < light->radius * 0.15f)
+	{
+		AddLightBlend (cr, cg, cb, light->radius * 0.00015f * inten);
 		return;
 	}
 
-	glBegin (GL_TRIANGLE_FAN);
-	glColor3f (cr * 0.2f, cg * 0.2f, cb * 0.2f);
-	for (i=0 ; i<3 ; i++)
-		v[i] = light->origin[i] - vpn[i]*rad;
-	glVertex3fv (v);
-	glColor3f (0,0,0);
-	for (i=16 ; i>=0 ; i--)
+	/* Several soft rings, quadratic falloff — avoids 16-slice onion banding. */
+	nrings = 5;
+	nseg = 32;
+	for (ring = 0; ring < nrings; ring++)
 	{
-		a = i/16.0 * M_PI*2;
-		for (j=0 ; j<3 ; j++)
-			v[j] = light->origin[j] + vright[j]*cos(a)*rad
-				+ vup[j]*sin(a)*rad;
+		frac = (ring + 1) / (float)nrings;
+		fall = (1.0f - frac) * (1.0f - frac);
+		rad = light->radius * 0.22f * frac;
+		glBegin (GL_TRIANGLE_FAN);
+		glColor3f (cr * 0.12f * fall * inten,
+			cg * 0.12f * fall * inten,
+			cb * 0.12f * fall * inten);
+		for (i = 0; i < 3; i++)
+			v[i] = light->origin[i] - vpn[i] * rad * 0.25f;
 		glVertex3fv (v);
+		glColor3f (0, 0, 0);
+		for (i = nseg; i >= 0; i--)
+		{
+			a = i / (float)nseg * (float)M_PI * 2.0f;
+			for (j = 0; j < 3; j++)
+				v[j] = light->origin[j]
+					+ vright[j] * cos(a) * rad
+					+ vup[j] * sin(a) * rad;
+			glVertex3fv (v);
+		}
+		glEnd ();
 	}
-	glEnd ();
 }
 
 /*
@@ -129,8 +148,6 @@ void R_RenderDlights (void)
 	if (!gl_flashblend.value)
 		return;
 
-	r_dlightframecount = r_framecount + 1;	// because the count hasn't
-											//  advanced yet for this frame
 	glDepthMask (0);
 	glDisable (GL_TEXTURE_2D);
 	glShadeModel (GL_SMOOTH);
@@ -141,6 +158,8 @@ void R_RenderDlights (void)
 	for (i=0 ; i<MAX_DLIGHTS ; i++, l++)
 	{
 		if (l->die < cl.time || !l->radius)
+			continue;
+		if (l->noflash)
 			continue;
 		R_RenderDlight (l);
 	}
@@ -217,7 +236,11 @@ void R_PushDlights (void)
 	int		i;
 	dlight_t	*l;
 
-	if (gl_flashblend.value)
+	/*
+	 * Always mark surfaces for lightmap dlights.  Flashblend (if on) is an
+	 * extra corona for weapons only (noflash map lamps skip the disc).
+	 */
+	if (!cl.worldmodel)
 		return;
 
 	r_dlightframecount = r_framecount + 1;	// because the count hasn't

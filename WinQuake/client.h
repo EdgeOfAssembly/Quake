@@ -78,6 +78,8 @@ typedef struct
 	float	minlight;			// don't add when contributing less
 	int		key;
 	float	color[3];			/* RGB 0..1; warm default if unset */
+	float	intensity;			/* surface light strength scale (default 1) */
+	int		noflash;			/* 1 = lightmap only, no flashblend disc */
 #ifdef QUAKE2
 	qboolean	dark;			// subtracts light instead of adding
 #endif

@@ -44,9 +44,12 @@ static dynlight_probe_t	r_dyn_probes[MAX_DYN_PROBES];
 static int		r_num_dyn_probes;
 
 cvar_t	r_dynlights = {"r_dynlights", "1"};
-cvar_t	r_dynlights_radius = {"r_dynlights_radius", "220"};
+cvar_t	r_dynlights_radius = {"r_dynlights_radius", "160"};
 cvar_t	r_dynlights_map = {"r_dynlights_map", "1"};
 cvar_t	r_dynlights_models = {"r_dynlights_models", "1"};
+/* 0=tlight faces only, 1=also torch/flame/fluoro ents, 2=+plain light ents */
+cvar_t	r_dynlights_entities = {"r_dynlights_entities", "1"};
+cvar_t	r_dynlights_intensity = {"r_dynlights_intensity", "1.1"};
 
 /*
 ===============
@@ -59,6 +62,8 @@ void R_InitDynLights (void)
 	Cvar_RegisterVariable (&r_dynlights_radius);
 	Cvar_RegisterVariable (&r_dynlights_map);
 	Cvar_RegisterVariable (&r_dynlights_models);
+	Cvar_RegisterVariable (&r_dynlights_entities);
+	Cvar_RegisterVariable (&r_dynlights_intensity);
 }
 
 /*
@@ -94,30 +99,30 @@ static qboolean DynLight_ColorForTexture (const char *name, float *r, float *g, 
 	*r = 1.0f;
 	*g = 0.85f;
 	*b = 0.35f;
-	*radius = 220.0f;
+	*radius = 140.0f;
 
 	if (!Q_strncmp ((char *)name, "tlight01", 8))
 	{
 		*r = 1.0f; *g = 0.75f; *b = 0.35f;
-		*radius = 200.0f;
+		*radius = 130.0f;
 		return true;
 	}
 	if (!Q_strncmp ((char *)name, "tlight02", 8)
 	 || !Q_strncmp ((char *)name, "tlight10", 8))
 	{
 		*r = 1.0f; *g = 0.85f; *b = 0.35f;
-		*radius = 240.0f;
+		*radius = 150.0f;
 		return true;
 	}
 	if (!Q_strncmp ((char *)name, "tlight07", 8))
 	{
 		*r = 1.0f; *g = 0.55f; *b = 0.2f;
-		*radius = 220.0f;
+		*radius = 145.0f;
 		return true;
 	}
 	if (!Q_strncmp ((char *)name, "tlight08", 8))
 	{
-		*r = 0.6f; *g = 0.45f; *b = 0.25f;
+		*r = 0.55f; *g = 0.4f; *b = 0.22f;
 		*radius = 140.0f;	/* dim fixture housing */
 		return true;
 	}
@@ -246,8 +251,11 @@ static qboolean DynLight_ClassInfo (const char *classname, float *r, float *g, f
 
 	if (!strcmp (classname, "light"))
 	{
+		/* baked already — only if user opts in (doubles haze) */
+		if (r_dynlights_entities.value < 2)
+			return false;
 		*r = 1.0f; *g = 0.9f; *b = 0.7f;
-		*radius = 300.0f;
+		*radius = 180.0f;
 		return true;
 	}
 	if (!Q_strncmp ((char *)classname, "light_torch", 11))
@@ -316,6 +324,8 @@ static void DynLight_CollectEntities (void)
 	int		have_class;
 
 	if (!cl.worldmodel || !cl.worldmodel->entities)
+		return;
+	if (r_dynlights_entities.value < 1)
 		return;
 
 	data = cl.worldmodel->entities;
@@ -427,7 +437,9 @@ static void DynLight_PushEntity (entity_t *ent, int key)
 	dl = CL_AllocDlight (key);
 	VectorCopy (ent->origin, dl->origin);
 	dl->origin[2] += 8.0f;
-	dl->radius = 200.0f * (r_dynlights_radius.value / 220.0f);
+	dl->noflash = 1;
+	dl->intensity = r_dynlights_intensity.value;
+	dl->radius = 160.0f * (r_dynlights_radius.value / 160.0f);
 	if (dl->radius < 40.0f)
 		dl->radius = 40.0f;
 	dl->die = cl.time + 0.1;
@@ -530,7 +542,7 @@ static void DynLight_PushNearestProbes (void)
 		}
 	}
 
-	scale = r_dynlights_radius.value / 220.0f;
+	scale = r_dynlights_radius.value / 160.0f;
 	if (scale < 0.1f)
 		scale = 0.1f;
 
@@ -543,14 +555,18 @@ static void DynLight_PushNearestProbes (void)
 		dl = CL_AllocDlight (DYNLIGHT_KEY_BASE + i);
 		VectorCopy (p->origin, dl->origin);
 		dl->radius = p->radius * scale;
-		if (dl->radius < 32.0f)
-			dl->radius = 32.0f;
+		if (dl->radius < 48.0f)
+			dl->radius = 48.0f;
+		if (dl->radius > 280.0f)
+			dl->radius = 280.0f;
 		dl->die = cl.time + 0.1;
 		dl->decay = 0;
 		dl->minlight = 0;
 		dl->color[0] = p->color[0];
 		dl->color[1] = p->color[1];
 		dl->color[2] = p->color[2];
+		dl->intensity = r_dynlights_intensity.value;
+		dl->noflash = 1;	/* surface pools only — no onion-ring discs */
 		nactive++;
 	}
 

@@ -70,12 +70,13 @@ void R_AddDynamicLights (msurface_t *surf)
 {
 	int			lnum;
 	int			sd, td;
-	float		dist, rad, minlight;
+	float		dist, rad, minlight, f, inten, planedist;
 	vec3_t		impact, local;
 	int			s, t;
 	int			i;
 	int			smax, tmax;
 	mtexinfo_t	*tex;
+	dlight_t	*dl;
 
 	smax = (surf->extents[0]>>4)+1;
 	tmax = (surf->extents[1]>>4)+1;
@@ -86,19 +87,33 @@ void R_AddDynamicLights (msurface_t *surf)
 		if ( !(surf->dlightbits & (1<<lnum) ) )
 			continue;		// not lit by this light
 
-		rad = cl_dlights[lnum].radius;
-		dist = DotProduct (cl_dlights[lnum].origin, surf->plane->normal) -
+		dl = &cl_dlights[lnum];
+		rad = dl->radius;
+		planedist = DotProduct (dl->origin, surf->plane->normal) -
 				surf->plane->dist;
-		rad -= fabs(dist);
-		minlight = cl_dlights[lnum].minlight;
+		if (planedist < -rad)
+			continue;
+		rad -= (float)fabs(planedist);
+		if (rad < 1.0f)
+			continue;
+
+		inten = dl->intensity > 0 ? dl->intensity : 1.0f;
+		{
+			float	lum = dl->color[0] * 0.35f + dl->color[1] * 0.45f
+				+ dl->color[2] * 0.20f;
+			if (lum < 0.15f)
+				lum = 0.15f;
+			inten *= lum * 1.35f;
+		}
+
+		minlight = dl->minlight;
 		if (rad < minlight)
 			continue;
-		minlight = rad - minlight;
 
 		for (i=0 ; i<3 ; i++)
 		{
-			impact[i] = cl_dlights[lnum].origin[i] -
-					surf->plane->normal[i]*dist;
+			impact[i] = dl->origin[i] -
+					surf->plane->normal[i]*planedist;
 		}
 
 		local[0] = DotProduct (impact, tex->vecs[0]) + tex->vecs[0][3];
@@ -117,12 +132,13 @@ void R_AddDynamicLights (msurface_t *surf)
 				sd = local[0] - s*16;
 				if (sd < 0)
 					sd = -sd;
-				if (sd > td)
-					dist = sd + (td>>1);
-				else
-					dist = td + (sd>>1);
-				if (dist < minlight)
-					blocklights[t*smax + s] += (rad - dist)*256;
+				dist = (float)sqrt((double)(sd * sd + td * td));
+				if (dist >= rad)
+					continue;
+				/* quadratic falloff — soft pool, less banding than linear */
+				f = 1.0f - dist / rad;
+				f = f * f;
+				blocklights[t*smax + s] += (unsigned)(f * rad * inten * 256.0f);
 			}
 		}
 	}
