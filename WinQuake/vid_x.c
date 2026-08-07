@@ -838,6 +838,19 @@ int XLateKey(XKeyEvent *ev)
 		case XK_Alt_R:	
 		case XK_Meta_R: key = K_ALT;			break;
 
+		/* Finnish: key under Esc is section/onehalf, not grave — open console */
+#ifdef XK_section
+		case XK_section:	/* Finnish § under Esc */
+#endif
+#ifdef XK_onehalf
+		case XK_onehalf:	/* Finnish ½ */
+#endif
+#ifndef XK_section
+		case 0xa7:
+#endif
+			key = '`';
+			break;
+
 		case XK_KP_Begin: key = K_AUX30;	break;
 
 		case XK_KP_Insert: key = K_KP_INS; break;
@@ -1212,21 +1225,26 @@ void IN_Move (usercmd_t *cmd)
 	mouse_x *= sensitivity.value;
 	mouse_y *= sensitivity.value;
    
+	/*
+	 * Freelook always when mouse is active. Under Xmux the viewer injects
+	 * absolute pointer into the client area (seamless grab); without mlook
+	 * latched, mouse Y becomes +forward/-back ("slight player move").
+	 */
 	if ( (in_strafe.state & 1) || (lookstrafe.value && (in_mlook.state & 1) ))
 		cmd->sidemove += m_side.value * mouse_x;
 	else
 		cl.viewangles[YAW] -= m_yaw.value * mouse_x;
-	if (in_mlook.state & 1)
-		V_StopPitchDrift ();
-   
-	if ( (in_mlook.state & 1) && !(in_strafe.state & 1)) {
+
+	V_StopPitchDrift ();
+
+	if (!(in_strafe.state & 1)) {
 		cl.viewangles[PITCH] += m_pitch.value * mouse_y;
 		if (cl.viewangles[PITCH] > 80)
 			cl.viewangles[PITCH] = 80;
 		if (cl.viewangles[PITCH] < -70)
 			cl.viewangles[PITCH] = -70;
 	} else {
-		if ((in_strafe.state & 1) && noclip_anglehack)
+		if (noclip_anglehack)
 			cmd->upmove -= m_forward.value * mouse_y;
 		else
 			cmd->forwardmove -= m_forward.value * mouse_y;
