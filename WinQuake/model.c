@@ -395,6 +395,13 @@ static texture_t *Mod_TryLoadExternalRGBA (const char *texname,
 		return NULL;
 	if (!Q_strncmp ((char *)texname, "sky", 3))
 		return NULL;
+	/*
+	 * Turb water/slime/tele (*name → #name): software turb expects classic
+	 * 64×64 paletted warp. Hires Real-ESRGAN water often washes to flat gray
+	 * and still needs a dedicated turb path — skip external for now.
+	 */
+	if (texname[0] == '*')
+		return NULL;
 
 	Mod_SanitizeTexFilename (texname, file, sizeof(file));
 	rgba = NULL;
@@ -505,6 +512,9 @@ static texture_t *Mod_TryLoadExternalMip (const char *texname,
 
 	/* Sky has fixed layout expectations — never replace from hires. */
 	if (!Q_strncmp ((char *)texname, "sky", 3))
+		return NULL;
+	/* Turb water/slime/tele: keep BSP 64x64 for software warp. */
+	if (texname[0] == '*')
 		return NULL;
 
 	/* Prefer truecolor sources first */
