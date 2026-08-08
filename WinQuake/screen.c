@@ -258,6 +258,10 @@ static void SCR_CalcRefdef (void)
 	else
 		sb_lines = 24+16+8;
 
+	/* Match HUD scale (same as menus) so 3D view leaves room for big sbar */
+	if (sb_lines > 0)
+		sb_lines *= Draw_GuiScale ();
+
 // these calculations mirror those in R_Init() for r_refdef, but take no
 // account of water warping
 	vrect.x = 0;

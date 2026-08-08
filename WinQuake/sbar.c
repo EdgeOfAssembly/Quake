@@ -250,7 +250,31 @@ void Sbar_Init (void)
 
 //=============================================================================
 
-// drawing routines are relative to the status bar location
+// drawing routines are relative to the status bar location (320×SBAR_HEIGHT design)
+
+/**
+ * @brief Same scale as menus (vid.height/240) — not texture ×4.
+ */
+static int Sbar_Scale (void)
+{
+	return Draw_GuiScale ();
+}
+
+/** Horizontal origin of the 320-wide sbar design space. */
+static int Sbar_XOfs (void)
+{
+	int	s = Sbar_Scale ();
+
+	if (cl.gametype == GAME_DEATHMATCH)
+		return 0;
+	return (vid.width - 320 * s) >> 1;
+}
+
+/** Top of the main sbar strip (bottom of screen minus scaled height). */
+static int Sbar_YBase (void)
+{
+	return vid.height - SBAR_HEIGHT * Sbar_Scale ();
+}
 
 /*
 =============
@@ -259,10 +283,9 @@ Sbar_DrawPic
 */
 void Sbar_DrawPic (int x, int y, qpic_t *pic)
 {
-	if (cl.gametype == GAME_DEATHMATCH)
-		Draw_Pic (x /* + ((vid.width - 320)>>1)*/, y + (vid.height-SBAR_HEIGHT), pic);
-	else
-		Draw_Pic (x + ((vid.width - 320)>>1), y + (vid.height-SBAR_HEIGHT), pic);
+	int	s = Sbar_Scale ();
+
+	Draw_PicScaled (Sbar_XOfs () + x * s, Sbar_YBase () + y * s, pic, s);
 }
 
 /*
@@ -272,10 +295,9 @@ Sbar_DrawTransPic
 */
 void Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 {
-	if (cl.gametype == GAME_DEATHMATCH)
-		Draw_TransPic (x /*+ ((vid.width - 320)>>1)*/, y + (vid.height-SBAR_HEIGHT), pic);
-	else
-		Draw_TransPic (x + ((vid.width - 320)>>1), y + (vid.height-SBAR_HEIGHT), pic);
+	int	s = Sbar_Scale ();
+
+	Draw_TransPicScaled (Sbar_XOfs () + x * s, Sbar_YBase () + y * s, pic, s);
 }
 
 /*
@@ -287,10 +309,9 @@ Draws one solid graphics character
 */
 void Sbar_DrawCharacter (int x, int y, int num)
 {
-	if (cl.gametype == GAME_DEATHMATCH)
-		Draw_Character ( x /*+ ((vid.width - 320)>>1) */ + 4 , y + vid.height-SBAR_HEIGHT, num);
-	else
-		Draw_Character ( x + ((vid.width - 320)>>1) + 4 , y + vid.height-SBAR_HEIGHT, num);
+	int	s = Sbar_Scale ();
+
+	Draw_CharacterScaled (Sbar_XOfs () + x * s + 4 * s, Sbar_YBase () + y * s, num, s);
 }
 
 /*
@@ -300,10 +321,16 @@ Sbar_DrawString
 */
 void Sbar_DrawString (int x, int y, char *str)
 {
-	if (cl.gametype == GAME_DEATHMATCH)
-		Draw_String (x /*+ ((vid.width - 320)>>1)*/, y+ vid.height-SBAR_HEIGHT, str);
-	else
-		Draw_String (x + ((vid.width - 320)>>1), y+ vid.height-SBAR_HEIGHT, str);
+	int	s = Sbar_Scale ();
+	int	px = Sbar_XOfs () + x * s;
+	int	py = Sbar_YBase () + y * s;
+
+	while (*str)
+	{
+		Draw_CharacterScaled (px, py, *str, s);
+		str++;
+		px += 8 * s;
+	}
 }
 
 /*
@@ -778,42 +805,43 @@ void Sbar_DrawFrags (void)
 	l = scoreboardlines <= 4 ? scoreboardlines : 4;
 
 	x = 23;
-	if (cl.gametype == GAME_DEATHMATCH)
-		xofs = 0;
-	else
-		xofs = (vid.width - 320)>>1;
-	y = vid.height - SBAR_HEIGHT - 23;
-
-	for (i=0 ; i<l ; i++)
+	xofs = Sbar_XOfs ();
 	{
-		k = fragsort[i];
-		s = &cl.scores[k];
-		if (!s->name[0])
-			continue;
+		int	sc = Sbar_Scale ();
 
-	// draw background
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15)<<4;
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
+		y = vid.height - SBAR_HEIGHT * sc - 23 * sc;
 
-		Draw_Fill (xofs + x*8 + 10, y, 28, 4, top);
-		Draw_Fill (xofs + x*8 + 10, y+4, 28, 3, bottom);
-
-	// draw number
-		f = s->frags;
-		sprintf (num, "%3i",f);
-
-		Sbar_DrawCharacter ( (x+1)*8 , -24, num[0]);
-		Sbar_DrawCharacter ( (x+2)*8 , -24, num[1]);
-		Sbar_DrawCharacter ( (x+3)*8 , -24, num[2]);
-
-		if (k == cl.viewentity - 1)
+		for (i = 0; i < l; i++)
 		{
-			Sbar_DrawCharacter (x*8+2, -24, 16);
-			Sbar_DrawCharacter ( (x+4)*8-4, -24, 17);
+			k = fragsort[i];
+			s = &cl.scores[k];
+			if (!s->name[0])
+				continue;
+
+			/* draw background */
+			top = s->colors & 0xf0;
+			bottom = (s->colors & 15) << 4;
+			top = Sbar_ColorForMap (top);
+			bottom = Sbar_ColorForMap (bottom);
+
+			Draw_Fill (xofs + (x * 8 + 10) * sc, y, 28 * sc, 4 * sc, top);
+			Draw_Fill (xofs + (x * 8 + 10) * sc, y + 4 * sc, 28 * sc, 3 * sc, bottom);
+
+			/* draw number */
+			f = s->frags;
+			sprintf (num, "%3i", f);
+
+			Sbar_DrawCharacter ((x + 1) * 8, -24, num[0]);
+			Sbar_DrawCharacter ((x + 2) * 8, -24, num[1]);
+			Sbar_DrawCharacter ((x + 3) * 8, -24, num[2]);
+
+			if (k == cl.viewentity - 1)
+			{
+				Sbar_DrawCharacter (x * 8 + 2, -24, 16);
+				Sbar_DrawCharacter ((x + 4) * 8 - 4, -24, 17);
+			}
+			x += 4;
 		}
-		x+=4;
 	}
 }
 
@@ -848,14 +876,14 @@ void Sbar_DrawFace (void)
 		top = Sbar_ColorForMap (top);
 		bottom = Sbar_ColorForMap (bottom);
 
-		if (cl.gametype == GAME_DEATHMATCH)
-			xofs = 113;
-		else
-			xofs = ((vid.width - 320)>>1) + 113;
+		{
+			int	sc = Sbar_Scale ();
 
-		Sbar_DrawPic (112, 0, rsb_teambord);
-		Draw_Fill (xofs, vid.height-SBAR_HEIGHT+3, 22, 9, top);
-		Draw_Fill (xofs, vid.height-SBAR_HEIGHT+12, 22, 9, bottom);
+			xofs = Sbar_XOfs () + 113 * sc;
+			Sbar_DrawPic (112, 0, rsb_teambord);
+			Draw_Fill (xofs, Sbar_YBase () + 3 * sc, 22 * sc, 9 * sc, top);
+			Draw_Fill (xofs, Sbar_YBase () + 12 * sc, 22 * sc, 9 * sc, bottom);
+		}
 
 		// draw number
 		f = s->frags;
