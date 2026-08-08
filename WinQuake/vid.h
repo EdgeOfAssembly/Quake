@@ -59,6 +59,15 @@ extern	unsigned	d_8to24table[256];
 extern void (*vid_menudrawfn)(void);
 extern void (*vid_menukeyfn)(int key);
 
+/**
+ * @brief Pack 8-bit RGB into native framebuffer pixel (same as d_8to24table).
+ * @param r Red 0..255
+ * @param g Green 0..255
+ * @param b Blue 0..255
+ * @return Packed pixel for r_pixbytes==4 paths
+ */
+unsigned D_PackRGB (int r, int g, int b);
+
 void	VID_SetPalette (unsigned char *palette);
 // called at startup and after any gamma correction
 

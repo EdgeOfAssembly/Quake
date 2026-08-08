@@ -61,7 +61,8 @@ Prefer `-mem 256` or `512` with hires + 32bpp.
 
 ## Notes
 
-- Software still **draws** 8-bit + colormap into the surface cache; RGBA is kept for quality conversion / future truecolor light.
+- **32bpp + RGBA:** lit world surfaces sample `texture_t.rgba` (truecolor) with lightmap shade; no palette quantize on the hot path.
+- **8-bit fallback:** mips still built (box-filtered) for PseudoColor / missing RGBA.
 - Sky not overridden.
 - ×4 pack is larger (~30MB+); use `-mem 256` or `512`.
 

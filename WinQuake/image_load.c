@@ -198,14 +198,50 @@ int Image_RGBAToMiptex8 (const byte *rgba, int w, int h,
 	pw = w;
 	ph = h;
 	off = w * h;
+	/*
+	 * Box-filter mips in RGB then re-quantize (was nearest-neighbor).
+	 * Needs host_basepal — set before texture load.
+	 */
 	for (level = 1; level < 4; level++) {
 		int nw = pw >> 1, nh = ph >> 1;
 		byte *dst = mips + off;
 		if (nw < 1) nw = 1;
 		if (nh < 1) nh = 1;
-		for (y = 0; y < nh; y++)
-			for (x = 0; x < nw; x++)
-				dst[y * nw + x] = prev[(y * 2) * pw + (x * 2)];
+		for (y = 0; y < nh; y++) {
+			for (x = 0; x < nw; x++) {
+				int	x0 = x * 2, y0 = y * 2;
+				int	dx, dy, ntrans = 0, nopaque = 0;
+				int	sr = 0, sg = 0, sb = 0;
+				for (dy = 0; dy < 2; dy++) {
+					int yy = y0 + dy;
+					if (yy >= ph) yy = ph - 1;
+					for (dx = 0; dx < 2; dx++) {
+						int xx = x0 + dx;
+						int idx;
+						if (xx >= pw) xx = pw - 1;
+						idx = prev[yy * pw + xx];
+						if (idx == QUAKE_TRANSPARENT_INDEX) {
+							ntrans++;
+							continue;
+						}
+						if (host_basepal) {
+							sr += host_basepal[idx * 3 + 0];
+							sg += host_basepal[idx * 3 + 1];
+							sb += host_basepal[idx * 3 + 2];
+						}
+						nopaque++;
+					}
+				}
+				if (nopaque == 0 || ntrans >= 3)
+					dst[y * nw + x] = (byte)QUAKE_TRANSPARENT_INDEX;
+				else if (host_basepal && nopaque > 0)
+					dst[y * nw + x] = (byte)Image_NearestPal (
+						sr / nopaque, sg / nopaque, sb / nopaque,
+						allow_fullbright);
+				else
+					dst[y * nw + x] = prev[y0 * pw + x0];
+			}
+		}
 		off += nw * nh;
 		prev = dst;
 		pw = nw;

@@ -47,12 +47,128 @@ int				r_src_scale_t = 1;
 /* Cache pixels per lightmap cell on T (S uses blocksize). */
 int				r_block_height = 16;
 
+/* Truecolor source for R_DrawSurfaceBlock32 (NULL → 8-bit+colormap path). */
+static const byte	*r_rgba;
+static int			r_rgba_w;
+static int			r_rgba_h;
+static int			r_rgba_mip;
+static int			r_mip_width;
+
 void R_DrawSurfaceBlock8_mip0 (void);
 void R_DrawSurfaceBlock8_mip1 (void);
 void R_DrawSurfaceBlock8_mip2 (void);
 void R_DrawSurfaceBlock8_mip3 (void);
 void R_DrawSurfaceBlock8 (void);
 void R_DrawSurfaceBlock32 (void);
+
+/**
+ * @brief Apply Quake lightmap shade to RGB, matched to vid.colormap.
+ *
+ * 8-bit path uses colormap[(light & 0xFF00) + pix]. We measure how that
+ * row darkens a mid palette entry and scale truecolor RGB the same way
+ * (avoids linear falloff looking much too dark).
+ */
+static unsigned R_LitPackRGB (int r, int g, int b, int light)
+{
+	int				s;
+	int				ref, lit;
+	int				pr, pg, pb, lr, lg, lb, denom;
+	unsigned char	*cm;
+	extern byte		*host_basepal;
+
+	cm = (unsigned char *)vid.colormap;
+	if (cm && host_basepal)
+	{
+		/* Palette ~13 is a stable mid/light gray in the Quake palette */
+		ref = 13;
+		lit = cm[(light & 0xFF00) + ref];
+		pr = host_basepal[ref * 3 + 0];
+		pg = host_basepal[ref * 3 + 1];
+		pb = host_basepal[ref * 3 + 2];
+		lr = host_basepal[lit * 3 + 0];
+		lg = host_basepal[lit * 3 + 1];
+		lb = host_basepal[lit * 3 + 2];
+		denom = pr + pg + pb;
+		if (denom > 0)
+			s = ((lr + lg + lb) * 256) / denom;
+		else
+			s = 256;
+	}
+	else
+	{
+		/* Fallback: linear row scale */
+		int	row = light >> 8;
+		if (row < 0) row = 0;
+		if (row > 63) row = 63;
+		s = (64 - row) << 2;	/* 256 .. 4 */
+	}
+	if (s < 0)
+		s = 0;
+	if (s > 256)
+		s = 256;
+	r = (r * s) >> 8;
+	g = (g * s) >> 8;
+	b = (b * s) >> 8;
+	return D_PackRGB (r, g, b);
+}
+
+/**
+ * @brief Sample texture_t.rgba at mip-space (s,t) with box filter when mip>0.
+ */
+static unsigned R_SampleRGBALit (int s, int t, int light)
+{
+	int			mip = r_rgba_mip;
+	int			rw = r_rgba_w;
+	int			rh = r_rgba_h;
+	const byte	*rgba = r_rgba;
+	int			step, rs0, rt0, dx, dy, stride;
+	int			rsum, gsum, bsum, count;
+	const byte	*p;
+
+	if (!rgba || rw < 1 || rh < 1)
+		return 0;
+
+	if (mip <= 0)
+	{
+		if (s < 0) s = 0;
+		if (t < 0) t = 0;
+		if (s >= rw) s = rw - 1;
+		if (t >= rh) t = rh - 1;
+		p = rgba + ((size_t)t * (size_t)rw + (size_t)s) * 4;
+		if (p[3] < 128)
+			return 0;
+		return R_LitPackRGB (p[0], p[1], p[2], light);
+	}
+
+	/* Box over 2^mip block; cap samples at 4×4 for speed at mip3 */
+	step = 1 << mip;
+	rs0 = s * step;
+	rt0 = t * step;
+	stride = (step > 4) ? (step / 4) : 1;
+	rsum = gsum = bsum = count = 0;
+	for (dy = 0; dy < step; dy += stride)
+	{
+		int	rt = rt0 + dy;
+		if (rt >= rh)
+			break;
+		for (dx = 0; dx < step; dx += stride)
+		{
+			int	rs = rs0 + dx;
+			if (rs >= rw)
+				break;
+			p = rgba + ((size_t)rt * (size_t)rw + (size_t)rs) * 4;
+			if (p[3] < 128)
+				continue;
+			rsum += p[0];
+			gsum += p[1];
+			bsum += p[2];
+			count++;
+		}
+	}
+	if (count < 1)
+		return 0;
+	return R_LitPackRGB (rsum / count, gsum / count, bsum / count, light);
+}
 
 /**
  * @brief BSP UV → source mip scale for hires replacements.
@@ -310,6 +426,21 @@ void R_DrawSurface (void)
 	mt = r_drawsurf.texture;
 	
 	r_source = (byte *)mt + mt->offsets[r_drawsurf.surfmip];
+
+	/* Truecolor path: full-res RGBA when present (hires TGA load). */
+	if (mt->rgba && mt->rgba_width > 0 && mt->rgba_height > 0 && r_pixbytes == 4)
+	{
+		r_rgba = mt->rgba;
+		r_rgba_w = mt->rgba_width;
+		r_rgba_h = mt->rgba_height;
+		r_rgba_mip = r_drawsurf.surfmip;
+	}
+	else
+	{
+		r_rgba = NULL;
+		r_rgba_w = r_rgba_h = 0;
+		r_rgba_mip = 0;
+	}
 	
 // the fractional light values should range from 0 to (VID_GRADES - 1) << 16
 // from a source range of 0 - 255
@@ -335,6 +466,7 @@ void R_DrawSurface (void)
 		 * cache pixels each.
 		 */
 		texwidth = src_w;
+		r_mip_width = src_w;
 		smax = src_w;
 		tmax = src_h;
 		sourcetstep = src_w;
@@ -687,8 +819,9 @@ void R_DrawSurfaceBlock8 (void)
 R_DrawSurfaceBlock32
 
 Lit surface → native 32-bit pixels for X11.
-Uses 8-bit mips + colormap, then d_8to24table.
-Hires: cache is scale× larger; sample source 1:1; light over blocksize.
+- If texture_t.rgba: sample truecolor (box at mip>0), apply lightmap shade.
+- Else: 8-bit mips + colormap + d_8to24table.
+Hires: cache is scale× larger; sample 1:1 in mip space.
 ================
 */
 void R_DrawSurfaceBlock32 (void)
@@ -702,6 +835,8 @@ void R_DrawSurfaceBlock32 (void)
 	const int		sstep = sourcetstep;
 	const int		bs = blocksize;
 	const int		bt = r_block_height;
+	const int		mip_w = r_mip_width > 0 ? r_mip_width : 1;
+	const int		use_rgba = (r_rgba != NULL);
 
 	psource = pbasesource;
 	prowdest = (unsigned *)prowdestbase;
@@ -720,14 +855,32 @@ void R_DrawSurfaceBlock32 (void)
 			lightstep = (ll - lr) / bs;
 			light = lr;
 
-			for (b = bs - 1; b >= 0; b--)
+			if (use_rgba)
 			{
-				pix = psource[b];
-				if (pix == 255)
-					prowdest[b] = 0;
-				else
-					prowdest[b] = d_8to24table[colormap[(light & 0xFF00) + pix]];
-				light += lightstep;
+				ptrdiff_t	pos = (ptrdiff_t)(psource - r_source);
+				int			s0, t0;
+
+				if (pos < 0)
+					pos = 0;
+				s0 = (int)(pos % mip_w);
+				t0 = (int)(pos / mip_w);
+				for (b = bs - 1; b >= 0; b--)
+				{
+					prowdest[b] = R_SampleRGBALit (s0 + b, t0, light);
+					light += lightstep;
+				}
+			}
+			else
+			{
+				for (b = bs - 1; b >= 0; b--)
+				{
+					pix = psource[b];
+					if (pix == 255)
+						prowdest[b] = 0;
+					else
+						prowdest[b] = d_8to24table[colormap[(light & 0xFF00) + pix]];
+					light += lightstep;
+				}
 			}
 
 			psource += sstep;

@@ -188,6 +188,17 @@ PIXEL24 xlib_rgb24(int r,int g,int b)
     return p;
 }
 
+unsigned D_PackRGB (int r, int g, int b)
+{
+	if (r < 0) r = 0;
+	if (g < 0) g = 0;
+	if (b < 0) b = 0;
+	if (r > 255) r = 255;
+	if (g > 255) g = 255;
+	if (b > 255) b = 255;
+	return (unsigned)xlib_rgb24 (r, g, b);
+}
+
 void st2_fixup( XImage *framebuf, int x, int y, int width, int height)
 {
 	int xi,yi;

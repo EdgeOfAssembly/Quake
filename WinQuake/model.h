@@ -75,7 +75,8 @@ typedef struct texture_s
 	struct texture_s *alternate_anims;	// bmodels in frmae 1 use these
 	unsigned	offsets[MIPLEVELS];		// four mip maps stored
 	/* Optional truecolor source (24/32-bit). Full-res RGBA8, hunk or NULL.
-	 * Software still draws 8-bit mips; alpha 0 ↔ palette index 255. */
+	 * 32bpp path samples this for lit world surfaces; 8-bit mips remain fallback.
+	 * Alpha 0 ↔ palette index 255. */
 	byte		*rgba;
 	int			rgba_width;
 	int			rgba_height;
