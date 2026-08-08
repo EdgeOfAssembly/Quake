@@ -172,21 +172,21 @@ int 	iff_chunk_len;
 short GetLittleShort(void)
 {
 	short val = 0;
-	val = *data_p;
-	val = val + (*(data_p+1)<<8);
+	val = (int)((unsigned)data_p[0] | ((unsigned)data_p[1] << 8));
 	data_p += 2;
 	return val;
 }
 
 int GetLittleLong(void)
 {
-	int val = 0;
-	val = *data_p;
-	val = val + (*(data_p+1)<<8);
-	val = val + (*(data_p+2)<<16);
-	val = val + (*(data_p+3)<<24);
+	unsigned val;
+
+	val = (unsigned)data_p[0]
+		| ((unsigned)data_p[1] << 8)
+		| ((unsigned)data_p[2] << 16)
+		| ((unsigned)data_p[3] << 24);
 	data_p += 4;
-	return val;
+	return (int)val;
 }
 
 void FindNextChunk(char *name)
