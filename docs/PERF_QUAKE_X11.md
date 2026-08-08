@@ -43,3 +43,15 @@ Water warp is a **feature**, not a bug.
 | Inner unroll×4 on spans16 | ~570 | **REVERT** (slower) |
 
 Next candidates (if needed): `D_DrawZSpans`, `R_DrawSurfaceBlock8_mip0`, X11 blit — only if still Quake-side dominated.
+
+### Iteration 2 (2026-08-08)
+
+| Change | FPS | Keep? |
+|--------|-----|-------|
+| spans16 baseline | ~589 | yes |
+| r_surf mip0/1 locals + colormap | noise | yes (clarity) |
+| D_DrawZSpans pair unroll | noise | yes (clarity) |
+| **D_DrawSpans32** (`d_subdiv16 2`) | **~604–623** | **yes optional** (~+3–5%) |
+| default stays `d_subdiv16 1` (16px) for quality | | |
+
+Use `+d_subdiv16 2` for max throughput timedemos.

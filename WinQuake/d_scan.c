@@ -506,6 +506,129 @@ void D_DrawSpans16 (espan_t *pspan)
 	} while ((pspan = pspan->pnext) != NULL);
 }
 
+/*
+=============
+D_DrawSpans32
+
+Wider subdivision (32 px) — fewer 1/z corrections. Slightly more affine
+error; measure with timedemo before keeping.
+=============
+*/
+void D_DrawSpans32 (espan_t *pspan)
+{
+	int				count, spancount;
+	unsigned char	*pbase, *pdest;
+	fixed16_t		s, t, snext, tnext, sstep, tstep;
+	float			sdivz, tdivz, zi, z, du, dv, spancountminus1;
+	float			sdivz32stepu, tdivz32stepu, zi32stepu;
+	const int		cwidth = cachewidth;
+
+	sstep = 0;
+	tstep = 0;
+	pbase = (unsigned char *)cacheblock;
+
+	sdivz32stepu = d_sdivzstepu * 32;
+	tdivz32stepu = d_tdivzstepu * 32;
+	zi32stepu = d_zistepu * 32;
+
+	do
+	{
+		pdest = (unsigned char *)((byte *)d_viewbuffer +
+				(screenwidth * pspan->v) + pspan->u);
+		count = pspan->count;
+
+		du = (float)pspan->u;
+		dv = (float)pspan->v;
+
+		sdivz = d_sdivzorigin + dv*d_sdivzstepv + du*d_sdivzstepu;
+		tdivz = d_tdivzorigin + dv*d_tdivzstepv + du*d_tdivzstepu;
+		zi = d_ziorigin + dv*d_zistepv + du*d_zistepu;
+		z = (float)0x10000 / zi;
+
+		s = (int)(sdivz * z) + sadjust;
+		if (s > bbextents)
+			s = bbextents;
+		else if (s < 0)
+			s = 0;
+
+		t = (int)(tdivz * z) + tadjust;
+		if (t > bbextentt)
+			t = bbextentt;
+		else if (t < 0)
+			t = 0;
+
+		do
+		{
+			if (count >= 32)
+				spancount = 32;
+			else
+				spancount = count;
+
+			count -= spancount;
+
+			if (count)
+			{
+				sdivz += sdivz32stepu;
+				tdivz += tdivz32stepu;
+				zi += zi32stepu;
+				z = (float)0x10000 / zi;
+
+				snext = (int)(sdivz * z) + sadjust;
+				if (snext > bbextents)
+					snext = bbextents;
+				else if (snext < 32)
+					snext = 32;
+
+				tnext = (int)(tdivz * z) + tadjust;
+				if (tnext > bbextentt)
+					tnext = bbextentt;
+				else if (tnext < 32)
+					tnext = 32;
+
+				sstep = (snext - s) >> 5;
+				tstep = (tnext - t) >> 5;
+			}
+			else
+			{
+				spancountminus1 = (float)(spancount - 1);
+				sdivz += d_sdivzstepu * spancountminus1;
+				tdivz += d_tdivzstepu * spancountminus1;
+				zi += d_zistepu * spancountminus1;
+				z = (float)0x10000 / zi;
+				snext = (int)(sdivz * z) + sadjust;
+				if (snext > bbextents)
+					snext = bbextents;
+				else if (snext < 32)
+					snext = 32;
+
+				tnext = (int)(tdivz * z) + tadjust;
+				if (tnext > bbextentt)
+					tnext = bbextentt;
+				else if (tnext < 32)
+					tnext = 32;
+
+				if (spancount > 1)
+				{
+					sstep = (snext - s) / (spancount - 1);
+					tstep = (tnext - t) / (spancount - 1);
+				}
+			}
+
+			do
+			{
+				*pdest++ = *(pbase + (s >> 16) + (t >> 16) * cwidth);
+				s += sstep;
+				t += tstep;
+			} while (--spancount > 0);
+
+			s = snext;
+			t = tnext;
+
+		} while (count > 0);
+
+	} while ((pspan = pspan->pnext) != NULL);
+}
+
 #endif
 
 
@@ -524,6 +647,7 @@ void D_DrawZSpans (espan_t *pspan)
 	unsigned		ltemp;
 	double			zi;
 	float			du, dv;
+	const int		zwidth = d_zwidth;
 
 // FIXME: check for clamping/range problems
 // we count on FP exceptions being turned off to avoid range problems
@@ -531,7 +655,7 @@ void D_DrawZSpans (espan_t *pspan)
 
 	do
 	{
-		pdest = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u;
+		pdest = d_pzbuffer + (zwidth * pspan->v) + pspan->u;
 
 		count = pspan->count;
 
@@ -543,7 +667,7 @@ void D_DrawZSpans (espan_t *pspan)
 	// we count on FP exceptions being turned off to avoid range problems
 		izi = (int)(zi * 0x8000 * 0x10000);
 
-		if ((long)pdest & 0x02)
+		if ((uintptr_t)pdest & 0x02)
 		{
 			*pdest++ = (short)(izi >> 16);
 			izi += izistep;
@@ -552,15 +676,32 @@ void D_DrawZSpans (espan_t *pspan)
 
 		if ((doublecount = count >> 1) > 0)
 		{
-			do
+			while (doublecount >= 2)
 			{
-				ltemp = izi >> 16;
+				ltemp = (unsigned)(izi >> 16);
 				izi += izistep;
-				ltemp |= izi & 0xFFFF0000;
+				ltemp |= (unsigned)izi & 0xFFFF0000u;
 				izi += izistep;
-				*(int *)pdest = ltemp;
+				((unsigned *)pdest)[0] = ltemp;
+
+				ltemp = (unsigned)(izi >> 16);
+				izi += izistep;
+				ltemp |= (unsigned)izi & 0xFFFF0000u;
+				izi += izistep;
+				((unsigned *)pdest)[1] = ltemp;
+
+				pdest += 4;
+				doublecount -= 2;
+			}
+			while (doublecount-- > 0)
+			{
+				ltemp = (unsigned)(izi >> 16);
+				izi += izistep;
+				ltemp |= (unsigned)izi & 0xFFFF0000u;
+				izi += izistep;
+				*(unsigned *)pdest = ltemp;
 				pdest += 2;
-			} while (--doublecount > 0);
+			}
 		}
 
 		if (count & 1)

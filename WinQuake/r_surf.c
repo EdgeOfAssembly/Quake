@@ -342,41 +342,42 @@ R_DrawSurfaceBlock8_mip0
 */
 void R_DrawSurfaceBlock8_mip0 (void)
 {
-	int				v, i, b, lightstep, lighttemp, light;
+	int				v, i, b, lightstep, light;
+	int				ll, lr, llstep, lrstep;
 	unsigned char	pix, *psource, *prowdest;
+	unsigned char	*colormap;
+	const int		srow = surfrowbytes;
+	const int		sstep = sourcetstep;
 
 	psource = pbasesource;
-	prowdest = prowdestbase;
+	prowdest = (unsigned char *)prowdestbase;
+	colormap = (unsigned char *)vid.colormap;
 
 	for (v=0 ; v<r_numvblocks ; v++)
 	{
-	// FIXME: make these locals?
-	// FIXME: use delta rather than both right and left, like ASM?
-		lightleft = r_lightptr[0];
-		lightright = r_lightptr[1];
+		ll = (int)r_lightptr[0];
+		lr = (int)r_lightptr[1];
 		r_lightptr += r_lightwidth;
-		lightleftstep = (r_lightptr[0] - lightleft) >> 4;
-		lightrightstep = (r_lightptr[1] - lightright) >> 4;
+		llstep = ((int)r_lightptr[0] - ll) >> 4;
+		lrstep = ((int)r_lightptr[1] - lr) >> 4;
 
 		for (i=0 ; i<16 ; i++)
 		{
-			lighttemp = lightleft - lightright;
-			lightstep = lighttemp >> 4;
+			lightstep = (ll - lr) >> 4;
+			light = lr;
 
-			light = lightright;
-
+			/* 16 texels right-to-left (matches original) */
 			for (b=15; b>=0; b--)
 			{
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *)vid.colormap)
-						[(light & 0xFF00) + pix];
+				prowdest[b] = colormap[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
-	
-			psource += sourcetstep;
-			lightright += lightrightstep;
-			lightleft += lightleftstep;
-			prowdest += surfrowbytes;
+
+			psource += sstep;
+			lr += lrstep;
+			ll += llstep;
+			prowdest += srow;
 		}
 
 		if (psource >= r_sourcemax)
@@ -392,41 +393,41 @@ R_DrawSurfaceBlock8_mip1
 */
 void R_DrawSurfaceBlock8_mip1 (void)
 {
-	int				v, i, b, lightstep, lighttemp, light;
+	int				v, i, b, lightstep, light;
+	int				ll, lr, llstep, lrstep;
 	unsigned char	pix, *psource, *prowdest;
+	unsigned char	*colormap;
+	const int		srow = surfrowbytes;
+	const int		sstep = sourcetstep;
 
 	psource = pbasesource;
-	prowdest = prowdestbase;
+	prowdest = (unsigned char *)prowdestbase;
+	colormap = (unsigned char *)vid.colormap;
 
 	for (v=0 ; v<r_numvblocks ; v++)
 	{
-	// FIXME: make these locals?
-	// FIXME: use delta rather than both right and left, like ASM?
-		lightleft = r_lightptr[0];
-		lightright = r_lightptr[1];
+		ll = (int)r_lightptr[0];
+		lr = (int)r_lightptr[1];
 		r_lightptr += r_lightwidth;
-		lightleftstep = (r_lightptr[0] - lightleft) >> 3;
-		lightrightstep = (r_lightptr[1] - lightright) >> 3;
+		llstep = ((int)r_lightptr[0] - ll) >> 3;
+		lrstep = ((int)r_lightptr[1] - lr) >> 3;
 
 		for (i=0 ; i<8 ; i++)
 		{
-			lighttemp = lightleft - lightright;
-			lightstep = lighttemp >> 3;
-
-			light = lightright;
+			lightstep = (ll - lr) >> 3;
+			light = lr;
 
 			for (b=7; b>=0; b--)
 			{
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *)vid.colormap)
-						[(light & 0xFF00) + pix];
+				prowdest[b] = colormap[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
-	
-			psource += sourcetstep;
-			lightright += lightrightstep;
-			lightleft += lightleftstep;
-			prowdest += surfrowbytes;
+
+			psource += sstep;
+			lr += lrstep;
+			ll += llstep;
+			prowdest += srow;
 		}
 
 		if (psource >= r_sourcemax)

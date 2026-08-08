@@ -1,0 +1,6 @@
+=== AFTER zspan+surf locals ===
+969 frames   1.7 seconds 575.9 fps
+969 frames   1.7 seconds 583.6 fps
+969 frames   1.7 seconds 582.4 fps
+969 frames   1.7 seconds 585.0 fps
+969 frames   1.7 seconds 583.2 fps

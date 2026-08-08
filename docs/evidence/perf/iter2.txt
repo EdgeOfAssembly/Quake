@@ -1,0 +1,12 @@
+=== spans16 (default) ===
+969 frames   1.6 seconds 591.2 fps
+969 frames   1.6 seconds 589.4 fps
+969 frames   1.6 seconds 587.3 fps
+=== spans32 (d_subdiv16 2) ===
+969 frames   1.6 seconds 589.4 fps
+969 frames   1.6 seconds 587.9 fps
+969 frames   1.6 seconds 591.6 fps
+=== spans32 via +d_subdiv16 2 ===
+969 frames   1.6 seconds 603.5 fps
+969 frames   1.6 seconds 623.1 fps
+969 frames   1.6 seconds 605.7 fps

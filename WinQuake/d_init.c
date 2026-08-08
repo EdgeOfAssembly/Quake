@@ -145,8 +145,13 @@ void D_SetupFrame (void)
 	for (i=0 ; i<(NUM_MIPS-1) ; i++)
 		d_scalemip[i] = basemip[i] * d_mipscale.value;
 
-	/* C D_DrawSpans16 on all arches; ASM path was id386-only */
-	if (d_subdiv16.value)
+	/*
+	 * Span subdivision: d_subdiv16 0 → 8px, 1 → 16px, 2 → 32px (C paths).
+	 * Default cvar remains "1" (16); set 2 for max throughput if quality OK.
+	 */
+	if (d_subdiv16.value >= 2)
+		d_drawspans = D_DrawSpans32;
+	else if (d_subdiv16.value)
 		d_drawspans = D_DrawSpans16;
 	else
 		d_drawspans = D_DrawSpans8;
