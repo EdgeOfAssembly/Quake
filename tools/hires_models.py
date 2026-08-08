@@ -34,7 +34,12 @@ def load_palette(path: Path) -> list[tuple[int, int, int]]:
     return [(data[i], data[i + 1], data[i + 2]) for i in range(0, 768, 3)]
 
 
-def quantize(img_rgb, pal: list[tuple[int, int, int]], allow_fb: bool = False) -> bytes:
+def quantize(
+    img_rgb,
+    pal: list[tuple[int, int, int]],
+    allow_fb: bool = False,
+    prefer: set[int] | None = None,
+) -> bytes:
     import numpy as np
     from PIL import Image
 
@@ -43,25 +48,30 @@ def quantize(img_rgb, pal: list[tuple[int, int, int]], allow_fb: bool = False) -
     else:
         img = img_rgb.convert("RGB")
     arr = np.asarray(img, dtype=np.int16)
-    h, w, _ = arr.shape
-    pal_a = np.array(pal, dtype=np.int16)
-    if not allow_fb:
-        # avoid fullbright 224-254
+    if prefer:
+        use = sorted(i for i in prefer if 0 <= i < 256)
+        if not allow_fb:
+            use = [i for i in use if i < 224]
+        if len(use) < 8:
+            use = list(range(0, 224 if not allow_fb else 256))
+    elif not allow_fb:
         use = list(range(0, 224))
     else:
         use = list(range(256))
-    pals = pal_a[use]
-    # nearest
+    pals = np.array([pal[i] for i in use], dtype=np.int16)
     flat = arr.reshape(-1, 3)
-    # chunked for memory
     out = np.empty(flat.shape[0], dtype=np.uint8)
     step = 4096
+    use_a = np.array(use, dtype=np.uint8)
     for i in range(0, flat.shape[0], step):
         chunk = flat[i : i + step]
-        # distances to palette
         d = ((chunk[:, None, :] - pals[None, :, :]) ** 2).sum(axis=2)
-        out[i : i + step] = np.array(use, dtype=np.uint8)[d.argmin(axis=1)]
+        out[i : i + step] = use_a[d.argmin(axis=1)]
     return out.tobytes()
+
+
+def quantize_prefer(img_rgb, pal: list[tuple[int, int, int]], prefer: set[int]) -> bytes:
+    return quantize(img_rgb, pal, allow_fb=False, prefer=prefer)
 
 
 def upscale_png(src: Path, dst: Path, scale: int, backend: str) -> None:
@@ -141,7 +151,9 @@ def remaster_mdl(
         if up.size != (new_w, new_h):
             up = up.resize((new_w, new_h), Image.Resampling.NEAREST)
         # no fullbright — washes white in software
-        indices = quantize(up, pal, allow_fb=False)
+        # Prefer original skin's palette indices (avoids white wash)
+        prefer = set(skin)
+        indices = quantize_prefer(up, pal, prefer)
         new_skins += struct.pack("<i", ALIAS_SKIN_SINGLE)
         new_skins += indices
 
