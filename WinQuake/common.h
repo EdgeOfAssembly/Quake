@@ -162,6 +162,10 @@ void COM_DefaultExtension (char *path, char *extension);
 char	*va(char *format, ...);
 // does a varargs printf into a temp buffer
 
+/* Checked size arithmetic for alloc paths (Sys_Error on overflow). */
+size_t	Q_checked_mul_size (size_t a, size_t b, const char *what);
+size_t	Q_checked_add_size (size_t a, size_t b, const char *what);
+int	Q_size_to_int (size_t n, const char *what);
 
 //============================================================================
 

@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // common.c -- misc functions used in client and server
 
 #include "quakedef.h"
+#include <stdint.h>	/* SIZE_MAX for Q_checked_* */
 
 #define NUM_SAFE_ARGVS  7
 
@@ -1219,6 +1220,35 @@ char    *va(char *format, ...)
 	return string;  
 }
 
+/*
+============
+Q_checked_mul_size / Q_checked_add_size / Q_size_to_int
+
+Overflow-safe size math for Hunk/Z/Cache and model loaders.
+============
+*/
+size_t Q_checked_mul_size (size_t a, size_t b, const char *what)
+{
+	if (a != 0 && b > SIZE_MAX / a)
+		Sys_Error ("Q_checked_mul_size: overflow (%s)", what ? what : "?");
+	return a * b;
+}
+
+size_t Q_checked_add_size (size_t a, size_t b, const char *what)
+{
+	if (b > SIZE_MAX - a)
+		Sys_Error ("Q_checked_add_size: overflow (%s)", what ? what : "?");
+	return a + b;
+}
+
+int Q_size_to_int (size_t n, const char *what)
+{
+	if (n > (size_t)0x7fffffff)
+		Sys_Error ("Q_size_to_int: size too large for hunk API (%s: %zu)",
+			what ? what : "?", n);
+	return (int)n;
+}
+
 
 /// just for debugging
 int     memsearch (byte *start, int count, int search)
@@ -1587,24 +1617,30 @@ byte *COM_LoadFile (char *path, int usehunk)
 	
 // extract the filename base name for hunk tag
 	COM_FileBase (path, base);
-	
-	if (usehunk == 1)
-		buf = Hunk_AllocName (len+1, base);
-	else if (usehunk == 2)
-		buf = Hunk_TempAlloc (len+1);
-	else if (usehunk == 0)
-		buf = Z_Malloc (len+1);
-	else if (usehunk == 3)
-		buf = Cache_Alloc (loadcache, len+1, base);
-	else if (usehunk == 4)
+
+	/* len+1 for trailing NUL — reject wrap */
 	{
-		if (len+1 > loadsize)
-			buf = Hunk_TempAlloc (len+1);
+		int need = Q_size_to_int (
+			Q_checked_add_size ((size_t)len, 1, base), base);
+
+		if (usehunk == 1)
+			buf = Hunk_AllocName (need, base);
+		else if (usehunk == 2)
+			buf = Hunk_TempAlloc (need);
+		else if (usehunk == 0)
+			buf = Z_Malloc (need);
+		else if (usehunk == 3)
+			buf = Cache_Alloc (loadcache, need, base);
+		else if (usehunk == 4)
+		{
+			if (need > loadsize)
+				buf = Hunk_TempAlloc (need);
+			else
+				buf = loadbuf;
+		}
 		else
-			buf = loadbuf;
+			Sys_Error ("COM_LoadFile: bad usehunk");
 	}
-	else
-		Sys_Error ("COM_LoadFile: bad usehunk");
 
 	if (!buf)
 		Sys_Error ("COM_LoadFile: not enough space for %s", path);

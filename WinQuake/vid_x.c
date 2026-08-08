@@ -97,8 +97,8 @@ static int verbose=0;
 
 static byte current_palette[768];
 
-static long X11_highhunkmark;
-static long X11_buffersize;
+static int X11_highhunkmark;		/* matches Hunk_HighMark() */
+static size_t X11_buffersize;
 
 int vid_surfcachesize;
 void *vid_surfcache;
@@ -117,8 +117,8 @@ typedef uint32_t PIXEL24;
 static PIXEL16 st2d_8to16table[256];
 static PIXEL24 st2d_8to24table[256];
 static int shiftmask_fl=0;
-static long r_shift,g_shift,b_shift;
-static unsigned long r_mask,g_mask,b_mask;
+static int r_shift, g_shift, b_shift;
+static unsigned r_mask, g_mask, b_mask;
 
 void shiftmask_init()
 {
@@ -309,13 +309,16 @@ static Cursor CreateNullCursor(Display *display, Window root)
 
 void ResetFrameBuffer(void)
 {
-	int mem;
-	int pwidth;
+	size_t	zbytes;
+	size_t	mem;
+	int	pwidth;
+	void	*fbdata;
 
 	if (x_framebuffer[0])
 	{
-		free(x_framebuffer[0]->data);
-		free(x_framebuffer[0]);
+		/* XDestroyImage frees both the XImage and ->data from malloc */
+		XDestroyImage (x_framebuffer[0]);
+		x_framebuffer[0] = NULL;
 	}
 
 	if (d_pzbuffer)
@@ -327,50 +330,59 @@ void ResetFrameBuffer(void)
 	X11_highhunkmark = Hunk_HighMark ();
 
 // alloc an extra line in case we want to wrap, and allocate the z-buffer
-	X11_buffersize = vid.width * vid.height * sizeof (*d_pzbuffer);
+	zbytes = Q_checked_mul_size ((size_t)vid.width, (size_t)vid.height, "vid zbuffer");
+	zbytes = Q_checked_mul_size (zbytes, sizeof (*d_pzbuffer), "vid zbuffer");
 
 	vid_surfcachesize = D_SurfaceCacheForRes (vid.width, vid.height);
 
-	X11_buffersize += vid_surfcachesize;
+	X11_buffersize = Q_checked_add_size (zbytes, (size_t)vid_surfcachesize, "vid hunk");
 
-	d_pzbuffer = Hunk_HighAllocName (X11_buffersize, "video");
+	d_pzbuffer = Hunk_HighAllocName (Q_size_to_int (X11_buffersize, "vid hunk"), "video");
 	if (d_pzbuffer == NULL)
 		Sys_Error ("Not enough memory for video mode\n");
 
-	vid_surfcache = (byte *) d_pzbuffer
-		+ vid.width * vid.height * sizeof (*d_pzbuffer);
+	vid_surfcache = (byte *) d_pzbuffer + zbytes;
 
 	D_InitCaches(vid_surfcache, vid_surfcachesize);
 
 	pwidth = x_visinfo->depth / 8;
 	if (pwidth == 3) pwidth = 4;
-	mem = ((vid.width*pwidth+7)&~7) * vid.height;
+	mem = Q_checked_mul_size ((size_t)vid.width, (size_t)pwidth, "vid fb row");
+	mem = (mem + 7) & ~(size_t)7;
+	mem = Q_checked_mul_size (mem, (size_t)vid.height, "vid fb");
+
+	fbdata = malloc (mem);
+	if (!fbdata)
+		Sys_Error ("VID: malloc failed for framebuffer (%zu bytes)\n", mem);
 
 	x_framebuffer[0] = XCreateImage(	x_disp,
 		x_vis,
 		x_visinfo->depth,
 		ZPixmap,
 		0,
-		malloc(mem),
+		fbdata,
 		vid.width, vid.height,
 		32,
 		0);
 
 	if (!x_framebuffer[0])
+	{
+		free (fbdata);
 		Sys_Error("VID: XCreateImage failed\n");
+	}
 
-	vid.buffer = (byte*) (x_framebuffer[0]);
+	vid.buffer = (byte *) x_framebuffer[0]->data;
 	vid.conbuffer = vid.buffer;
 
 }
 
 void ResetSharedFrameBuffers(void)
 {
-
-	int size;
-	int key;
-	int minsize = getpagesize();
-	int frm;
+	size_t	zbytes;
+	size_t	size;
+	int	key;
+	int	minsize = getpagesize();
+	int	frm;
 
 	if (d_pzbuffer)
 	{
@@ -382,18 +394,18 @@ void ResetSharedFrameBuffers(void)
 	X11_highhunkmark = Hunk_HighMark ();
 
 // alloc an extra line in case we want to wrap, and allocate the z-buffer
-	X11_buffersize = vid.width * vid.height * sizeof (*d_pzbuffer);
+	zbytes = Q_checked_mul_size ((size_t)vid.width, (size_t)vid.height, "vid zbuffer shm");
+	zbytes = Q_checked_mul_size (zbytes, sizeof (*d_pzbuffer), "vid zbuffer shm");
 
 	vid_surfcachesize = D_SurfaceCacheForRes (vid.width, vid.height);
 
-	X11_buffersize += vid_surfcachesize;
+	X11_buffersize = Q_checked_add_size (zbytes, (size_t)vid_surfcachesize, "vid hunk shm");
 
-	d_pzbuffer = Hunk_HighAllocName (X11_buffersize, "video");
+	d_pzbuffer = Hunk_HighAllocName (Q_size_to_int (X11_buffersize, "vid hunk shm"), "video");
 	if (d_pzbuffer == NULL)
 		Sys_Error ("Not enough memory for video mode\n");
 
-	vid_surfcache = (byte *) d_pzbuffer
-		+ vid.width * vid.height * sizeof (*d_pzbuffer);
+	vid_surfcache = (byte *) d_pzbuffer + zbytes;
 
 	D_InitCaches(vid_surfcache, vid_surfcachesize);
 
@@ -405,8 +417,13 @@ void ResetSharedFrameBuffers(void)
 		if (x_framebuffer[frm])
 		{
 			XShmDetach(x_disp, &x_shminfo[frm]);
-			free(x_framebuffer[frm]);
-			shmdt(x_shminfo[frm].shmaddr);
+			/* data is SHM — detach first, then destroy image shell only */
+			if (x_shminfo[frm].shmaddr && x_shminfo[frm].shmaddr != (char *)-1)
+				shmdt(x_shminfo[frm].shmaddr);
+			x_framebuffer[frm]->data = NULL;
+			XDestroyImage(x_framebuffer[frm]);
+			x_framebuffer[frm] = NULL;
+			x_shminfo[frm].shmaddr = NULL;
 		}
 
 	// create the image
@@ -419,25 +436,29 @@ void ResetSharedFrameBuffers(void)
 						&x_shminfo[frm],
 						vid.width,
 						vid.height );
+		if (!x_framebuffer[frm])
+			Sys_Error("VID: XShmCreateImage failed\n");
 
 	// grab shared memory
 
-		size = x_framebuffer[frm]->bytes_per_line
-			* x_framebuffer[frm]->height;
-		if (size < minsize)
+		size = Q_checked_mul_size ((size_t)x_framebuffer[frm]->bytes_per_line,
+			(size_t)x_framebuffer[frm]->height, "vid shm");
+		if (size < (size_t)minsize)
 			Sys_Error("VID: Window must use at least %d bytes\n", minsize);
 
 		key = random();
-		x_shminfo[frm].shmid = shmget((key_t)key, size, IPC_CREAT|0777);
+		x_shminfo[frm].shmid = shmget((key_t)key, (size_t)size, IPC_CREAT|0777);
 		if (x_shminfo[frm].shmid==-1)
 			Sys_Error("VID: Could not get any shared memory\n");
 
 		// attach to the shared memory segment
 		x_shminfo[frm].shmaddr =
 			(void *) shmat(x_shminfo[frm].shmid, 0, 0);
+		if (x_shminfo[frm].shmaddr == (void *)-1)
+			Sys_Error("VID: shmat failed\n");
 
-		printf("VID: shared memory id=%d, addr=0x%lx\n", x_shminfo[frm].shmid,
-			(long) x_shminfo[frm].shmaddr);
+		printf("VID: shared memory id=%d, addr=%p\n", x_shminfo[frm].shmid,
+			x_shminfo[frm].shmaddr);
 
 		x_framebuffer[frm]->data = x_shminfo[frm].shmaddr;
 
@@ -746,9 +767,44 @@ void VID_SetPalette(unsigned char *palette)
 
 void	VID_Shutdown (void)
 {
+	int	frm;
+
 	Con_Printf("VID_Shutdown\n");
+	if (!x_disp)
+		return;
+
+	/* Tear down framebuffers / SHM before closing the display */
+	if (doShm)
+	{
+		for (frm = 0; frm < 2; frm++)
+		{
+			if (x_framebuffer[frm])
+			{
+				XShmDetach (x_disp, &x_shminfo[frm]);
+				if (x_shminfo[frm].shmaddr && x_shminfo[frm].shmaddr != (char *)-1)
+					shmdt (x_shminfo[frm].shmaddr);
+				x_framebuffer[frm]->data = NULL;
+				XDestroyImage (x_framebuffer[frm]);
+				x_framebuffer[frm] = NULL;
+			}
+		}
+	}
+	else if (x_framebuffer[0])
+	{
+		XDestroyImage (x_framebuffer[0]);
+		x_framebuffer[0] = NULL;
+	}
+
+	if (d_pzbuffer)
+	{
+		D_FlushCaches ();
+		Hunk_FreeToHighMark (X11_highhunkmark);
+		d_pzbuffer = NULL;
+	}
+
 	XAutoRepeatOn(x_disp);
 	XCloseDisplay(x_disp);
+	x_disp = NULL;
 }
 
 int XLateKey(XKeyEvent *ev)

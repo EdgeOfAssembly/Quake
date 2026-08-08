@@ -321,3 +321,18 @@ behavior changes, missing evidence. Do not implement.
 - `COM_Parse`: clamp to `com_token` size
 - `va` + host printf helpers: `vsnprintf`
 
+
+### Waves B–D (2026-08-08 autonomous)
+
+| Wave | Work |
+|------|------|
+| **B vid_x** | `XDestroyImage` teardown; SHM detach order; checked width×height; `size_t` buffersize; NULL malloc check; `VID_Shutdown` frees video |
+| **C QC** | Statement PC bounds; STOREP/LOAD/ADDRESS field+edict bounds; `PR_RunError` vsnprintf |
+| **D zone/model** | `Q_checked_mul/add_size`, `Q_size_to_int`; zone/hunk/cache wrap guards; model lump/tex/alias/sprite checked allocs; `COM_LoadFile` len+1 |
+| **extra** | `cl_parse` `1u<<j` UBSan shift |
+
+| Command | Result |
+|---------|--------|
+| `./quake.x11-asan +quit` | exit 0 |
+| `./quake.x11-asan +map e1m1 +quit` | exit 0 (player entered; VID_Shutdown) |
+

@@ -156,17 +156,23 @@ void *Z_TagMalloc (int size, int tag)
 {
 	int		extra;
 	memblock_t	*start, *rover, *new, *base;
+	size_t		need;
 
 	if (!tag)
 		Sys_Error ("Z_TagMalloc: tried to use a 0 tag");
+	if (size < 0)
+		Sys_Error ("Z_TagMalloc: bad size: %i", size);
 
 //
 // scan through the block list looking for the first free block
 // of sufficient size
 //
-	size += sizeof(memblock_t);	// account for size of block header
-	size += 4;					// space for memory trash tester
-	size = (size + 7) & ~7;		// align to 8-byte boundary
+	/* header + trash sentinel + 8-byte align — reject wrap near INT_MAX */
+	need = (size_t)size;
+	need = Q_checked_add_size (need, sizeof(memblock_t), "Z_TagMalloc header");
+	need = Q_checked_add_size (need, 4, "Z_TagMalloc trash");
+	need = (need + 7) & ~(size_t)7;
+	size = Q_size_to_int (need, "Z_TagMalloc");
 	
 	base = rover = mainzone->rover;
 	start = base->prev;
@@ -406,8 +412,12 @@ void *Hunk_AllocName (int size, char *name)
 
 	if (size < 0)
 		Sys_Error ("Hunk_Alloc: bad size: %i", size);
-		
-	size = sizeof(hunk_t) + ((size+15)&~15);
+	{
+		size_t need = (size_t)size;
+		need = (need + 15) & ~(size_t)15;
+		need = Q_checked_add_size (need, sizeof(hunk_t), "Hunk_AllocName");
+		size = Q_size_to_int (need, "Hunk_AllocName");
+	}
 	
 	if (hunk_size - hunk_low_used - hunk_high_used < size)
 		Sys_Error ("Hunk_Alloc: failed on %i bytes",size);
@@ -496,7 +506,12 @@ void *Hunk_HighAllocName (int size, char *name)
 	Hunk_Check ();
 #endif
 
-	size = sizeof(hunk_t) + ((size+15)&~15);
+	{
+		size_t need = (size_t)size;
+		need = (need + 15) & ~(size_t)15;
+		need = Q_checked_add_size (need, sizeof(hunk_t), "Hunk_HighAllocName");
+		size = Q_size_to_int (need, "Hunk_HighAllocName");
+	}
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size)
 	{
@@ -878,7 +893,12 @@ void *Cache_Alloc (cache_user_t *c, int size, char *name)
 	if (size <= 0)
 		Sys_Error ("Cache_Alloc: size %i", size);
 
-	size = (size + sizeof(cache_system_t) + 15) & ~15;
+	{
+		size_t need = (size_t)size;
+		need = Q_checked_add_size (need, sizeof(cache_system_t), "Cache_Alloc");
+		need = (need + 15) & ~(size_t)15;
+		size = Q_size_to_int (need, "Cache_Alloc");
+	}
 
 // find memory for it	
 	while (1)

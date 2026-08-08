@@ -264,16 +264,47 @@ void PR_RunError (char *error, ...)
 	char		string[1024];
 
 	va_start (argptr,error);
-	vsprintf (string,error,argptr);
+	vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
+	string[sizeof(string) - 1] = 0;
 
-	PR_PrintStatement (pr_statements + pr_xstatement);
+	if (pr_statements && pr_xstatement >= 0 && progs
+		&& pr_xstatement < progs->numstatements)
+		PR_PrintStatement (pr_statements + pr_xstatement);
 	PR_StackTrace ();
 	Con_Printf ("%s\n", string);
 	
 	pr_depth = 0;		// dump the stack so host_error can shutdown functions
 
 	Host_Error ("Program error");
+}
+
+/*
+ * QC VM bounds helpers — always on in DEBUG/PARANOID builds; also on for
+ * STOREP/LOAD/ADDRESS in all builds (hostile progs / memory safety).
+ */
+static void PR_BoundStatement (int s)
+{
+	if (!progs || s < 0 || s >= progs->numstatements)
+		PR_RunError ("QC bad statement index %i", s);
+}
+
+static void PR_BoundEdictByteOfs (int ofs, int nbytes)
+{
+	int	maxbytes;
+
+	if (pr_edict_size <= 0 || sv.num_edicts <= 0)
+		PR_RunError ("QC edict arena not ready");
+	maxbytes = sv.num_edicts * pr_edict_size;
+	if (ofs < 0 || nbytes < 0 || ofs > maxbytes - nbytes)
+		PR_RunError ("QC edict pointer out of range (ofs %i)", ofs);
+}
+
+static void PR_BoundField (int field, int words)
+{
+	if (!progs || field < 0 || words < 0
+		|| field > progs->entityfields - words)
+		PR_RunError ("QC entity field out of range (%i)", field);
 }
 
 /*
@@ -391,6 +422,7 @@ while (1)
 {
 	s++;	// next statement
 
+	PR_BoundStatement (s);
 	st = &pr_statements[s];
 	a = (eval_t *)&pr_globals[st->a];
 	b = (eval_t *)&pr_globals[st->b];
@@ -548,10 +580,12 @@ while (1)
 	case OP_STOREP_FLD:		// integers
 	case OP_STOREP_S:
 	case OP_STOREP_FNC:		// pointers
+		PR_BoundEdictByteOfs (b->_int, (int)sizeof(int));
 		ptr = (eval_t *)((byte *)sv.edicts + b->_int);
 		ptr->_int = a->_int;
 		break;
 	case OP_STOREP_V:
+		PR_BoundEdictByteOfs (b->_int, (int)(3 * sizeof(float)));
 		ptr = (eval_t *)((byte *)sv.edicts + b->_int);
 		ptr->vector[0] = a->vector[0];
 		ptr->vector[1] = a->vector[1];
@@ -560,9 +594,8 @@ while (1)
 		
 	case OP_ADDRESS:
 		ed = PROG_TO_EDICT(a->edict);
-#ifdef PARANOID
 		NUM_FOR_EDICT(ed);		// make sure it's in range
-#endif
+		PR_BoundField (b->_int, 1);
 		if (ed == (edict_t *)sv.edicts && sv.state == ss_active)
 			PR_RunError ("assignment to world entity");
 		c->_int = (byte *)((int *)&ed->v + b->_int) - (byte *)sv.edicts;
@@ -574,18 +607,16 @@ while (1)
 	case OP_LOAD_S:
 	case OP_LOAD_FNC:
 		ed = PROG_TO_EDICT(a->edict);
-#ifdef PARANOID
-		NUM_FOR_EDICT(ed);		// make sure it's in range
-#endif
+		NUM_FOR_EDICT(ed);
+		PR_BoundField (b->_int, 1);
 		a = (eval_t *)((int *)&ed->v + b->_int);
 		c->_int = a->_int;
 		break;
 
 	case OP_LOAD_V:
 		ed = PROG_TO_EDICT(a->edict);
-#ifdef PARANOID
-		NUM_FOR_EDICT(ed);		// make sure it's in range
-#endif
+		NUM_FOR_EDICT(ed);
+		PR_BoundField (b->_int, 3);
 		a = (eval_t *)((int *)&ed->v + b->_int);
 		c->vector[0] = a->vector[0];
 		c->vector[1] = a->vector[1];

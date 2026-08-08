@@ -371,7 +371,7 @@ void Mod_LoadTextures (lump_t *l)
 	m->nummiptex = LittleLong (m->nummiptex);
 	
 	loadmodel->numtextures = m->nummiptex;
-	loadmodel->textures = Hunk_AllocName (m->nummiptex * sizeof(*loadmodel->textures) , loadname);
+	loadmodel->textures = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)m->nummiptex, sizeof(*loadmodel->textures), loadname), loadname), loadname);
 
 	for (i=0 ; i<m->nummiptex ; i++)
 	{
@@ -386,8 +386,14 @@ void Mod_LoadTextures (lump_t *l)
 		
 		if ( (mt->width & 15) || (mt->height & 15) )
 			Sys_Error ("Texture %s is not 16 aligned", mt->name);
-		pixels = mt->width*mt->height/64*85;
-		tx = Hunk_AllocName (sizeof(texture_t) +pixels, loadname );
+		{
+			size_t wh = Q_checked_mul_size((size_t)mt->width, (size_t)mt->height, mt->name);
+			size_t pix = wh / 64 * 85; /* mip chain: full+1/4+1/16+1/64 = 85/64 */
+			if (wh % 64)
+				Sys_Error ("Texture %s bad mip size", mt->name);
+			pixels = Q_size_to_int(pix, mt->name);
+		}
+		tx = Hunk_AllocName (Q_size_to_int(Q_checked_add_size(sizeof(texture_t), (size_t)pixels, mt->name), mt->name), loadname );
 		loadmodel->textures[i] = tx;
 
 		memcpy (tx->name, mt->name, sizeof(tx->name));
@@ -562,7 +568,7 @@ void Mod_LoadVertexes (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);	
+	out = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)count, sizeof(*out), loadname), loadname), loadname);	
 
 	loadmodel->vertexes = out;
 	loadmodel->numvertexes = count;
@@ -590,7 +596,7 @@ void Mod_LoadSubmodels (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);	
+	out = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)count, sizeof(*out), loadname), loadname), loadname);	
 
 	loadmodel->submodels = out;
 	loadmodel->numsubmodels = count;
@@ -655,7 +661,7 @@ void Mod_LoadTexinfo (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);	
+	out = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)count, sizeof(*out), loadname), loadname), loadname);	
 
 	loadmodel->texinfo = out;
 	loadmodel->numtexinfo = count;
@@ -774,7 +780,7 @@ void Mod_LoadFaces (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);	
+	out = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)count, sizeof(*out), loadname), loadname), loadname);	
 
 	loadmodel->surfaces = out;
 	loadmodel->numsurfaces = count;
@@ -857,7 +863,7 @@ void Mod_LoadNodes (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);	
+	out = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)count, sizeof(*out), loadname), loadname), loadname);	
 
 	loadmodel->nodes = out;
 	loadmodel->numnodes = count;
@@ -904,7 +910,7 @@ void Mod_LoadLeafs (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);	
+	out = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)count, sizeof(*out), loadname), loadname), loadname);	
 
 	loadmodel->leafs = out;
 	loadmodel->numleafs = count;
@@ -951,7 +957,7 @@ void Mod_LoadClipnodes (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);	
+	out = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)count, sizeof(*out), loadname), loadname), loadname);	
 
 	loadmodel->clipnodes = out;
 	loadmodel->numclipnodes = count;
@@ -1006,7 +1012,7 @@ void Mod_MakeHull0 (void)
 	
 	in = loadmodel->nodes;
 	count = loadmodel->numnodes;
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);	
+	out = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)count, sizeof(*out), loadname), loadname), loadname);	
 
 	hull->clipnodes = out;
 	hull->firstclipnode = 0;
@@ -1042,7 +1048,7 @@ void Mod_LoadMarksurfaces (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);	
+	out = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)count, sizeof(*out), loadname), loadname), loadname);	
 
 	loadmodel->marksurfaces = out;
 	loadmodel->nummarksurfaces = count;
@@ -1070,7 +1076,7 @@ void Mod_LoadSurfedges (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);	
+	out = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)count, sizeof(*out), loadname), loadname), loadname);	
 
 	loadmodel->surfedges = out;
 	loadmodel->numsurfedges = count;
@@ -1096,7 +1102,7 @@ void Mod_LoadPlanes (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*2*sizeof(*out), loadname);	
+	out = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)count * 2, sizeof(*out), loadname), loadname), loadname);	
 	
 	loadmodel->planes = out;
 	loadmodel->numplanes = count;
@@ -1252,7 +1258,7 @@ void * Mod_LoadAliasFrame (void * pin, int *pframeindex, int numv,
 	}
 
 	pinframe = (trivertx_t *)(pdaliasframe + 1);
-	pframe = Hunk_AllocName (numv * sizeof(*pframe), loadname);
+	pframe = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)numv, sizeof(*pframe), loadname), loadname), loadname);
 
 	*pframeindex = (byte *)pframe - (byte *)pheader;
 
@@ -1310,7 +1316,7 @@ void * Mod_LoadAliasGroup (void * pin, int *pframeindex, int numv,
 
 	pin_intervals = (daliasinterval_t *)(pingroup + 1);
 
-	poutintervals = Hunk_AllocName (numframes * sizeof (float), loadname);
+	poutintervals = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)numframes, sizeof(float), loadname), loadname), loadname);
 
 	paliasgroup->intervals = (byte *)poutintervals - (byte *)pheader;
 
@@ -1352,7 +1358,7 @@ void * Mod_LoadAliasSkin (void * pin, int *pskinindex, int skinsize,
 	byte	*pskin, *pinskin;
 	unsigned short	*pusskin;
 
-	pskin = Hunk_AllocName (skinsize * r_pixbytes, loadname);
+	pskin = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)skinsize, (size_t)r_pixbytes, loadname), loadname), loadname);
 	pinskin = (byte *)pin;
 	*pskinindex = (byte *)pskin - (byte *)pheader;
 
@@ -1408,7 +1414,7 @@ void * Mod_LoadAliasSkinGroup (void * pin, int *pskinindex, int skinsize,
 
 	pinskinintervals = (daliasskininterval_t *)(pinskingroup + 1);
 
-	poutskinintervals = Hunk_AllocName (numskins * sizeof (float),loadname);
+	poutskinintervals = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)numskins, sizeof(float), loadname), loadname), loadname);
 
 	paliasskingroup->intervals = (byte *)poutskinintervals - (byte *)pheader;
 
@@ -1468,12 +1474,19 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 // allocate space for a working header, plus all the data except the frames,
 // skin and group info
 //
-	size = 	sizeof (aliashdr_t) + (LittleLong (pinmodel->numframes) - 1) *
-			 sizeof (pheader->frames[0]) +
-			sizeof (mdl_t) +
-			LittleLong (pinmodel->numverts) * sizeof (stvert_t) +
-			LittleLong (pinmodel->numtris) * sizeof (mtriangle_t);
-
+	{
+		size_t need = sizeof (aliashdr_t);
+		int nf = LittleLong (pinmodel->numframes);
+		int nv = LittleLong (pinmodel->numverts);
+		int nt = LittleLong (pinmodel->numtris);
+		if (nf < 1 || nv < 0 || nt < 0)
+			Sys_Error ("%s has invalid alias counts", mod->name);
+		need = Q_checked_add_size(need, Q_checked_mul_size((size_t)(nf - 1), sizeof (pheader->frames[0]), mod->name), mod->name);
+		need = Q_checked_add_size(need, sizeof (mdl_t), mod->name);
+		need = Q_checked_add_size(need, Q_checked_mul_size((size_t)nv, sizeof (stvert_t), mod->name), mod->name);
+		need = Q_checked_add_size(need, Q_checked_mul_size((size_t)nt, sizeof (mtriangle_t), mod->name), mod->name);
+		size = Q_size_to_int(need, mod->name);
+	}
 	pheader = Hunk_AllocName (size, loadname);
 	pmodel = (mdl_t *) ((byte *)&pheader[1] +
 			(LittleLong (pinmodel->numframes) - 1) *
@@ -1537,7 +1550,7 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 
 	pskintype = (daliasskintype_t *)&pinmodel[1];
 
-	pskindesc = Hunk_AllocName (numskins * sizeof (maliasskindesc_t),
+	pskindesc = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)numskins, sizeof(maliasskindesc_t), loadname), loadname),
 								loadname);
 
 	pheader->skindesc = (byte *)pskindesc - (byte *)pheader;
@@ -1678,10 +1691,15 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe)
 
 	width = LittleLong (pinframe->width);
 	height = LittleLong (pinframe->height);
-	size = width * height;
-
-	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size*r_pixbytes,
-								   loadname);
+	if (width < 0 || height < 0)
+		Sys_Error ("Mod_LoadSpriteFrame: bad size");
+	{
+		size_t pix = Q_checked_mul_size((size_t)width, (size_t)height, loadname);
+		size_t bytes = Q_checked_mul_size(pix, (size_t)r_pixbytes, loadname);
+		size_t total = Q_checked_add_size(sizeof(mspriteframe_t), bytes, loadname);
+		size = Q_size_to_int(pix, loadname);
+		pspriteframe = Hunk_AllocName (Q_size_to_int(total, loadname), loadname);
+	}
 
 	Q_memset (pspriteframe, 0, sizeof (mspriteframe_t) + size);
 	*ppframe = pspriteframe;
@@ -1745,7 +1763,7 @@ void * Mod_LoadSpriteGroup (void * pin, mspriteframe_t **ppframe)
 
 	pin_intervals = (dspriteinterval_t *)(pingroup + 1);
 
-	poutintervals = Hunk_AllocName (numframes * sizeof (float), loadname);
+	poutintervals = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)numframes, sizeof(float), loadname), loadname), loadname);
 
 	pspritegroup->intervals = poutintervals;
 
