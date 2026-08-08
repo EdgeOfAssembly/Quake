@@ -43,3 +43,15 @@ python3 tools/hires_textures.py pack /tmp/.../png_x4tta hires/textures \
 - Software still **draws** 8-bit + colormap; RGBA is loaded/stored for quality conversion.
 - Sky not overridden.
 - ×4 pack is larger (~30MB+); use `-mem 256` or `512`.
+
+## Native 32-bit software draw
+
+On X11 TrueColor (depth 24, bpp 32), the engine sets **`r_pixbytes = 4`**:
+
+- World spans write **native 32-bit** pixels (`D_DrawSpans32bpp`)
+- Surface cache stores 4 bytes/texel (`R_DrawSurfaceBlock32`)
+- **No** `st3_fixup` 8→32 expand at present
+- Particles, sprites, alias, HUD expand 8-bit art via `d_8to24table`
+- Log line: `VID: r_pixbytes=4 (depth=24 bpp=32)`
+
+8-bit PseudoColor still uses `r_pixbytes=1` + fixup.

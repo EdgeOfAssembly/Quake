@@ -115,7 +115,9 @@ typedef unsigned short PIXEL16;
  */
 typedef uint32_t PIXEL24;
 static PIXEL16 st2d_8to16table[256];
-static PIXEL24 st2d_8to24table[256];
+/* Global for software 32bpp drawers (particles, UI, surface cache). */
+unsigned d_8to24table[256];
+#define st2d_8to24table d_8to24table
 static int shiftmask_fl=0;
 static int r_shift, g_shift, b_shift;
 static unsigned r_mask, g_mask, b_mask;
@@ -724,6 +726,19 @@ void	VID_Init (unsigned char *palette)
 	vid.conheight = vid.height;
 	vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
 
+	/*
+	 * Native 32-bit software draw when XImage is 32 bpp (typical "24-bit"
+	 * TrueColor). 8-bit path kept for rare PseudoColor.
+	 */
+	if (x_visinfo->depth >= 24 && x_framebuffer[0]->bits_per_pixel >= 32)
+		r_pixbytes = 4;
+	else if (x_visinfo->depth == 16)
+		r_pixbytes = 1;	/* still draw 8-bit + st2_fixup for MVP */
+	else
+		r_pixbytes = 1;
+	Con_Printf ("VID: r_pixbytes=%d (depth=%d bpp=%d)\n",
+		r_pixbytes, x_visinfo->depth, x_framebuffer[0]->bits_per_pixel);
+
 //	XSynchronize(x_disp, False);
 
 }
@@ -743,7 +758,7 @@ void VID_SetPalette(unsigned char *palette)
 
 	for(i=0;i<256;i++) {
 		st2d_8to16table[i]= xlib_rgb16(palette[i*3], palette[i*3+1],palette[i*3+2]);
-		st2d_8to24table[i]= xlib_rgb24(palette[i*3], palette[i*3+1],palette[i*3+2]);
+		d_8to24table[i]= xlib_rgb24(palette[i*3], palette[i*3+1],palette[i*3+2]);
 	}
 
 	if (x_visinfo->class == PseudoColor && x_visinfo->depth == 8)
@@ -1110,14 +1125,18 @@ void	VID_Update (vrect_t *rects)
 
 		while (rects)
 		{
-			if (x_visinfo->depth == 16)
-				st2_fixup( x_framebuffer[current_framebuffer], 
-					rects->x, rects->y, rects->width,
-					rects->height);
-			else if (x_visinfo->depth == 24)
-				st3_fixup( x_framebuffer[current_framebuffer], 
-					rects->x, rects->y, rects->width,
-					rects->height);
+			/* Native 32bpp software: already RGB in buffer — skip expand */
+			if (r_pixbytes == 1)
+			{
+				if (x_visinfo->depth == 16)
+					st2_fixup( x_framebuffer[current_framebuffer], 
+						rects->x, rects->y, rects->width,
+						rects->height);
+				else if (x_visinfo->depth == 24)
+					st3_fixup( x_framebuffer[current_framebuffer], 
+						rects->x, rects->y, rects->width,
+						rects->height);
+			}
 			if (!XShmPutImage(x_disp, x_win, x_gc,
 				x_framebuffer[current_framebuffer], rects->x, rects->y,
 				rects->x, rects->y, rects->width, rects->height, True))
@@ -1135,14 +1154,17 @@ void	VID_Update (vrect_t *rects)
 	{
 		while (rects)
 		{
-			if (x_visinfo->depth == 16)
-				st2_fixup( x_framebuffer[current_framebuffer], 
-					rects->x, rects->y, rects->width,
-					rects->height);
-			else if (x_visinfo->depth == 24)
-				st3_fixup( x_framebuffer[current_framebuffer], 
-					rects->x, rects->y, rects->width,
-					rects->height);
+			if (r_pixbytes == 1)
+			{
+				if (x_visinfo->depth == 16)
+					st2_fixup( x_framebuffer[current_framebuffer], 
+						rects->x, rects->y, rects->width,
+						rects->height);
+				else if (x_visinfo->depth == 24)
+					st3_fixup( x_framebuffer[current_framebuffer], 
+						rects->x, rects->y, rects->width,
+						rects->height);
+			}
 			XPutImage(x_disp, x_win, x_gc, x_framebuffer[0], rects->x,
 				rects->y, rects->x, rects->y, rects->width, rects->height);
 			rects = rects->pnext;

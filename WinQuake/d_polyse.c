@@ -168,7 +168,14 @@ void D_PolysetDrawFinalVerts (finalvert_t *fv, int numverts)
 				*zbuf = z;
 				pix = skintable[fv->v[3]>>16][fv->v[2]>>16];
 				pix = ((byte *)acolormap)[pix + (fv->v[4] & 0xFF00) ];
-				d_viewbuffer[d_scantable[fv->v[1]] + fv->v[0]] = pix;
+				if (r_pixbytes == 4)
+					*(unsigned *)(d_viewbuffer + d_scantable[fv->v[1]] + fv->v[0]*4) =
+						d_8to24table[pix];
+				else
+					if (r_pixbytes == 4)
+					*(unsigned *)(d_viewbuffer + d_scantable[fv->v[1]] + fv->v[0]*4) = d_8to24table[pix];
+				else
+					d_viewbuffer[d_scantable[fv->v[1]] + fv->v[0]] = pix;
 			}
 		}
 	}
@@ -377,7 +384,10 @@ split:
 		
 		*zbuf = z;
 		pix = d_pcolormap[skintable[new[3]>>16][new[2]>>16]];
-		d_viewbuffer[d_scantable[new[1]] + new[0]] = pix;
+		if (r_pixbytes == 4)
+			*(unsigned *)(d_viewbuffer + d_scantable[new[1]] + new[0]*4) = d_8to24table[pix];
+		else
+			d_viewbuffer[d_scantable[new[1]] + new[0]] = pix;
 	}
 
 nodraw:
@@ -650,11 +660,15 @@ void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage)
 			{
 				if ((lzi >> 16) >= *lpz)
 				{
-					*lpdest = ((byte *)acolormap)[*lptex + (llight & 0xFF00)];
+					byte	lit = ((byte *)acolormap)[*lptex + (llight & 0xFF00)];
 // gel mapping					*lpdest = gelmap[*lpdest];
 					*lpz = lzi >> 16;
+					if (r_pixbytes == 4)
+						*(unsigned *)lpdest = d_8to24table[lit];
+					else
+						*lpdest = lit;
 				}
-				lpdest++;
+				lpdest += r_pixbytes;
 				lzi += r_zistepx;
 				lpz++;
 				llight += r_lstepx;
@@ -765,7 +779,7 @@ void D_RasterizeAliasPolySmooth (void)
 	d_zi = plefttop[5];
 
 	d_pdest = (byte *)d_viewbuffer +
-			ystart * screenwidth + plefttop[0];
+			ystart * screenwidth + plefttop[0] * r_pixbytes;
 	d_pz = d_pzbuffer + ystart * d_zwidth + plefttop[0];
 
 	if (initialleftheight == 1)
@@ -797,8 +811,8 @@ void D_RasterizeAliasPolySmooth (void)
 		d_pzextrastep = d_pzbasestep + 1;
 	#endif
 
-		d_pdestbasestep = screenwidth + ubasestep;
-		d_pdestextrastep = d_pdestbasestep + 1;
+		d_pdestbasestep = screenwidth + ubasestep * r_pixbytes;
+		d_pdestextrastep = d_pdestbasestep + r_pixbytes;
 
 	// TODO: can reuse partial expressions here
 
@@ -863,7 +877,8 @@ void D_RasterizeAliasPolySmooth (void)
 		d_light = plefttop[4];
 		d_zi = plefttop[5];
 
-		d_pdest = (byte *)d_viewbuffer + ystart * screenwidth + plefttop[0];
+		d_pdest = (byte *)d_viewbuffer +
+			ystart * screenwidth + plefttop[0] * r_pixbytes;
 		d_pz = d_pzbuffer + ystart * d_zwidth + plefttop[0];
 
 		if (height == 1)
@@ -887,8 +902,8 @@ void D_RasterizeAliasPolySmooth (void)
 			D_PolysetSetUpForLineScan(plefttop[0], plefttop[1],
 								  pleftbottom[0], pleftbottom[1]);
 
-			d_pdestbasestep = screenwidth + ubasestep;
-			d_pdestextrastep = d_pdestbasestep + 1;
+			d_pdestbasestep = screenwidth + ubasestep * r_pixbytes;
+			d_pdestextrastep = d_pdestbasestep + r_pixbytes;
 
 	#if	id386
 			d_pzbasestep = (d_zwidth + ubasestep) << 1;
@@ -1070,7 +1085,10 @@ split:
 		d_pzbuffer[ofs] = new[5];
 		pix = skintable[new[3]>>16][new[2]>>16];
 //		pix = ((byte *)acolormap)[pix + (new[4] & 0xFF00)];
-		d_viewbuffer[ofs] = pix;
+		if (r_pixbytes == 4)
+			*(unsigned *)(d_viewbuffer + d_scantable[new[1]] + new[0]*4) = d_8to24table[pix];
+		else
+			d_viewbuffer[ofs] = pix;
 	}
 
 // recursively continue

@@ -952,7 +952,19 @@ r_refdef must be set before the first call
 */
 void R_RenderView_ (void)
 {
-	byte	warpbuffer[WARP_WIDTH * WARP_HEIGHT];
+	/* 32bpp needs 4× warp buffer; keep stack alloc for 8-bit, heap for 32 */
+	static byte	warpbuffer8[WARP_WIDTH * WARP_HEIGHT];
+	static byte	*warpbuffer32;
+	byte	*warpbuffer;
+
+	if (r_pixbytes == 4)
+	{
+		if (!warpbuffer32)
+			warpbuffer32 = malloc (WARP_WIDTH * WARP_HEIGHT * 4);
+		warpbuffer = warpbuffer32;
+	}
+	else
+		warpbuffer = warpbuffer8;
 
 	r_warpbuffer = warpbuffer;
 

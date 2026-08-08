@@ -75,7 +75,7 @@ void D_DrawSkyScans8 (espan_t *pspan)
 	do
 	{
 		pdest = (unsigned char *)((byte *)d_viewbuffer +
-				(screenwidth * pspan->v) + pspan->u);
+				(screenwidth * pspan->v) + pspan->u * r_pixbytes);
 
 		count = pspan->count;
 
@@ -122,8 +122,17 @@ void D_DrawSkyScans8 (espan_t *pspan)
 
 			do
 			{
-				*pdest++ = r_skysource[((t & R_SKY_TMASK) >> 8) +
-						((s & R_SKY_SMASK) >> 16)];
+				{
+					byte	sky = r_skysource[((t & R_SKY_TMASK) >> 8) +
+							((s & R_SKY_SMASK) >> 16)];
+					if (r_pixbytes == 4)
+					{
+						*(unsigned *)pdest = d_8to24table[sky];
+						pdest += 4;
+					}
+					else
+						*pdest++ = sky;
+				}
 				s += sstep;
 				t += tstep;
 			} while (--spancount > 0);

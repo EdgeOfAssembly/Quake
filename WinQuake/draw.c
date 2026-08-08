@@ -192,6 +192,20 @@ void Draw_Character (int x, int y, int num)
 			dest += vid.conrowbytes;
 		}
 	}
+	else if (r_pixbytes == 4)
+	{
+		unsigned	*p32 = (unsigned *)
+			((byte *)vid.conbuffer + y*vid.conrowbytes + (x<<2));
+		while (drawline--)
+		{
+			int	i;
+			for (i = 0; i < 8; i++)
+				if (source[i])
+					p32[i] = d_8to24table[source[i]];
+			source += 128;
+			p32 = (unsigned *)((byte *)p32 + vid.conrowbytes);
+		}
+	}
 	else
 	{
 	// FIXME: pre-expand to native format?
@@ -310,6 +324,17 @@ void Draw_Pic (int x, int y, qpic_t *pic)
 		{
 			Q_memcpy (dest, source, pic->width);
 			dest += vid.rowbytes;
+			source += pic->width;
+		}
+	}
+	else if (r_pixbytes == 4)
+	{
+		unsigned	*p32 = (unsigned *)((byte *)vid.buffer + y * vid.rowbytes + (x<<2));
+		for (v=0 ; v<pic->height ; v++)
+		{
+			for (u=0 ; u<pic->width ; u++)
+				p32[u] = d_8to24table[source[u]];
+			p32 = (unsigned *)((byte *)p32 + vid.rowbytes);
 			source += pic->width;
 		}
 	}
@@ -823,6 +848,14 @@ void Draw_Fill (int x, int y, int w, int h, int c)
 			for (u=0 ; u<w ; u++)
 				dest[u] = c;
 	}
+	else if (r_pixbytes == 4)
+	{
+		unsigned	*p32 = (unsigned *)((byte *)vid.buffer + y*vid.rowbytes + (x<<2));
+		unsigned	c32 = d_8to24table[c & 0xFF];
+		for (v=0 ; v<h ; v++, p32 = (unsigned *)((byte *)p32 + vid.rowbytes))
+			for (u=0 ; u<w ; u++)
+				p32[u] = c32;
+	}
 	else
 	{
 		uc = d_8to16table[c];
@@ -860,7 +893,12 @@ void Draw_FadeScreen (void)
 		for (x=0 ; x<vid.width ; x++)
 		{
 			if ((x & 3) != t)
-				pbuf[x] = 0;
+			{
+				if (r_pixbytes == 4)
+					((unsigned *)pbuf)[x] = 0;
+				else
+					pbuf[x] = 0;
+			}
 		}
 	}
 

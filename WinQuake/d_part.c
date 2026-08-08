@@ -85,7 +85,7 @@ void D_DrawParticle (particle_t *pparticle)
 	}
 
 	pz = d_pzbuffer + (d_zwidth * v) + u;
-	pdest = d_viewbuffer + d_scantable[v] + u;
+	pdest = d_viewbuffer + d_scantable[v] + u * r_pixbytes;
 	izi = (int)(zi * 0x8000);
 
 	pix = izi >> d_pix_shift;
@@ -94,6 +94,30 @@ void D_DrawParticle (particle_t *pparticle)
 		pix = d_pix_min;
 	else if (pix > d_pix_max)
 		pix = d_pix_max;
+
+	if (r_pixbytes == 4)
+	{
+		unsigned	c32 = d_8to24table[(int)pparticle->color & 0xFF];
+		unsigned	*p32;
+		int		n, x;
+
+		p32 = (unsigned *)pdest;
+		n = pix << (int)d_y_aspect_shift;
+		if (n < 1)
+			n = 1;
+		for ( ; n ; n--, pz += d_zwidth, p32 = (unsigned *)((byte *)p32 + screenwidth))
+		{
+			for (x = 0; x < pix; x++)
+			{
+				if (pz[x] <= izi)
+				{
+					pz[x] = izi;
+					p32[x] = c32;
+				}
+			}
+		}
+		return;
+	}
 
 	switch (pix)
 	{

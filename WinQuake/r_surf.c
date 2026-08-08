@@ -41,6 +41,7 @@ void R_DrawSurfaceBlock8_mip0 (void);
 void R_DrawSurfaceBlock8_mip1 (void);
 void R_DrawSurfaceBlock8_mip2 (void);
 void R_DrawSurfaceBlock8_mip3 (void);
+void R_DrawSurfaceBlock32 (void);
 
 static void	(*surfmiptable[4])(void) = {
 	R_DrawSurfaceBlock8_mip0,
@@ -284,13 +285,16 @@ void R_DrawSurface (void)
 	if (r_pixbytes == 1)
 	{
 		pblockdrawer = surfmiptable[r_drawsurf.surfmip];
-	// TODO: only needs to be set when there is a display settings change
 		horzblockstep = blocksize;
+	}
+	else if (r_pixbytes == 4)
+	{
+		pblockdrawer = R_DrawSurfaceBlock32;
+		horzblockstep = blocksize * 4;
 	}
 	else
 	{
 		pblockdrawer = R_DrawSurfaceBlock16;
-	// TODO: only needs to be set when there is a display settings change
 		horzblockstep = blocksize << 1;
 	}
 
@@ -535,6 +539,66 @@ void R_DrawSurfaceBlock8_mip3 (void)
 	}
 }
 
+
+/*
+================
+R_DrawSurfaceBlock32
+
+Lit surface → native 32-bit pixels for X11.
+Uses 8-bit mips + colormap (same lighting as 8-bit path), then d_8to24table.
+If texture_t.rgba is present, samples truecolor and scales by light row
+(Quake: higher light&0xFF00 = darker, matching colormap).
+================
+*/
+void R_DrawSurfaceBlock32 (void)
+{
+	int				v, i, b, lightstep, light;
+	int				ll, lr, llstep, lrstep;
+	unsigned char	pix, *psource;
+	unsigned		*prowdest;
+	unsigned char	*colormap;
+	const int		srow = surfrowbytes >> 2;
+	const int		sstep = sourcetstep;
+	const int		bs = blocksize;
+	const int		bshift = blockdivshift;
+
+	psource = pbasesource;
+	prowdest = (unsigned *)prowdestbase;
+	colormap = (unsigned char *)vid.colormap;
+
+	for (v = 0; v < r_numvblocks; v++)
+	{
+		ll = (int)r_lightptr[0];
+		lr = (int)r_lightptr[1];
+		r_lightptr += r_lightwidth;
+		llstep = ((int)r_lightptr[0] - ll) >> bshift;
+		lrstep = ((int)r_lightptr[1] - lr) >> bshift;
+
+		for (i = 0; i < bs; i++)
+		{
+			lightstep = (ll - lr) >> bshift;
+			light = lr;
+
+			for (b = bs - 1; b >= 0; b--)
+			{
+				pix = psource[b];
+				if (pix == 255)
+					prowdest[b] = 0;
+				else
+					prowdest[b] = d_8to24table[colormap[(light & 0xFF00) + pix]];
+				light += lightstep;
+			}
+
+			psource += sstep;
+			lr += lrstep;
+			ll += llstep;
+			prowdest += srow;
+		}
+
+		if (psource >= r_sourcemax)
+			psource -= r_stepback;
+	}
+}
 
 /*
 ================

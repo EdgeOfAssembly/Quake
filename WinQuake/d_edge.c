@@ -85,7 +85,22 @@ void D_DrawSolidSurface (surf_t *surf, int color)
 	espan_t	*span;
 	byte	*pdest;
 	int		u, u2, pix;
-	
+	unsigned	pix32;
+
+	if (r_pixbytes == 4)
+	{
+		pix32 = d_8to24table[color & 0xFF];
+		for (span = surf->spans; span; span = span->pnext)
+		{
+			unsigned *p32 = (unsigned *)((byte *)d_viewbuffer + screenwidth * span->v);
+			u = span->u;
+			u2 = span->u + span->count;
+			for (; u < u2; u++)
+				p32[u] = pix32;
+		}
+		return;
+	}
+
 	pix = (color<<24) | (color<<16) | (color<<8) | color;
 	for (span=surf->spans ; span ; span=span->pnext)
 	{

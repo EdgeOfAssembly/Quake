@@ -59,7 +59,7 @@ void D_SpriteDrawSpans (sspan_t *pspan)
 
 	do
 	{
-		pdest = (byte *)d_viewbuffer + (screenwidth * pspan->v) + pspan->u;
+		pdest = (byte *)d_viewbuffer + (screenwidth * pspan->v) + pspan->u * r_pixbytes;
 		pz = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u;
 
 		count = pspan->count;
@@ -166,12 +166,15 @@ void D_SpriteDrawSpans (sspan_t *pspan)
 					if (*pz <= (izi >> 16))
 					{
 						*pz = izi >> 16;
-						*pdest = btemp;
+						if (r_pixbytes == 4)
+							*(unsigned *)pdest = d_8to24table[btemp];
+						else
+							*pdest = btemp;
 					}
 				}
 
 				izi += izistep;
-				pdest++;
+				pdest += r_pixbytes;
 				pz++;
 				s += sstep;
 				t += tstep;

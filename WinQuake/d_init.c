@@ -57,7 +57,9 @@ void D_Init (void)
 	r_drawpolys = false;
 	r_worldpolysbacktofront = false;
 	r_recursiveaffinetriangles = true;
-	r_pixbytes = 1;
+	/* r_pixbytes set by VID (4 for native 32bpp X11); default 1 */
+	if (r_pixbytes != 1 && r_pixbytes != 2 && r_pixbytes != 4)
+		r_pixbytes = 1;
 	r_aliasuvscale = 1.0;
 }
 
@@ -128,8 +130,9 @@ void D_SetupFrame (void)
 	else
 		d_viewbuffer = (void *)(byte *)vid.buffer;
 
+	/* screenwidth = byte stride of a scanline */
 	if (r_dowarp)
-		screenwidth = WARP_WIDTH;
+		screenwidth = WARP_WIDTH * r_pixbytes;
 	else
 		screenwidth = vid.rowbytes;
 
@@ -146,10 +149,12 @@ void D_SetupFrame (void)
 		d_scalemip[i] = basemip[i] * d_mipscale.value;
 
 	/*
-	 * Span subdivision: d_subdiv16 0 → 8px, 1 → 16px, 2 → 32px (C paths).
-	 * Default cvar remains "1" (16); set 2 for max throughput if quality OK.
+	 * Span drawers: 32bpp native path, else 8-bit with subdiv.
+	 * D_DrawSpans32 = 32-pixel affine subdiv (8-bit), not bpp.
 	 */
-	if (d_subdiv16.value >= 2)
+	if (r_pixbytes == 4)
+		d_drawspans = D_DrawSpans32bpp;
+	else if (d_subdiv16.value >= 2)
 		d_drawspans = D_DrawSpans32;
 	else if (d_subdiv16.value)
 		d_drawspans = D_DrawSpans16;

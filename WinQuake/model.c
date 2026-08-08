@@ -1589,11 +1589,12 @@ void * Mod_LoadAliasSkin (void * pin, int *pskinindex, int skinsize,
 	byte	*pskin, *pinskin;
 	unsigned short	*pusskin;
 
-	pskin = Hunk_AllocName (Q_size_to_int(Q_checked_mul_size((size_t)skinsize, (size_t)r_pixbytes, loadname), loadname), loadname);
+	/* Skins stay 8-bit; 32bpp converts at draw (d_polyse). */
+	pskin = Hunk_AllocName (skinsize, loadname);
 	pinskin = (byte *)pin;
 	*pskinindex = (byte *)pskin - (byte *)pheader;
 
-	if (r_pixbytes == 1)
+	if (r_pixbytes == 1 || r_pixbytes == 4)
 	{
 		Q_memcpy (pskin, pinskin, skinsize);
 	}
@@ -1945,7 +1946,8 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe)
 	pspriteframe->left = origin[0];
 	pspriteframe->right = width + origin[0];
 
-	if (r_pixbytes == 1)
+	/* Sprite pixels stay 8-bit; 32bpp expands in D_SpriteDrawSpans. */
+	if (r_pixbytes == 1 || r_pixbytes == 4)
 	{
 		Q_memcpy (&pspriteframe->pixels[0], (byte *)(pinframe + 1), size);
 	}
