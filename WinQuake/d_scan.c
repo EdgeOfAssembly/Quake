@@ -285,8 +285,19 @@ void Turbulent8 (espan_t *pspan)
 				}
 			}
 
-			r_turb_s = r_turb_s & ((CYCLE<<16)-1);
-			r_turb_t = r_turb_t & ((CYCLE<<16)-1);
+			/*
+			 * Wrap s/t to texture size (power-of-two). Stock used CYCLE(128)
+			 * which matches 64-texel turb; hires 256 must wrap at 256 or UVs
+			 * jump every span segment → flashing river.
+			 */
+			{
+				int	twrap = (cachewidth > 0) ? cachewidth : CYCLE;
+				if (twrap < CYCLE)
+					twrap = CYCLE;
+				/* power-of-two mask */
+				r_turb_s = r_turb_s & ((twrap << 16) - 1);
+				r_turb_t = r_turb_t & ((twrap << 16) - 1);
+			}
 
 			D_DrawTurbulent8Span ();
 
