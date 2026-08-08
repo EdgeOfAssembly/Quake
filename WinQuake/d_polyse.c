@@ -638,6 +638,14 @@ void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage)
 	int		llight;
 	int		lzi;
 	short	*lpz;
+	const int	pixbytes = r_pixbytes;
+	const int	skinw = r_affinetridesc.skinwidth;
+	const int	zstep = r_zistepx;
+	const int	lstep = r_lstepx;
+	const int	stwhole = a_ststepxwhole;
+	const int	sfracstep = a_sstepxfrac;
+	const int	tfracstep = a_tstepxfrac;
+	byte		*cmap = (byte *)acolormap;
 
 	do
 	{
@@ -664,33 +672,58 @@ void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage)
 			llight = pspanpackage->light;
 			lzi = pspanpackage->zi;
 
-			do
+			if (pixbytes == 4)
 			{
-				if ((lzi >> 16) >= *lpz)
+				do
 				{
-					byte	lit = ((byte *)acolormap)[*lptex + (llight & 0xFF00)];
-// gel mapping					*lpdest = gelmap[*lpdest];
-					*lpz = lzi >> 16;
-					if (r_pixbytes == 4)
+					if ((lzi >> 16) >= *lpz)
+					{
+						byte	lit = cmap[*lptex + (llight & 0xFF00)];
+						*lpz = lzi >> 16;
 						*(unsigned *)lpdest = d_8to24table[lit];
-					else
-						*lpdest = lit;
-				}
-				lpdest += r_pixbytes;
-				lzi += r_zistepx;
-				lpz++;
-				llight += r_lstepx;
-				lptex += a_ststepxwhole;
-				lsfrac += a_sstepxfrac;
-				lptex += lsfrac >> 16;
-				lsfrac &= 0xFFFF;
-				ltfrac += a_tstepxfrac;
-				if (ltfrac & 0x10000)
+					}
+					lpdest += 4;
+					lzi += zstep;
+					lpz++;
+					llight += lstep;
+					lptex += stwhole;
+					lsfrac += sfracstep;
+					lptex += lsfrac >> 16;
+					lsfrac &= 0xFFFF;
+					ltfrac += tfracstep;
+					if (ltfrac & 0x10000)
+					{
+						lptex += skinw;
+						ltfrac &= 0xFFFF;
+					}
+				} while (--lcount);
+			}
+			else
+			{
+				do
 				{
-					lptex += r_affinetridesc.skinwidth;
-					ltfrac &= 0xFFFF;
-				}
-			} while (--lcount);
+					if ((lzi >> 16) >= *lpz)
+					{
+						byte	lit = cmap[*lptex + (llight & 0xFF00)];
+						*lpz = lzi >> 16;
+						*lpdest = lit;
+					}
+					lpdest++;
+					lzi += zstep;
+					lpz++;
+					llight += lstep;
+					lptex += stwhole;
+					lsfrac += sfracstep;
+					lptex += lsfrac >> 16;
+					lsfrac &= 0xFFFF;
+					ltfrac += tfracstep;
+					if (ltfrac & 0x10000)
+					{
+						lptex += skinw;
+						ltfrac &= 0xFFFF;
+					}
+				} while (--lcount);
+			}
 		}
 
 		pspanpackage++;

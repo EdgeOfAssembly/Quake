@@ -876,16 +876,36 @@ void R_DrawSurfaceBlock32 (void)
 					light += lightstep;
 				}
 			}
+			else if (bs == 16)
+			{
+				/* mip0 block: fully unrolled 16-texel row */
+				unsigned char	*ltrow;
+#define SURF32_PIX(n) do { \
+	ltrow = colormap + (light & 0xFF00); \
+	pix = psource[n]; \
+	prowdest[n] = (pix == 255) ? 0 : d_8to24table[ltrow[pix]]; \
+	light += lightstep; \
+} while (0)
+				SURF32_PIX(15); SURF32_PIX(14); SURF32_PIX(13); SURF32_PIX(12);
+				SURF32_PIX(11); SURF32_PIX(10); SURF32_PIX(9);  SURF32_PIX(8);
+				SURF32_PIX(7);  SURF32_PIX(6);  SURF32_PIX(5);  SURF32_PIX(4);
+				SURF32_PIX(3);  SURF32_PIX(2);  SURF32_PIX(1);  SURF32_PIX(0);
+#undef SURF32_PIX
+			}
 			else
 			{
-				for (b = bs - 1; b >= 0; b--)
+				/*
+				 * Stock 8-bit mips + lightmap → 32bpp.
+				 * light is 8.8; high byte indexes 64 light rows of colormap.
+				 */
+				b = bs - 1;
+				while (b >= 0)
 				{
+					unsigned char	*ltrow = colormap + (light & 0xFF00);
 					pix = psource[b];
-					if (pix == 255)
-						prowdest[b] = 0;
-					else
-						prowdest[b] = d_8to24table[colormap[(light & 0xFF00) + pix]];
+					prowdest[b] = (pix == 255) ? 0 : d_8to24table[ltrow[pix]];
 					light += lightstep;
+					b--;
 				}
 			}
 

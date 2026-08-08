@@ -16,16 +16,21 @@ make profile-gprof    # gprof (-pg) variant
 **Spectator:** `xmux start quake-perf --geometry 800x600 --gl mesa --no-attach`  
 `SPECTATOR: xmux attach quake-perf --no-reconnect`
 
-## Baseline (2026-08-08, demo1, 640×480, -nosound)
+## Baseline (demo1, 640×480, -nosound)
 
-| Build | FPS (3 runs) | Notes |
-|-------|----------------|-------|
-| Release pre-spans16 | ~361–366 | `D_DrawSpans8` only |
-| Release **+ C D_DrawSpans16** | **~580–582** | **+60%** |
-| PROFILE (-g, frame ptr) | ~611–615 | for `perf` |
+| Build | FPS | Notes |
+|-------|-----|-------|
+| Release pre-spans16 (2026-08-08) | ~361–366 | `D_DrawSpans8` only |
+| Release + C D_DrawSpans16 | ~580–582 | +60% |
+| PROFILE after spans16 | ~611–615 | for `perf` |
+| **PROFILE 32bpp pre-opt (2026-08-09)** | **~530–551** | heap OOM fixed; truecolor path |
+| **PROFILE after iter 3** | **~670–680** median | see log below |
+| **Release after iter 3** | **~677** | stable ×3 |
 
-Hot path before: `D_DrawSpans8` ~35% of cycles (perf).  
+Hot path now (32bpp): `D_DrawSpans32bpp` ~26%, `R_DrawSurfaceBlock32` ~9–11%, `D_DrawZSpans` ~8–9%.  
 Water warp is a **feature**, not a bug.
+
+**Heap:** default SW `-mem` is **384 MiB** (surfcache floor scales with res; was 128 MiB fixed and broke 640×480 profile).
 
 ## Iteration rule
 
@@ -42,8 +47,6 @@ Water warp is a **feature**, not a bug.
 | C D_DrawSpans16 (d_subdiv16 default 1) | **~581** | **YES +60%** |
 | Inner unroll×4 on spans16 | ~570 | **REVERT** (slower) |
 
-Next candidates (if needed): `D_DrawZSpans`, `R_DrawSurfaceBlock8_mip0`, X11 blit — only if still Quake-side dominated.
-
 ### Iteration 2 (2026-08-08)
 
 | Change | FPS | Keep? |
@@ -54,4 +57,14 @@ Next candidates (if needed): `D_DrawZSpans`, `R_DrawSurfaceBlock8_mip0`, X11 bli
 | **D_DrawSpans32** (`d_subdiv16 2`) | **~604–623** | **yes optional** (~+3–5%) |
 | default stays `d_subdiv16 1` (16px) for quality | | |
 
-Use `+d_subdiv16 2` for max throughput timedemos.
+### Iteration 3 (2026-08-09) — 32bpp / HUD / cache
+
+| Change | PROFILE FPS | Keep? |
+|--------|-------------|-------|
+| Pre-opt 32bpp (heap fix only) | ~540 | baseline |
+| Draw_PicFit fixed-point + clip; R_DrawRect32; spans32bpp 32px+unroll×4 | **~608** | **YES +12%** |
+| Pre-expand backtile → memcpy tile clear | **~649** | **YES +7%** |
+| PoT cachewidth shift; lightrow; 64px subdiv; zspan/surf/polyse polish | **~670–680** | **YES ~+4%** |
+| Further micro-opts | noise | stop |
+
+**Stop reason:** top symbol still `D_DrawSpans32bpp` (~26%); further gains need SIMD/ASM, not more C micro-opts. No FPS regression kept.

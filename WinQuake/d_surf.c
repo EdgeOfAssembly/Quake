@@ -61,10 +61,19 @@ int     D_SurfaceCacheForRes (int width, int height)
 	 *   e.g. -surfcachesize 262144  → 256 MiB
 	 */
 	size *= 16;
-	/* 32bpp + hires: at least 128 MiB; 8bpp keeps formula result */
+	/*
+	 * 32bpp + hires: floor scales with framebuffer so 640×480 profile
+	 * fits a 384 MiB heap, while 720p/1080p still avoid thrash (RAM icon).
+	 * Cap 256 MiB. Override: -surfcachesize <KB>
+	 */
 	if (r_pixbytes > 1)
 	{
-		modern_floor = 128 * 1024 * 1024;
+		/* ~64 bytes of cache budget per framebuffer pixel (hires lit texels) */
+		modern_floor = width * height * r_pixbytes * 64;
+		if (modern_floor < 32 * 1024 * 1024)
+			modern_floor = 32 * 1024 * 1024;
+		if (modern_floor > 256 * 1024 * 1024)
+			modern_floor = 256 * 1024 * 1024;
 		if (size < modern_floor)
 			size = modern_floor;
 	}

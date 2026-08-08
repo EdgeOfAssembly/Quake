@@ -1,0 +1,7 @@
+== timedemo demo1 ×3 (PROFILE build, 640x480) ==
+--- run 1 ---
+969 frames   1.6 seconds 605.0 fps
+--- run 2 ---
+969 frames   1.6 seconds 609.8 fps
+--- run 3 ---
+969 frames   1.6 seconds 610.8 fps

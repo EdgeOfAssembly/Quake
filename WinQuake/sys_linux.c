@@ -374,13 +374,13 @@ int main (int c, char **v)
 	parms.argv = com_argv;
 
 /*
-	 * Software Full HD + optional hires textures need a large hunk.
-	 * Override: -mem <megabytes>
+	 * Software 32bpp + large surface cache (see D_SurfaceCacheForRes)
+	 * needs more than classic 128 MiB. Override: -mem <megabytes>
 	 */
 #ifdef GLQUAKE
-	parms.memsize = 128*1024*1024;
+	parms.memsize = 256*1024*1024;
 #else
-	parms.memsize = 128*1024*1024;
+	parms.memsize = 384*1024*1024;
 #endif
 
 	j = COM_CheckParm("-mem");

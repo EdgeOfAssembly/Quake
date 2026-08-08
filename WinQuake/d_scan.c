@@ -586,17 +586,20 @@ void D_DrawSpans32bpp (espan_t *pspan)
 	unsigned		*pbase, *pdest;
 	fixed16_t		s, t, snext, tnext, sstep, tstep;
 	float			sdivz, tdivz, zi, z, du, dv, spancountminus1;
-	float			sdivz16stepu, tdivz16stepu, zi16stepu;
+	float			sdivz32stepu, tdivz32stepu, zi32stepu;
 	const int		cwidth = cachewidth;
+	const int		cshift = (cwidth > 0 && (cwidth & (cwidth - 1)) == 0)
+					? __builtin_ctz ((unsigned)cwidth) : -1;
 	byte			*scan;
 
 	sstep = 0;
 	tstep = 0;
 	pbase = (unsigned *)cacheblock;
 
-	sdivz16stepu = d_sdivzstepu * 16;
-	tdivz16stepu = d_tdivzstepu * 16;
-	zi16stepu = d_zistepu * 16;
+	/* 64-pixel affine subdiv: fewer 1/z; measure before keeping */
+	sdivz32stepu = d_sdivzstepu * 64;
+	tdivz32stepu = d_tdivzstepu * 64;
+	zi32stepu = d_zistepu * 64;
 
 	do
 	{
@@ -626,8 +629,8 @@ void D_DrawSpans32bpp (espan_t *pspan)
 
 		do
 		{
-			if (count >= 16)
-				spancount = 16;
+			if (count >= 64)
+				spancount = 64;
 			else
 				spancount = count;
 
@@ -635,9 +638,9 @@ void D_DrawSpans32bpp (espan_t *pspan)
 
 			if (count)
 			{
-				sdivz += sdivz16stepu;
-				tdivz += tdivz16stepu;
-				zi += zi16stepu;
+				sdivz += sdivz32stepu;
+				tdivz += tdivz32stepu;
+				zi += zi32stepu;
 				z = (float)0x10000 / zi;
 
 				snext = (int)(sdivz * z) + sadjust;
@@ -652,8 +655,8 @@ void D_DrawSpans32bpp (espan_t *pspan)
 				else if (tnext < 16)
 					tnext = 16;
 
-				sstep = (snext - s) >> 4;
-				tstep = (tnext - t) >> 4;
+				sstep = (snext - s) >> 6;
+				tstep = (tnext - t) >> 6;
 			}
 			else
 			{
@@ -681,12 +684,51 @@ void D_DrawSpans32bpp (espan_t *pspan)
 				}
 			}
 
-			do
+			/* PoT cache width: shift instead of multiply in the pixel loop */
+			if (cshift >= 0)
 			{
-				*pdest++ = pbase[(s >> 16) + (t >> 16) * cwidth];
-				s += sstep;
-				t += tstep;
-			} while (--spancount > 0);
+				while (spancount >= 4)
+				{
+					pdest[0] = pbase[(s >> 16) + ((t >> 16) << cshift)];
+					s += sstep; t += tstep;
+					pdest[1] = pbase[(s >> 16) + ((t >> 16) << cshift)];
+					s += sstep; t += tstep;
+					pdest[2] = pbase[(s >> 16) + ((t >> 16) << cshift)];
+					s += sstep; t += tstep;
+					pdest[3] = pbase[(s >> 16) + ((t >> 16) << cshift)];
+					s += sstep; t += tstep;
+					pdest += 4;
+					spancount -= 4;
+				}
+				while (spancount-- > 0)
+				{
+					*pdest++ = pbase[(s >> 16) + ((t >> 16) << cshift)];
+					s += sstep;
+					t += tstep;
+				}
+			}
+			else
+			{
+				while (spancount >= 4)
+				{
+					pdest[0] = pbase[(s >> 16) + (t >> 16) * cwidth];
+					s += sstep; t += tstep;
+					pdest[1] = pbase[(s >> 16) + (t >> 16) * cwidth];
+					s += sstep; t += tstep;
+					pdest[2] = pbase[(s >> 16) + (t >> 16) * cwidth];
+					s += sstep; t += tstep;
+					pdest[3] = pbase[(s >> 16) + (t >> 16) * cwidth];
+					s += sstep; t += tstep;
+					pdest += 4;
+					spancount -= 4;
+				}
+				while (spancount-- > 0)
+				{
+					*pdest++ = pbase[(s >> 16) + (t >> 16) * cwidth];
+					s += sstep;
+					t += tstep;
+				}
+			}
 
 			s = snext;
 			t = tnext;
@@ -866,7 +908,8 @@ void D_DrawZSpans (espan_t *pspan)
 
 		if ((doublecount = count >> 1) > 0)
 		{
-			while (doublecount >= 2)
+			/* Unroll ×4 pairs (8 z-samples) for long spans */
+			while (doublecount >= 4)
 			{
 				ltemp = (unsigned)(izi >> 16);
 				izi += izistep;
@@ -880,8 +923,20 @@ void D_DrawZSpans (espan_t *pspan)
 				izi += izistep;
 				((unsigned *)pdest)[1] = ltemp;
 
-				pdest += 4;
-				doublecount -= 2;
+				ltemp = (unsigned)(izi >> 16);
+				izi += izistep;
+				ltemp |= (unsigned)izi & 0xFFFF0000u;
+				izi += izistep;
+				((unsigned *)pdest)[2] = ltemp;
+
+				ltemp = (unsigned)(izi >> 16);
+				izi += izistep;
+				ltemp |= (unsigned)izi & 0xFFFF0000u;
+				izi += izistep;
+				((unsigned *)pdest)[3] = ltemp;
+
+				pdest += 8;
+				doublecount -= 4;
 			}
 			while (doublecount-- > 0)
 			{

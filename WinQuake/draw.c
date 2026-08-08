@@ -33,6 +33,11 @@ typedef struct {
 
 static rectdesc_t	r_rectdesc;
 
+/* Pre-expanded backtile for 32bpp tile clears (avoids d_8to24 per pixel). */
+static unsigned	*r_backtile32;
+static int	r_backtile32_w;
+static int	r_backtile32_h;
+
 byte		*draw_chars;				// 8*8 graphic characters
 qpic_t		*draw_disc;
 qpic_t		*draw_backtile;
@@ -109,7 +114,8 @@ Draw_Init
 */
 void Draw_Init (void)
 {
-	int		i;
+	int		i, n;
+	byte	*src;
 
 	draw_chars = W_GetLumpName ("conchars");
 	draw_disc = W_GetLumpName ("disc");
@@ -119,6 +125,26 @@ void Draw_Init (void)
 	r_rectdesc.height = draw_backtile->height;
 	r_rectdesc.ptexbytes = draw_backtile->data;
 	r_rectdesc.rowbytes = draw_backtile->width;
+
+	/* Expand backtile once for native 32bpp clears (Draw_TileClear hot path). */
+	if (r_backtile32)
+	{
+		free (r_backtile32);
+		r_backtile32 = NULL;
+	}
+	r_backtile32_w = draw_backtile->width;
+	r_backtile32_h = draw_backtile->height;
+	n = r_backtile32_w * r_backtile32_h;
+	if (n > 0)
+	{
+		r_backtile32 = (unsigned *)malloc ((size_t)n * sizeof(unsigned));
+		if (r_backtile32)
+		{
+			src = draw_backtile->data;
+			for (i = 0; i < n; i++)
+				r_backtile32[i] = d_8to24table[src[i]];
+		}
+	}
 }
 
 
@@ -464,6 +490,9 @@ void Draw_PicFit (int x, int y, qpic_t *pic, int dw, int dh)
 {
 	byte	*source;
 	int		dy, dx, sx, sy;
+	int		x0, x1, y0, y1;
+	int		sx_step, sy_step, sx_fp, sy_fp;
+	int		pw;
 
 	if (!pic || dw < 1 || dh < 1)
 		return;
@@ -472,42 +501,64 @@ void Draw_PicFit (int x, int y, qpic_t *pic, int dw, int dh)
 		Draw_Pic (x, y, pic);
 		return;
 	}
+
+	/* Clip destination once; fixed-point source steps (no per-pixel div). */
+	x0 = 0;
+	x1 = dw;
+	y0 = 0;
+	y1 = dh;
+	if (x < 0)
+		x0 = -x;
+	if (y < 0)
+		y0 = -y;
+	if (x + x1 > vid.width)
+		x1 = vid.width - x;
+	if (y + y1 > vid.height)
+		y1 = vid.height - y;
+	if (x0 >= x1 || y0 >= y1)
+		return;
+
 	source = pic->data;
-	for (dy = 0; dy < dh; dy++)
+	pw = pic->width;
+	sx_step = (pw << 16) / dw;
+	sy_step = (pic->height << 16) / dh;
+	sy_fp = y0 * sy_step;
+
+	for (dy = y0; dy < y1; dy++)
 	{
-		int	py = y + dy;
-		if (py < 0 || py >= vid.height)
-			continue;
-		sy = dy * pic->height / dh;
+		int		py = y + dy;
+		byte	*row;
+
+		sy = sy_fp >> 16;
 		if (sy >= pic->height)
 			sy = pic->height - 1;
+		sy_fp += sy_step;
+		row = source + sy * pw;
+		sx_fp = x0 * sx_step;
+
 		if (r_pixbytes == 4)
 		{
 			unsigned	*p32 = (unsigned *)
-				((byte *)vid.buffer + py * vid.rowbytes + (x << 2));
-			for (dx = 0; dx < dw; dx++)
+				((byte *)vid.buffer + py * vid.rowbytes + ((x + x0) << 2));
+			for (dx = x0; dx < x1; dx++)
 			{
-				int	px = x + dx;
-				if (px < 0 || px >= vid.width)
-					continue;
-				sx = dx * pic->width / dw;
-				if (sx >= pic->width)
-					sx = pic->width - 1;
-				p32[dx] = d_8to24table[source[sy * pic->width + sx]];
+				sx = sx_fp >> 16;
+				if (sx >= pw)
+					sx = pw - 1;
+				*p32++ = d_8to24table[row[sx]];
+				sx_fp += sx_step;
 			}
 		}
 		else if (r_pixbytes == 1)
 		{
-			byte	*dest = vid.buffer + py * vid.rowbytes + x;
-			for (dx = 0; dx < dw; dx++)
+			byte	*dest = vid.buffer + py * vid.rowbytes + x + x0;
+			for (dx = x0; dx < x1; dx++)
 			{
-				int	px = x + dx;
-				if (px < 0 || px >= vid.width)
-					continue;
-				sx = dx * pic->width / dw;
-				if (sx >= pic->width)
-					sx = pic->width - 1;
-				dest[dx] = source[sy * pic->width + sx];
+				sx = sx_fp >> 16;
+				if (sx >= pw)
+					sx = pw - 1;
+				*dest++ = row[sx];
+				sx_fp += sx_step;
 			}
 		}
 	}
@@ -517,6 +568,9 @@ void Draw_TransPicFit (int x, int y, qpic_t *pic, int dw, int dh)
 {
 	byte	*source;
 	int		dy, dx, sx, sy;
+	int		x0, x1, y0, y1;
+	int		sx_step, sy_step, sx_fp, sy_fp;
+	int		pw;
 
 	if (!pic || dw < 1 || dh < 1)
 		return;
@@ -525,50 +579,71 @@ void Draw_TransPicFit (int x, int y, qpic_t *pic, int dw, int dh)
 		Draw_TransPic (x, y, pic);
 		return;
 	}
+
+	x0 = 0;
+	x1 = dw;
+	y0 = 0;
+	y1 = dh;
+	if (x < 0)
+		x0 = -x;
+	if (y < 0)
+		y0 = -y;
+	if (x + x1 > vid.width)
+		x1 = vid.width - x;
+	if (y + y1 > vid.height)
+		y1 = vid.height - y;
+	if (x0 >= x1 || y0 >= y1)
+		return;
+
 	source = pic->data;
-	for (dy = 0; dy < dh; dy++)
+	pw = pic->width;
+	sx_step = (pw << 16) / dw;
+	sy_step = (pic->height << 16) / dh;
+	sy_fp = y0 * sy_step;
+
+	for (dy = y0; dy < y1; dy++)
 	{
-		int	py = y + dy;
-		if (py < 0 || py >= vid.height)
-			continue;
-		sy = dy * pic->height / dh;
+		int		py = y + dy;
+		byte	*row;
+
+		sy = sy_fp >> 16;
 		if (sy >= pic->height)
 			sy = pic->height - 1;
+		sy_fp += sy_step;
+		row = source + sy * pw;
+		sx_fp = x0 * sx_step;
+
 		if (r_pixbytes == 4)
 		{
 			unsigned	*p32 = (unsigned *)
-				((byte *)vid.buffer + py * vid.rowbytes + (x << 2));
-			for (dx = 0; dx < dw; dx++)
+				((byte *)vid.buffer + py * vid.rowbytes + ((x + x0) << 2));
+			for (dx = x0; dx < x1; dx++)
 			{
-				int	px = x + dx;
 				byte	c;
-				if (px < 0 || px >= vid.width)
-					continue;
-				sx = dx * pic->width / dw;
-				if (sx >= pic->width)
-					sx = pic->width - 1;
-				c = source[sy * pic->width + sx];
-				if (c == TRANSPARENT_COLOR)
-					continue;
-				p32[dx] = d_8to24table[c];
+				sx = sx_fp >> 16;
+				if (sx >= pw)
+					sx = pw - 1;
+				sx_fp += sx_step;
+				c = row[sx];
+				if (c != TRANSPARENT_COLOR)
+					*p32 = d_8to24table[c];
+				p32++;
 			}
 		}
 		else if (r_pixbytes == 1)
 		{
-			byte	*dest = vid.buffer + py * vid.rowbytes + x;
-			for (dx = 0; dx < dw; dx++)
+			byte	*dest = vid.buffer + py * vid.rowbytes + x + x0;
+			for (dx = x0; dx < x1; dx++)
 			{
-				int	px = x + dx;
 				byte	c;
-				if (px < 0 || px >= vid.width)
-					continue;
-				sx = dx * pic->width / dw;
-				if (sx >= pic->width)
-					sx = pic->width - 1;
-				c = source[sy * pic->width + sx];
-				if (c == TRANSPARENT_COLOR)
-					continue;
-				dest[dx] = c;
+				sx = sx_fp >> 16;
+				if (sx >= pw)
+					sx = pw - 1;
+				sx_fp += sx_step;
+				c = row[sx];
+				if (c != TRANSPARENT_COLOR)
+					*dest = c;
+				dest++;
 			}
 		}
 	}
@@ -1238,6 +1313,74 @@ void R_DrawRect16 (vrect_t *prect, int rowbytes, byte *psrc,
 
 
 /*
+==============
+R_DrawRect32
+
+8-bit tile → native 32bpp framebuffer (d_8to24table).
+When psrc is inside the pre-expanded backtile, copy uint32 rows (fast path).
+==============
+*/
+void R_DrawRect32 (vrect_t *prect, int rowbytes, byte *psrc,
+	int transparent)
+{
+	byte		t;
+	int		i, j, srcdelta, destdelta;
+	unsigned	*pdest;
+	unsigned	*psrc32;
+	ptrdiff_t	off;
+
+	pdest = (unsigned *)((byte *)vid.buffer +
+			prect->y * vid.rowbytes + (prect->x << 2));
+
+	/* Fast path: pre-expanded backtile → memcpy rows */
+	if (!transparent && r_backtile32 && r_rectdesc.ptexbytes
+		&& psrc >= r_rectdesc.ptexbytes
+		&& psrc < r_rectdesc.ptexbytes
+			+ r_rectdesc.height * r_rectdesc.rowbytes)
+	{
+		off = (ptrdiff_t)(psrc - r_rectdesc.ptexbytes);
+		psrc32 = r_backtile32 + off;
+		for (i = 0; i < prect->height; i++)
+		{
+			memcpy (pdest, psrc32, (size_t)prect->width * sizeof(unsigned));
+			psrc32 += r_backtile32_w;
+			pdest = (unsigned *)((byte *)pdest + vid.rowbytes);
+		}
+		return;
+	}
+
+	srcdelta = rowbytes - prect->width;
+	destdelta = (vid.rowbytes >> 2) - prect->width;
+
+	if (transparent)
+	{
+		for (i = 0; i < prect->height; i++)
+		{
+			for (j = 0; j < prect->width; j++)
+			{
+				t = *psrc++;
+				if (t != TRANSPARENT_COLOR)
+					*pdest = d_8to24table[t];
+				pdest++;
+			}
+			psrc += srcdelta;
+			pdest += destdelta;
+		}
+	}
+	else
+	{
+		for (i = 0; i < prect->height; i++)
+		{
+			for (j = 0; j < prect->width; j++)
+				*pdest++ = d_8to24table[*psrc++];
+			psrc += srcdelta;
+			pdest += destdelta;
+		}
+	}
+}
+
+
+/*
 =============
 Draw_TileClear
 
@@ -1292,6 +1435,10 @@ void Draw_TileClear (int x, int y, int w, int h)
 			if (r_pixbytes == 1)
 			{
 				R_DrawRect8 (&vr, r_rectdesc.rowbytes, psrc, 0);
+			}
+			else if (r_pixbytes == 4)
+			{
+				R_DrawRect32 (&vr, r_rectdesc.rowbytes, psrc, 0);
 			}
 			else
 			{

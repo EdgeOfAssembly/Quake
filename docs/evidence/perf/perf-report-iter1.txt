@@ -1,0 +1,301 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 6K of event 'cpu/cycles/Pu'
+# Event count (approx.): 5664292419
+#
+# Overhead       Samples  Command    Shared Object         Symbol                                  
+# ........  ............  .........  ....................  ........................................
+#
+    23.43%          1480  quake.x11  quake.x11             [.] D_DrawSpans32bpp
+            |
+            ---D_DrawSpans32bpp
+               D_DrawSurfaces
+               R_ScanEdges
+               R_EdgeDrawing
+               R_RenderView_
+               V_RenderView
+               SCR_UpdateScreen (inlined)
+               _Host_Frame
+               main
+               0x7ff5c5368eea
+
+    14.54%           888  quake.x11  quake.x11             [.] Draw_TileClear
+            |          
+             --14.42%--R_DrawRect32 (inlined)
+                       Draw_TileClear
+                       |          
+                       |--7.90%--SCR_UpdateScreen (inlined)
+                       |          |          
+                       |           --7.81%--_Host_Frame
+                       |                     main
+                       |                     0x7ff5c5368eea
+                       |          
+                       |--4.78%--SCR_SetUpToDrawConsole (inlined)
+                       |          SCR_EraseCenterString (inlined)
+                       |          SCR_UpdateScreen (inlined)
+                       |          _Host_Frame
+                       |          main
+                       |          0x7ff5c5368eea
+                       |          
+                        --1.65%--Sbar_Draw
+                                  SCR_DrawConsole (inlined)
+                                  SCR_UpdateScreen (inlined)
+                                  _Host_Frame
+                                  main
+                                  0x7ff5c5368eea
+
+     9.98%           616  quake.x11  quake.x11             [.] R_DrawSurfaceBlock32
+            |
+            ---R_DrawSurfaceBlock32
+               |          
+                --9.97%--R_DrawSurface
+                          D_CacheSurface
+                          D_DrawSurfaces
+                          R_ScanEdges
+                          R_EdgeDrawing
+                          R_RenderView_
+                          V_RenderView
+                          SCR_UpdateScreen (inlined)
+                          _Host_Frame
+                          main
+                          0x7ff5c5368eea
+
+     8.27%           521  quake.x11  quake.x11             [.] D_DrawZSpans
+            |
+            ---D_DrawZSpans
+               D_DrawSurfaces
+               R_ScanEdges
+               R_EdgeDrawing
+               R_RenderView_
+               V_RenderView
+               SCR_UpdateScreen (inlined)
+               _Host_Frame
+               main
+               0x7ff5c5368eea
+
+     7.10%           436  quake.x11  quake.x11             [.] D_PolysetDrawSpans8
+            |
+            ---D_PolysetDrawSpans8
+               |          
+                --6.25%--D_RasterizeAliasPolySmooth
+                          D_DrawNonSubdiv
+                          D_PolysetDraw
+                          |          
+                          |--3.33%--R_AliasClipTriangle
+                          |          R_AliasPreparePoints
+                          |          R_AliasDrawModel
+                          |          |          
+                          |           --3.25%--R_DrawViewModel
+                          |                     R_RenderView_
+                          |                     V_RenderView
+                          |                     SCR_UpdateScreen (inlined)
+                          |                     _Host_Frame
+                          |                     main
+                          |                     0x7ff5c5368eea
+                          |          
+                          |--1.80%--R_AliasPreparePoints
+                          |          R_AliasDrawModel
+                          |          |          
+                          |           --1.49%--R_DrawViewModel
+                          |                     R_RenderView_
+                          |                     V_RenderView
+                          |                     SCR_UpdateScreen (inlined)
+                          |                     _Host_Frame
+                          |                     main
+                          |                     0x7ff5c5368eea
+                          |          
+                           --1.11%--R_AliasPrepareUnclippedPoints (inlined)
+                                     R_AliasDrawModel
+                                     R_DrawEntitiesOnList
+                                     R_RenderView_
+                                     V_RenderView
+                                     SCR_UpdateScreen (inlined)
+                                     _Host_Frame
+                                     main
+                                     0x7ff5c5368eea
+
+     4.37%           270  quake.x11  quake.x11             [.] Draw_ConsoleBackground
+            |          
+             --4.12%--Draw_ConsoleBackground
+                       Con_DrawConsole
+                       SCR_DrawConsole (inlined)
+                       SCR_UpdateScreen (inlined)
+                       |          
+                        --3.99%--_Host_Frame
+                                  main
+                                  0x7ff5c5368eea
+
+     4.35%           268  quake.x11  quake.x11             [.] Draw_Character.part.0
+            |          
+             --4.22%--Draw_Character (inlined)
+                       |          
+                        --4.17%--SCR_DrawConsole (inlined)
+                                  |          
+                                   --4.10%--SCR_UpdateScreen (inlined)
+                                             |          
+                                              --4.00%--_Host_Frame
+                                                        main
+                                                        0x7ff5c5368eea
+
+     2.90%           178  quake.x11  quake.x11             [.] Draw_PicFit
+            |
+            ---Draw_PicFit
+               |          
+               |--1.64%--Sbar_Draw
+               |          SCR_DrawConsole (inlined)
+               |          SCR_UpdateScreen (inlined)
+               |          _Host_Frame
+               |          main
+               |          0x7ff5c5368eea
+               |          
+                --1.26%--Sbar_DrawInventory
+                          Sbar_Draw
+                          SCR_DrawConsole (inlined)
+                          SCR_UpdateScreen (inlined)
+                          _Host_Frame
+                          main
+                          0x7ff5c5368eea
+
+     2.75%           174  quake.x11  quake.x11             [.] R_GenerateSpans
+            |          
+             --1.62%--R_TrailingEdge (inlined)
+                       |          
+                        --1.40%--R_TrailingEdge (inlined)
+                                  R_GenerateSpans
+                                  R_ScanEdges
+                                  R_EdgeDrawing
+                                  R_RenderView_
+                                  V_RenderView
+                                  SCR_UpdateScreen (inlined)
+                                  _Host_Frame
+                                  main
+                                  0x7ff5c5368eea
+
+     2.06%           129  quake.x11  quake.x11             [.] D_DrawTurbulent8Span
+            |
+            ---D_DrawTurbulent8Span
+               Turbulent8
+               D_DrawSurfaces
+               R_ScanEdges
+               R_EdgeDrawing
+               R_RenderView_
+               V_RenderView
+               SCR_UpdateScreen (inlined)
+               _Host_Frame
+               main
+               0x7ff5c5368eea
+
+     1.86%           118  quake.x11  quake.x11             [.] R_LeadingEdge
+            |          
+             --1.84%--R_LeadingEdge
+                       R_ScanEdges
+                       R_EdgeDrawing
+                       R_RenderView_
+                       V_RenderView
+                       SCR_UpdateScreen (inlined)
+                       _Host_Frame
+                       main
+                       0x7ff5c5368eea
+
+     1.76%           111  quake.x11  quake.x11             [.] R_StepActiveU
+            |          
+             --1.72%--R_StepActiveU
+                       R_EdgeDrawing
+                       R_RenderView_
+                       V_RenderView
+                       SCR_UpdateScreen (inlined)
+                       _Host_Frame
+                       main
+                       0x7ff5c5368eea
+
+     1.38%            84  quake.x11  quake.x11             [.] D_PolysetScanLeftEdge
+            |
+            ---D_PolysetScanLeftEdge
+               D_RasterizeAliasPolySmooth
+               D_DrawNonSubdiv
+               D_PolysetDraw
+
+     1.36%            85  quake.x11  quake.x11             [.] R_RecursiveWorldNode
+            |
+            ---R_RecursiveWorldNode
+               |          
+                --1.35%--R_RecursiveWorldNode
+                          |          
+                           --1.30%--R_RecursiveWorldNode
+                                     |          
+                                      --1.28%--R_RecursiveWorldNode
+                                                |          
+                                                 --1.27%--R_RecursiveWorldNode
+                                                           |          
+                                                            --1.23%--R_RecursiveWorldNode
+                                                                      |          
+                                                                       --1.17%--R_RecursiveWorldNode
+                                                                                 |          
+                                                                                  --1.15%--R_RecursiveWorldNode
+                                                                                            R_RecursiveWorldNode
+                                                                                            R_RecursiveWorldNode
+                                                                                            |          
+                                                                                             --1.14%--R_RecursiveWorldNode
+                                                                                                       R_RecursiveWorldNode
+                                                                                                       |          
+                                                                                                        --1.12%--R_RecursiveWorldNode
+                                                                                                                  R_RecursiveWorldNode
+                                                                                                                  |          
+                                                                                                                   --1.10%--R_RecursiveWorldNode
+                                                                                                                             |          
+                                                                                                                              --1.06%--R_RecursiveWorldNode
+                                                                                                                                        |          
+                                                                                                                                         --1.04%--R_RecursiveWorldNode
+                                                                                                                                                   |          
+                                                                                                                                                    --1.03%--R_RecursiveWorldNode
+                                                                                                                                                              |          
+                                                                                                                                                               --1.01%--R_RecursiveWorldNode
+                                                                                                                                                                         R_RecursiveWorldNode
+                                                                                                                                                                         R_RecursiveWorldNode
+
+     1.35%            85  quake.x11  quake.x11             [.] R_RenderFace
+            |          
+             --1.26%--R_RenderFace
+                       |          
+                        --1.21%--R_RecursiveWorldNode
+                                  R_RecursiveWorldNode
+                                  R_RecursiveWorldNode
+                                  R_RecursiveWorldNode
+                                  R_RecursiveWorldNode
+                                  |          
+                                   --1.17%--R_RecursiveWorldNode
+                                             |          
+                                              --1.10%--R_RecursiveWorldNode
+                                                        R_RecursiveWorldNode
+                                                        R_RecursiveWorldNode
+                                                        R_RecursiveWorldNode
+                                                        R_RecursiveWorldNode
+                                                        R_RecursiveWorldNode
+                                                        R_RecursiveWorldNode
+                                                        R_RecursiveWorldNode
+                                                        R_RecursiveWorldNode
+                                                        |          
+                                                         --1.02%--R_RecursiveWorldNode
+                                                                   R_RecursiveWorldNode
+                                                                   |          
+                                                                    --1.01%--R_RecursiveWorldNode
+
+     1.06%            65  quake.x11  quake.x11             [.] Draw_TransPicFit
+            |
+            ---Draw_TransPicFit
+               Sbar_DrawNum
+               Sbar_Draw
+               SCR_DrawConsole (inlined)
+               SCR_UpdateScreen (inlined)
+               _Host_Frame
+               main
+               0x7ff5c5368eea
+
+
+
+#
+# (Tip: Compare performance results with: perf diff [<old file> <new file>])
+#
