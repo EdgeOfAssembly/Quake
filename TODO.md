@@ -56,6 +56,16 @@ Train or fine-tune a **Quake-specific game model / policy** instead of raw gener
 Related notes: `~/.grok/memory/projects/quake-linux.md`  
 Prototype loop (not production): `tools/quake_vl_loop.py`
 
+### Engine / ports — **quake.x11 debug & memory (active goal)**
+
+Full brief: **`docs/GOAL_QUAKE_X11_DEBUG_MEMORY.md`**
+
+- [ ] Debug build: asserts on, `-O0 -g3`, `quake.x11-dbg`
+- [ ] ASan + UBSan (+ Valgrind / GDB recipes)
+- [ ] Multi-agent hunt: uninit, NULL, UAF, double-free, buffer over/underflow, stack smash, leaks
+- [ ] `stdint` / `q_stdint.h` hygiene; widen on clear overflow risk
+- [ ] Loop policy: `size_t` / `ssize_t`, `const size_t` length outside loop, hoist invariants
+
 ### Engine / ports
 
 - [ ] Software `quake.x11` interactive proof (FHD) under Xmux
