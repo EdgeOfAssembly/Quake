@@ -12,4 +12,11 @@ int Image_RGBAToMiptex8 (const byte *rgba, int w, int h,
 
 #define QUAKE_TRANSPARENT_INDEX 255
 
+/* Software miptex: multiples of 16; practical max edge (hunk/cache). */
+#define IMAGE_TEX_ALIGN     16
+#define IMAGE_TEX_MAX_EDGE  1024
+
+/* Downscale RGBA in-place policy: largest size <= max that is 16-aligned. */
+byte *Image_FitTextureSize (byte *rgba, int *w, int *h, int max_edge);
+
 #endif

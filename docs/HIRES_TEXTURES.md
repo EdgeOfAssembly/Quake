@@ -1,79 +1,45 @@
 # Hi-res textures for software quake.x11
 
+## Policy (source art)
+
+1. **Keep images as large as possible** (e.g. Real-ESRGAN **×4 + TTA**).
+2. **Do not downscale in the pipeline** for “engine convenience.”
+3. **Engine** either uses the size as-is (if valid) or **box-downscales** to the
+   next supported size: **multiple of 16**, edge **≤ 1024** (`Image_FitTextureSize`).
+
 ## Run
 
 ```bash
-./quake.x11 -basedir . -game hires -mem 256 -width 1920 -height 1080 -window +map e1m1
+./quake.x11 -basedir . -game hires -mem 512 -width 1920 -height 1080 -window +map e1m1
 ```
 
-Loose files under `hires/textures/*.mip` override BSP-embedded textures
-(`*` in names → `#` in filenames). Sky is never overridden (engine layout).
+## External formats (per texture name, `*` → `#`)
 
-## Build pack (e1m1 x2)
-
-```bash
-source /mnt/python/bin/activate   # Pillow + numpy
-python3 tools/hires_textures.py build-e1m1 --scale 2
-```
-
-Uses `qpak` + `realesrgan-ncnn-vulkan` + palette quantize.
-
-## Memory
-
-Default heap is 128 MB (`-mem` overrides). Surface cache still scales with
-**framebuffer** resolution more than texture size.
-
-## FPS (demo1, -nosound)
-
-| Mode | 640×480 | 1920×1080 |
-|------|---------|-----------|
-| stock | ~585 | ~131 |
-| hires x2 e1m1 | ~591 | ~130 |
-
-Software remains palette-based; upscale helps detail but is not GL filtering.
-
-## Palette quantize (important)
-
-Naive nearest-RGB mapping put texels into **fullbright** indices (224–254) →
-washed-out white walls.
-
-Current pack uses:
-- **No fullbright** unless the original texture used them
-- Prefer colors from the **original** miptex (+ a few neighbors)
-- **Floyd–Steinberg** dither + perceptual weights
-- Max index in e1m1 pack: **222**
-
-Rebuild:
-```bash
-python3 tools/hires_textures.py pack /tmp/quake-hires-work/png_x2 hires/textures \
-  --palette hires/gfx/palette.lmp --original /tmp/quake-hires-work/png
-```
-
-## 24/32-bit RGB(A) sources
-
-Engine loads (search order per texture name):
-
-1. `textures/<name>.tga` — 24-bit RGB or 32-bit RGBA (uncompressed TGA)
-2. `textures/<name>.rgba` — raw: `u32 w, u32 h, u32 flags, RGBA×w×h`
-3. `textures/<name>.mip` — classic 8-bit miptex
-
-`*` in texture names → `#` in filenames (`*water0` → `#water0.tga`).
+1. `textures/<name>.tga` — 24/32-bit (preferred truecolor)
+2. `textures/<name>.rgba` — raw RGBA
+3. `textures/<name>.mip` — classic 8-bit
 
 ### Transparency → alpha
 
-| Source | Mapping |
-|--------|---------|
-| TGA/PNG alpha &lt; 128 | alpha = 0 |
-| RGB equals **palette index 255** color | alpha = 0 (Quake transparent key) |
-| Magenta (255,0,255) | alpha = 0 |
+- Image alpha &lt; 128 → transparent  
+- RGB = **palette index 255** → transparent (Quake key)  
+- Magenta (255,0,255) → transparent  
+- Software mips: transparent → **index 255**
 
-Software still **draws** via 8-bit mips + colormap (span path). RGBA is kept on
-`texture_t.rgba` for future truecolor lighting. Transparent texels become
-**index 255** in the 8-bit mips.
+## Rebuild e1m1 ×4 + TTA
 
-### Export TGA from pipeline PNGs
-
-```python
-# see tools — or convert:
-# Real-ESRGAN PNG → 32-bit TGA in hires/textures/
+```bash
+source /mnt/python/bin/activate
+# extract + realesrgan -s 4 -x, then pack (no downscale)
+python3 tools/hires_textures.py build-e1m1 --scale 4 --tta
+# or manual: upscale file-by-file with -x, then:
+python3 tools/hires_textures.py pack /tmp/.../png_x4tta hires/textures \
+  --palette hires/gfx/palette.lmp --original /tmp/.../png_src
+# export TGA for RGBA path from those PNGs
 ```
+
+## Notes
+
+- Software still **draws** 8-bit + colormap; RGBA is loaded/stored for quality conversion.
+- Sky not overridden.
+- ×4 pack is larger (~30MB+); use `-mem 256` or `512`.

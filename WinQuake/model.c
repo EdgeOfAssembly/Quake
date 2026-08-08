@@ -404,16 +404,19 @@ static texture_t *Mod_TryLoadExternalRGBA (const char *texname)
 	if (!rgba)
 		return NULL;
 
-	/* snap down to 16-aligned if needed */
-	if ((w & 15) || (h & 15))
+	/*
+	 * Policy: ship largest art possible. Engine fits to 16-aligned
+	 * size <= IMAGE_TEX_MAX_EDGE (box downscale). Never reject for being "too big".
+	 */
 	{
-		Con_Printf ("external %s: size %dx%d not 16-aligned, ignored\n", path, w, h);
-		free (rgba);
-		return NULL;
+		int ow = w, oh = h;
+		rgba = Image_FitTextureSize (rgba, &w, &h, IMAGE_TEX_MAX_EDGE);
+		if (w != ow || h != oh)
+			Con_DPrintf ("hires: %s fitted %dx%d -> %dx%d\n", path, ow, oh, w, h);
 	}
-	if (w < 16 || h < 16 || w > 1024 || h > 1024)
+	if (w < 16 || h < 16)
 	{
-		Con_Printf ("external %s: bad size, ignored\n", path);
+		Con_Printf ("external %s: size unusable after fit, ignored\n", path);
 		free (rgba);
 		return NULL;
 	}

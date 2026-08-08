@@ -302,29 +302,53 @@ def extract_bsp_textures(bsp_path: Path, out_dir: Path, pal: list[tuple[int, int
     return n
 
 
-def upscale_dir(src: Path, dst: Path, scale: int, model: str) -> None:
+def upscale_dir(
+    src: Path,
+    dst: Path,
+    scale: int,
+    model: str,
+    *,
+    tta: bool = False,
+    tile: int = 200,
+    gpu: int | None = 1,
+) -> None:
+    """Upscale to the size the game should use — do NOT downscale afterward.
+
+    Engine will fit to 16-aligned <= 1024 if needed (Image_FitTextureSize).
+    """
     dst.mkdir(parents=True, exist_ok=True)
     models = Path("/usr/share/realesrgan-ncnn-vulkan/models")
     if not models.is_dir():
         models = Path.home() / ".local/share/realesrgan-ncnn-vulkan/models"
-    cmd = [
-        "realesrgan-ncnn-vulkan",
-        "-i",
-        str(src),
-        "-o",
-        str(dst),
-        "-s",
-        str(scale),
-        "-n",
-        model,
-        "-f",
-        "png",
-    ]
-    if models.is_dir():
-        cmd.extend(["-m", str(models)])
-    print("run:", " ".join(cmd), flush=True)
-    subprocess.check_call(cmd)
-    # copy .name sidecars
+    # Directory -o can fail on some builds; process file-by-file into dst
+    pngs = sorted(src.glob("*.png"))
+    if not pngs:
+        raise SystemExit(f"no PNGs in {src}")
+    for png in pngs:
+        out = dst / png.name
+        cmd = [
+            "realesrgan-ncnn-vulkan",
+            "-i",
+            str(png),
+            "-o",
+            str(out),
+            "-s",
+            str(scale),
+            "-n",
+            model,
+            "-f",
+            "png",
+            "-t",
+            str(tile),
+        ]
+        if models.is_dir():
+            cmd.extend(["-m", str(models)])
+        if tta:
+            cmd.append("-x")
+        if gpu is not None:
+            cmd.extend(["-g", str(gpu)])
+        print("run:", " ".join(cmd), flush=True)
+        subprocess.check_call(cmd)
     for p in src.glob("*.name"):
         (dst / p.name).write_text(p.read_text())
 
@@ -387,8 +411,8 @@ def cmd_build_e1m1(args: argparse.Namespace) -> None:
 
     src = work / "png"
     extract_bsp_textures(work / "extract/maps/e1m1.bsp", src, pal)
-    up = work / f"png_x{args.scale}"
-    upscale_dir(src, up, args.scale, args.model)
+    up = work / f"png_x{args.scale}{'tta' if args.tta else ''}"
+    upscale_dir(src, up, args.scale, args.model, tta=args.tta)
     n = pack_dir(up, hires / "textures", pal, original_dir=src)
     print(f"done: {n} textures in {hires / 'textures'}")
     print(f"run: ./quake.x11 -basedir . -game hires -mem 256 -width 1920 -height 1080 -window +map e1m1")
@@ -424,8 +448,11 @@ def main() -> None:
     p.add_argument("--pak", default="id1/pak0.pak")
     p.add_argument("--qpak", default="/mnt/qpaktool/build/release/qpak")
     p.add_argument("--work", default="/tmp/quake-hires-work")
-    p.add_argument("--scale", type=int, default=2)
+    p.add_argument("--scale", type=int, default=4,
+                   help="AI upscale factor (default 4 — keep full res for engine)")
     p.add_argument("--model", default="realesrgan-x4plus")
+    p.add_argument("--tta", action="store_true",
+                   help="Real-ESRGAN -x TTA mode (slower, better quality)")
 
     args = ap.parse_args()
     if args.cmd == "extract-bsp":

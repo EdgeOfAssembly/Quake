@@ -215,3 +215,88 @@ int Image_RGBAToMiptex8 (const byte *rgba, int w, int h,
 	*out_pixels_size = pixels;
 	return 0;
 }
+
+
+/*
+=================
+Image_FitTextureSize
+
+Policy: keep art as large as possible; engine supports up to max_edge and
+16-aligned sizes. If needed, box-downscale RGBA to the largest valid size.
+Returns new buffer (caller frees old if different) or same pointer.
+=================
+*/
+byte *Image_FitTextureSize (byte *rgba, int *w, int *h, int max_edge)
+{
+	int	ow, oh, nw, nh, x, y, xi, yi, count;
+	int	r, g, b, a;
+	byte	*out;
+	const byte *src;
+
+	if (!rgba || !w || !h)
+		return rgba;
+	ow = *w;
+	oh = *h;
+	if (max_edge < IMAGE_TEX_ALIGN)
+		max_edge = IMAGE_TEX_ALIGN;
+	max_edge &= ~(IMAGE_TEX_ALIGN - 1);
+
+	nw = ow;
+	nh = oh;
+	if (nw > max_edge)
+		nw = max_edge;
+	if (nh > max_edge)
+		nh = max_edge;
+	nw &= ~(IMAGE_TEX_ALIGN - 1);
+	nh &= ~(IMAGE_TEX_ALIGN - 1);
+	if (nw < IMAGE_TEX_ALIGN)
+		nw = IMAGE_TEX_ALIGN;
+	if (nh < IMAGE_TEX_ALIGN)
+		nh = IMAGE_TEX_ALIGN;
+
+	if (nw == ow && nh == oh)
+		return rgba;
+
+	out = (byte *)malloc ((size_t)nw * (size_t)nh * 4);
+	if (!out)
+		return rgba;
+
+	/* box filter */
+	for (y = 0; y < nh; y++)
+	{
+		int y0 = y * oh / nh;
+		int y1 = (y + 1) * oh / nh;
+		if (y1 <= y0)
+			y1 = y0 + 1;
+		for (x = 0; x < nw; x++)
+		{
+			int x0 = x * ow / nw;
+			int x1 = (x + 1) * ow / nw;
+			if (x1 <= x0)
+				x1 = x0 + 1;
+			r = g = b = a = count = 0;
+			for (yi = y0; yi < y1; yi++)
+			{
+				for (xi = x0; xi < x1; xi++)
+				{
+					src = rgba + ((size_t)yi * (size_t)ow + (size_t)xi) * 4;
+					r += src[0];
+					g += src[1];
+					b += src[2];
+					a += src[3];
+					count++;
+				}
+			}
+			if (count < 1)
+				count = 1;
+			out[((size_t)y * (size_t)nw + (size_t)x) * 4 + 0] = (byte)(r / count);
+			out[((size_t)y * (size_t)nw + (size_t)x) * 4 + 1] = (byte)(g / count);
+			out[((size_t)y * (size_t)nw + (size_t)x) * 4 + 2] = (byte)(b / count);
+			out[((size_t)y * (size_t)nw + (size_t)x) * 4 + 3] = (byte)(a / count);
+		}
+	}
+	free (rgba);
+	*w = nw;
+	*h = nh;
+	return out;
+}
