@@ -261,17 +261,20 @@ static int Sbar_Scale (void)
 }
 
 /**
- * @brief If gfx.wad pics were pre-upscaled (×2/×4), detect content scale.
- * Stock SBAR is 320 wide.
+ * @brief If gfx.wad was pre-upscaled, content scale from main SBAR (stock 320 wide).
+ * Small lumps (FACE 24→96, NUM 24→96) must use the same factor — not width heuristics.
  */
-static int Sbar_PicContentScale (qpic_t *pic)
+static int Sbar_ContentScale (void)
 {
-	if (!pic || pic->width < 1)
-		return 1;
-	if (pic->width >= 960)
-		return 4;
-	if (pic->width >= 480)
-		return 2;
+	if (sb_sbar && sb_sbar->width >= 320)
+	{
+		int	cs = sb_sbar->width / 320;
+		if (cs < 1)
+			cs = 1;
+		if (cs > 8)
+			cs = 8;
+		return cs;
+	}
 	return 1;
 }
 
@@ -299,12 +302,18 @@ Sbar_DrawPic
 void Sbar_DrawPic (int x, int y, qpic_t *pic)
 {
 	int	s = Sbar_Scale ();
-	int	cs = Sbar_PicContentScale (pic);
-	int	dw = (pic->width / cs) * s;
-	int	dh = (pic->height / cs) * s;
+	int	cs = Sbar_ContentScale ();
+	int	dw, dh;
 
-	if (dw < 1) dw = s;
-	if (dh < 1) dh = s;
+	if (!pic)
+		return;
+	/* design size = stored size / content scale (e.g. 96/4=24 for FACE) */
+	dw = (pic->width / cs) * s;
+	dh = (pic->height / cs) * s;
+	if (dw < 1)
+		dw = s;
+	if (dh < 1)
+		dh = s;
 	Draw_PicFit (Sbar_XOfs () + x * s, Sbar_YBase () + y * s, pic, dw, dh);
 }
 
@@ -316,12 +325,17 @@ Sbar_DrawTransPic
 void Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 {
 	int	s = Sbar_Scale ();
-	int	cs = Sbar_PicContentScale (pic);
-	int	dw = (pic->width / cs) * s;
-	int	dh = (pic->height / cs) * s;
+	int	cs = Sbar_ContentScale ();
+	int	dw, dh;
 
-	if (dw < 1) dw = s;
-	if (dh < 1) dh = s;
+	if (!pic)
+		return;
+	dw = (pic->width / cs) * s;
+	dh = (pic->height / cs) * s;
+	if (dw < 1)
+		dw = s;
+	if (dh < 1)
+		dh = s;
 	Draw_TransPicFit (Sbar_XOfs () + x * s, Sbar_YBase () + y * s, pic, dw, dh);
 }
 
