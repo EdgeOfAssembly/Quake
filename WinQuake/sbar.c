@@ -673,7 +673,7 @@ void Sbar_DrawInventory (void)
 	flashon = 0;
    // items
    for (i=0 ; i<6 ; i++)
-      if (cl.items & (1<<(17+i)))
+      if (cl.items & (1u<<(17+i)))
       {
          time = cl.item_gettime[17+i];
          if (time && time > cl.time - 2 && flashon )
@@ -696,7 +696,7 @@ void Sbar_DrawInventory (void)
    if (hipnotic)
    {
       for (i=0 ; i<2 ; i++)
-         if (cl.items & (1<<(24+i)))
+         if (cl.items & (1u<<(24+i)))
          {
             time = cl.item_gettime[24+i];
             if (time && time > cl.time - 2 && flashon )
@@ -717,7 +717,7 @@ void Sbar_DrawInventory (void)
 	// new rogue items
 		for (i=0 ; i<2 ; i++)
 		{
-			if (cl.items & (1<<(29+i)))
+			if (cl.items & (1u<<(29+i)))
 			{
 				time = cl.item_gettime[29+i];
 
@@ -740,7 +740,7 @@ void Sbar_DrawInventory (void)
 	// sigils
 		for (i=0 ; i<4 ; i++)
 		{
-			if (cl.items & (1<<(28+i)))
+			if (cl.items & (1u<<(28+i)))
 			{
 				time = cl.item_gettime[28+i];
 				if (time &&	time > cl.time - 2 && flashon )

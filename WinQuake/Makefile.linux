@@ -76,8 +76,9 @@ BASE_CFLAGS := $(STD) $(OPTFLAGS) $(WARNFLAGS) -fcommon \
 # Usage: make -f Makefile.linux DEBUG=1 quake.x11
 #        make -f Makefile.linux debug-x11
 ifdef DEBUG
+  # -fwrapv: software renderer uses intentional signed wrap (fixed-point)
   BASE_CFLAGS := $(STD) -O0 -g3 -fno-strict-aliasing -fno-omit-frame-pointer \
-                 -fno-optimize-sibling-calls -fstack-protector-strong \
+                 -fno-optimize-sibling-calls -fstack-protector-strong -fwrapv \
                  $(WARNFLAGS) -fcommon \
                  -Dstricmp=strcasecmp -D_GNU_SOURCE -I$(SRCDIR) \
                  -DDEBUG -DPARANOID -UNDEBUG

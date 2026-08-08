@@ -768,30 +768,39 @@ void VID_SetPalette(unsigned char *palette)
 void	VID_Shutdown (void)
 {
 	int	frm;
+	static qboolean	in_shutdown;
+
+	if (in_shutdown)
+		return;
+	in_shutdown = true;
 
 	Con_Printf("VID_Shutdown\n");
-	if (!x_disp)
-		return;
 
-	/* Tear down framebuffers / SHM before closing the display */
+	/*
+	 * Process is exiting (or Host_Shutdown after Sys_Error). Talking to X
+	 * here often SIGSEGVs in libX11 when the connection is already dying
+	 * (ASan +quit path). Detach local SHM only; OS reclaims the rest.
+	 */
 	if (doShm)
 	{
 		for (frm = 0; frm < 2; frm++)
 		{
-			if (x_framebuffer[frm])
+			if (x_shminfo[frm].shmaddr && x_shminfo[frm].shmaddr != (char *)-1)
 			{
-				XShmDetach (x_disp, &x_shminfo[frm]);
-				if (x_shminfo[frm].shmaddr && x_shminfo[frm].shmaddr != (char *)-1)
-					shmdt (x_shminfo[frm].shmaddr);
-				x_framebuffer[frm]->data = NULL;
-				XDestroyImage (x_framebuffer[frm]);
-				x_framebuffer[frm] = NULL;
+				shmdt (x_shminfo[frm].shmaddr);
+				x_shminfo[frm].shmaddr = NULL;
 			}
+			x_framebuffer[frm] = NULL;
 		}
 	}
-	else if (x_framebuffer[0])
+	else
 	{
-		XDestroyImage (x_framebuffer[0]);
+		/* Non-SHM: data was malloc'd into XImage — free if still owned */
+		if (x_framebuffer[0] && x_framebuffer[0]->data)
+		{
+			free (x_framebuffer[0]->data);
+			x_framebuffer[0]->data = NULL;
+		}
 		x_framebuffer[0] = NULL;
 	}
 
@@ -802,9 +811,13 @@ void	VID_Shutdown (void)
 		d_pzbuffer = NULL;
 	}
 
-	XAutoRepeatOn(x_disp);
-	XCloseDisplay(x_disp);
-	x_disp = NULL;
+	/* Best-effort restore key repeat; ignore failure */
+	if (x_disp)
+	{
+		XAutoRepeatOn (x_disp);
+		/* Do not XCloseDisplay — can SEGV on broken connections under ASan */
+		x_disp = NULL;
+	}
 }
 
 int XLateKey(XKeyEvent *ev)

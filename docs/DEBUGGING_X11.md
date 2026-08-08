@@ -59,3 +59,24 @@ ASAN_OPTIONS=abort_on_error=1:detect_leaks=1 \
 make DEBUG=1 -C WinQuake -f Makefile.linux test-debug
 make test          # release both binaries
 ```
+
+## Visual testing (spectator)
+
+Prefer **Xmux** so the human can watch:
+
+```bash
+xmux start quake-x11-test --geometry 1024x768 --gl mesa --no-attach
+# SPECTATOR: xmux attach quake-x11-test --no-reconnect
+eval $(xmux env quake-x11-test)
+./quake.x11-dbg -basedir . -window -width 800 -height 600 +map e1m1
+```
+
+Screenshots during play:
+
+```bash
+xmux screenshot quake-x11-test -o /tmp/quake-shots/xmux-N.png
+# or full session root via GNOME (uses X11 fallback on Xvfb):
+DISPLAY=:10 gnome-screenshot -f /tmp/quake-shots/gnome-N.png
+```
+
+Evidence shots: `docs/evidence/shots/`.

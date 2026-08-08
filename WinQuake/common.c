@@ -515,40 +515,26 @@ void MSG_WriteChar (sizebuf_t *sb, int c)
 {
 	byte    *buf;
 	
-#ifdef PARANOID
-	if (c < -128 || c > 127)
-		Sys_Error ("MSG_WriteChar: range error");
-#endif
-
+	/* Truncate to 8-bit; vanilla progs occasionally pass out-of-range values. */
 	buf = SZ_GetSpace (sb, 1);
-	buf[0] = c;
+	buf[0] = (byte)c;
 }
 
 void MSG_WriteByte (sizebuf_t *sb, int c)
 {
 	byte    *buf;
 	
-#ifdef PARANOID
-	if (c < 0 || c > 255)
-		Sys_Error ("MSG_WriteByte: range error");
-#endif
-
 	buf = SZ_GetSpace (sb, 1);
-	buf[0] = c;
+	buf[0] = (byte)c;
 }
 
 void MSG_WriteShort (sizebuf_t *sb, int c)
 {
 	byte    *buf;
 	
-#ifdef PARANOID
-	if (c < ((short)0x8000) || c > (short)0x7fff)
-		Sys_Error ("MSG_WriteShort: range error");
-#endif
-
 	buf = SZ_GetSpace (sb, 2);
 	buf[0] = c&0xff;
-	buf[1] = c>>8;
+	buf[1] = (c>>8)&0xff;
 }
 
 void MSG_WriteLong (sizebuf_t *sb, int c)
@@ -650,8 +636,8 @@ int MSG_ReadShort (void)
 		return -1;
 	}
 		
-	c = (short)(net_message.data[msg_readcount]
-	+ (net_message.data[msg_readcount+1]<<8));
+	c = (short)((unsigned)net_message.data[msg_readcount]
+	| ((unsigned)net_message.data[msg_readcount+1]<<8));
 	
 	msg_readcount += 2;
 	
@@ -668,10 +654,10 @@ int MSG_ReadLong (void)
 		return -1;
 	}
 		
-	c = net_message.data[msg_readcount]
-	+ (net_message.data[msg_readcount+1]<<8)
-	+ (net_message.data[msg_readcount+2]<<16)
-	+ (net_message.data[msg_readcount+3]<<24);
+	c = (int)((unsigned)net_message.data[msg_readcount]
+	| ((unsigned)net_message.data[msg_readcount+1]<<8)
+	| ((unsigned)net_message.data[msg_readcount+2]<<16)
+	| ((unsigned)net_message.data[msg_readcount+3]<<24));
 	
 	msg_readcount += 4;
 	
@@ -687,6 +673,12 @@ float MSG_ReadFloat (void)
 		int     l;
 	} dat;
 	
+	if (msg_readcount+4 > net_message.cursize)
+	{
+		msg_badread = true;
+		return 0;
+	}
+
 	dat.b[0] =      net_message.data[msg_readcount];
 	dat.b[1] =      net_message.data[msg_readcount+1];
 	dat.b[2] =      net_message.data[msg_readcount+2];
@@ -759,7 +751,10 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 {
 	void    *data;
 	
-	if (buf->cursize + length > buf->maxsize)
+	if (length < 0)
+		Sys_Error ("SZ_GetSpace: negative length %i", length);
+	/* avoid signed wrap: cursize + length */
+	if (length > buf->maxsize || buf->cursize > buf->maxsize - length)
 	{
 		if (!buf->allowoverflow)
 			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set");
@@ -1249,6 +1244,46 @@ int Q_size_to_int (size_t n, const char *what)
 	return (int)n;
 }
 
+/*
+============
+Q_snprintf / Q_vsnprintf / COM_PathJoin
+
+Bounded string formatting for path and message buffers.
+============
+*/
+int Q_vsnprintf (char *str, size_t size, const char *format, va_list ap)
+{
+	int	r;
+
+	if (!str || size == 0)
+		return -1;
+	r = vsnprintf (str, size, format, ap);
+	str[size - 1] = 0;
+	return r;
+}
+
+int Q_snprintf (char *str, size_t size, const char *format, ...)
+{
+	va_list	ap;
+	int	r;
+
+	va_start (ap, format);
+	r = Q_vsnprintf (str, size, format, ap);
+	va_end (ap);
+	return r;
+}
+
+void COM_PathJoin (char *out, size_t outsize, const char *dir, const char *file)
+{
+	if (!out || outsize == 0)
+		return;
+	if (!dir)
+		dir = "";
+	if (!file)
+		file = "";
+	Q_snprintf (out, outsize, "%s/%s", dir, file);
+}
+
 
 /// just for debugging
 int     memsearch (byte *start, int count, int search)
@@ -1354,7 +1389,7 @@ void COM_WriteFile (char *filename, void *data, int len)
 	int             handle;
 	char    name[MAX_OSPATH];
 	
-	sprintf (name, "%s/%s", com_gamedir, filename);
+	COM_PathJoin (name, sizeof(name), com_gamedir, filename);
 
 	handle = Sys_FileOpenWrite (name);
 	if (handle == -1)
@@ -1492,7 +1527,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 					continue;
 			}
 			
-			sprintf (netpath, "%s/%s",search->filename, filename);
+			COM_PathJoin (netpath, sizeof(netpath), search->filename, filename);
 			
 			findtime = Sys_FileTime (netpath);
 			if (findtime == -1)
@@ -1505,11 +1540,11 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 			{	
 #if defined(_WIN32)
 				if ((strlen(netpath) < 2) || (netpath[1] != ':'))
-					sprintf (cachepath,"%s%s", com_cachedir, netpath);
+					Q_snprintf (cachepath, sizeof(cachepath), "%s%s", com_cachedir, netpath);
 				else
-					sprintf (cachepath,"%s%s", com_cachedir, netpath+2);
+					Q_snprintf (cachepath, sizeof(cachepath), "%s%s", com_cachedir, netpath+2);
 #else
-				sprintf (cachepath,"%s%s", com_cachedir, netpath);
+				Q_snprintf (cachepath, sizeof(cachepath), "%s%s", com_cachedir, netpath);
 #endif
 
 				cachetime = Sys_FileTime (cachepath);
@@ -1785,7 +1820,7 @@ void COM_AddGameDirectory (char *dir)
 //
 	for (i=0 ; ; i++)
 	{
-		sprintf (pakfile, "%s/pak%i.pak", dir, i);
+		Q_snprintf (pakfile, sizeof(pakfile), "%s/pak%i.pak", dir, i);
 		pak = COM_LoadPackFile (pakfile);
 		if (!pak)
 			break;

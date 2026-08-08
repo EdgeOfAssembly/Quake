@@ -511,7 +511,7 @@ void Host_Savegame_f (void)
 		}
 	}
 
-	sprintf (name, "%s/%s", com_gamedir, Cmd_Argv(1));
+	COM_PathJoin (name, sizeof(name), com_gamedir, Cmd_Argv(1));
 	COM_DefaultExtension (name, ".sav");
 	
 	Con_Printf ("Saving game to %s...\n", name);
@@ -582,7 +582,7 @@ void Host_Loadgame_f (void)
 
 	cls.demonum = -1;		// stop demo loop in case this fails
 
-	sprintf (name, "%s/%s", com_gamedir, Cmd_Argv(1));
+	COM_PathJoin (name, sizeof(name), com_gamedir, Cmd_Argv(1));
 	COM_DefaultExtension (name, ".sav");
 	
 // we can't call SCR_BeginLoadingPlaque, because too much stack space has
@@ -715,7 +715,7 @@ void SaveGamestate()
 	char	comment[SAVEGAME_COMMENT_LENGTH+1];
 	edict_t	*ent;
 
-	sprintf (name, "%s/%s.gip", com_gamedir, sv.name);
+	Q_snprintf (name, sizeof(name), "%s/%s.gip", com_gamedir, sv.name);
 	
 	Con_Printf ("Saving game to %s...\n", name);
 	f = fopen (name, "w");
@@ -771,7 +771,7 @@ int LoadGamestate(char *level, char *startspot)
 	int		version;
 //	float	spawn_parms[NUM_SPAWN_PARMS];
 
-	sprintf (name, "%s/%s.gip", com_gamedir, level);
+	Q_snprintf (name, sizeof(name), "%s/%s.gip", com_gamedir, level);
 	
 	Con_Printf ("Loading game from %s...\n", name);
 	f = fopen (name, "r");

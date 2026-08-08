@@ -1049,19 +1049,24 @@ SetVisibilityByPassages ();
 void R_RenderView (void)
 {
 	int		dummy;
-	int		delta;
+	ptrdiff_t	delta;
 	
+	/*
+	 * DOS-era check used ±10k bytes. Linux defaults (and ASan/UBSan frames)
+	 * use far more stack between R_Init and first render — that is not a bug.
+	 * Keep a large guard against true runaway recursion only.
+	 */
 	delta = (byte *)&dummy - r_stack_start;
-	if (delta < -10000 || delta > 10000)
+	if (delta < -(ptrdiff_t)(2*1024*1024) || delta > (ptrdiff_t)(2*1024*1024))
 		Sys_Error ("R_RenderView: called without enough stack");
 
 	if ( Hunk_LowMark() & 3 )
 		Sys_Error ("Hunk is missaligned");
 
-	if ( (long)(&dummy) & 3 )
+	if ( (uintptr_t)(&dummy) & 3 )
 		Sys_Error ("Stack is missaligned");
 
-	if ( (long)(&r_warpbuffer) & 3 )
+	if ( (uintptr_t)(&r_warpbuffer) & 3 )
 		Sys_Error ("Globals are missaligned");
 
 	R_RenderView_ ();

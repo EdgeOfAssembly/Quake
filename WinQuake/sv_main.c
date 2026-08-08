@@ -59,7 +59,7 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_nostep);
 
 	for (i=0 ; i<MAX_MODELS ; i++)
-		sprintf (localmodels[i], "*%i", i);
+		Q_snprintf (localmodels[i], sizeof(localmodels[i]), "*%i", i);
 }
 
 /*
@@ -1126,7 +1126,7 @@ void SV_SpawnServer (char *server)
 	sv.time = 1.0;
 	
 	strcpy (sv.name, server);
-	sprintf (sv.modelname,"maps/%s.bsp", server);
+	Q_snprintf (sv.modelname, sizeof(sv.modelname), "maps/%s.bsp", server);
 	sv.worldmodel = Mod_ForName (sv.modelname, false);
 	if (!sv.worldmodel)
 	{

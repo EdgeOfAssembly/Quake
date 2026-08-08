@@ -221,7 +221,7 @@ void Con_Init (void)
 	{
 		if (strlen (com_gamedir) < (MAXGAMEDIRLEN - strlen (t2)))
 		{
-			sprintf (temp, "%s%s", com_gamedir, t2);
+			Q_snprintf (temp, sizeof(temp), "%s%s", com_gamedir, t2);
 			unlink (temp);
 		}
 	}
@@ -613,7 +613,9 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 	con_vislines = lines;
 
 	rows = (lines-16)>>3;		// rows of text to draw
-	y = lines - 16 - (rows<<3);	// may start slightly negative
+	if (rows < 0)
+		rows = 0;
+	y = lines - 16 - (rows*8);	// may start slightly negative
 
 	for (i= con_current - rows + 1 ; i<=con_current ; i++, y+=8 )
 	{

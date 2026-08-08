@@ -307,6 +307,13 @@ static void PR_BoundField (int field, int words)
 		PR_RunError ("QC entity field out of range (%i)", field);
 }
 
+static void PR_BoundGlobal (int ofs, int words)
+{
+	if (!progs || ofs < 0 || words < 0
+		|| ofs > progs->numglobals - words)
+		PR_RunError ("QC global out of range (%i)", ofs);
+}
+
 /*
 ============================================================================
 PR_ExecuteProgram
@@ -424,6 +431,17 @@ while (1)
 
 	PR_BoundStatement (s);
 	st = &pr_statements[s];
+	/*
+	 * a/b/c are global indices for most ops. Exceptions:
+	 *  OP_GOTO — a is relative statement offset
+	 *  OP_IF / OP_IFNOT — b is relative statement offset
+	 */
+	if (st->op != OP_GOTO)
+		PR_BoundGlobal (st->a, 1);
+	if (st->op != OP_IF && st->op != OP_IFNOT && st->op != OP_GOTO)
+		PR_BoundGlobal (st->b, 1);
+	if (st->op != OP_GOTO)
+		PR_BoundGlobal (st->c, 1);
 	a = (eval_t *)&pr_globals[st->a];
 	b = (eval_t *)&pr_globals[st->b];
 	c = (eval_t *)&pr_globals[st->c];

@@ -158,6 +158,9 @@ char *COM_SkipPath (char *pathname);
 void COM_StripExtension (char *in, char *out);
 void COM_FileBase (char *in, char *out);
 void COM_DefaultExtension (char *path, char *extension);
+void COM_PathJoin (char *out, size_t outsize, const char *dir, const char *file);
+int Q_vsnprintf (char *str, size_t size, const char *format, va_list ap);
+int Q_snprintf (char *str, size_t size, const char *format, ...);
 
 char	*va(char *format, ...);
 // does a varargs printf into a temp buffer

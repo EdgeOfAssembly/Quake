@@ -151,18 +151,19 @@ void D_CalcGradients (msurface_t *pface)
 	VectorScale (transformed_modelorg, mipscale, p_temp1);
 
 	t = 0x10000*mipscale;
+	/* Use *65536 not <<16 — texturemins may be negative (UBSan). */
 	sadjust = ((fixed16_t)(DotProduct (p_temp1, p_saxis) * 0x10000 + 0.5)) -
-			((pface->texturemins[0] << 16) >> miplevel)
+			((fixed16_t)(pface->texturemins[0] * 65536) >> miplevel)
 			+ pface->texinfo->vecs[0][3]*t;
 	tadjust = ((fixed16_t)(DotProduct (p_temp1, p_taxis) * 0x10000 + 0.5)) -
-			((pface->texturemins[1] << 16) >> miplevel)
+			((fixed16_t)(pface->texturemins[1] * 65536) >> miplevel)
 			+ pface->texinfo->vecs[1][3]*t;
 
 //
 // -1 (-epsilon) so we never wander off the edge of the texture
 //
-	bbextents = ((pface->extents[0] << 16) >> miplevel) - 1;
-	bbextentt = ((pface->extents[1] << 16) >> miplevel) - 1;
+	bbextents = ((fixed16_t)(pface->extents[0] * 65536) >> miplevel) - 1;
+	bbextentt = ((fixed16_t)(pface->extents[1] * 65536) >> miplevel) - 1;
 }
 
 

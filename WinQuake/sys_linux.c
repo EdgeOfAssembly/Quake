@@ -160,8 +160,9 @@ void Sys_Warn (char *warning, ...)
     char        string[1024];
     
     va_start (argptr,warning);
-    vsprintf (string,warning,argptr);
+    vsnprintf (string, sizeof(string), warning, argptr);
     va_end (argptr);
+	string[sizeof(string) - 1] = 0;
 	fprintf(stderr, "Warning: %s", string);
 } 
 
@@ -247,8 +248,9 @@ void Sys_DebugLog(char *file, char *fmt, ...)
     int fd;
     
     va_start(argptr, fmt);
-    vsprintf(data, fmt, argptr);
+    vsnprintf(data, sizeof(data), fmt, argptr);
     va_end(argptr);
+    data[sizeof(data) - 1] = 0;
 //    fd = open(file, O_WRONLY | O_BINARY | O_CREAT | O_APPEND, 0666);
     fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0666);
     write(fd, data, strlen(data));
@@ -272,7 +274,7 @@ void Sys_EditFile(char *filename)
 			editor = getenv("EDIT");
 		if (!editor)
 			editor = "vi";
-		sprintf(cmd, "xterm -e %s %s", editor, filename);
+		Q_snprintf(cmd, sizeof(cmd), "xterm -e %s %s", editor, filename);
 		system(cmd);
 	}
 
