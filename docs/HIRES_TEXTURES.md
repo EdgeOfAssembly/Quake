@@ -31,3 +31,20 @@ Default heap is 128 MB (`-mem` overrides). Surface cache still scales with
 | hires x2 e1m1 | ~591 | ~130 |
 
 Software remains palette-based; upscale helps detail but is not GL filtering.
+
+## Palette quantize (important)
+
+Naive nearest-RGB mapping put texels into **fullbright** indices (224–254) →
+washed-out white walls.
+
+Current pack uses:
+- **No fullbright** unless the original texture used them
+- Prefer colors from the **original** miptex (+ a few neighbors)
+- **Floyd–Steinberg** dither + perceptual weights
+- Max index in e1m1 pack: **222**
+
+Rebuild:
+```bash
+python3 tools/hires_textures.py pack /tmp/quake-hires-work/png_x2 hires/textures \
+  --palette hires/gfx/palette.lmp --original /tmp/quake-hires-work/png
+```

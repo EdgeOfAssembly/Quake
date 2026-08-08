@@ -101,7 +101,119 @@ def indices_to_png(indices: bytes, w: int, h: int, pal: list[tuple[int, int, int
     img.save(out)
 
 
-def png_to_indices(path: Path, pal: list[tuple[int, int, int]]) -> tuple[bytes, int, int]:
+# Quake software: 224–254 are fullbright ramps; 255 often unused/transparent.
+# Mapping AI-upscaled bright RGB into those indices washes walls to white.
+FULLBRIGHT_LO = 224
+FULLBRIGHT_HI = 255  # exclusive end for "avoid" set → use 0..223 only by default
+
+
+def _palette_allowed(
+    pal: list[tuple[int, int, int]],
+    prefer_indices: set[int] | None,
+    allow_fullbright: bool,
+):
+    import numpy as np
+
+    if prefer_indices:
+        idx = sorted(i for i in prefer_indices if 0 <= i < 256)
+        if not allow_fullbright:
+            idx = [i for i in idx if i < FULLBRIGHT_LO]
+        if not idx:
+            idx = list(range(FULLBRIGHT_LO if allow_fullbright else 0,
+                             256 if allow_fullbright else FULLBRIGHT_LO))
+    else:
+        if allow_fullbright:
+            idx = list(range(256))
+        else:
+            idx = list(range(FULLBRIGHT_LO))  # 0..223
+    return np.array(idx, dtype=np.int32)
+
+
+def quantize_rgb_to_quake(
+    arr,
+    pal: list[tuple[int, int, int]],
+    *,
+    prefer_indices: set[int] | None = None,
+    allow_fullbright: bool = False,
+    dither: bool = True,
+) -> bytes:
+    """Map HxWx3 uint8 RGB → Quake palette indices with optional FS dither.
+
+    Uses perceptual weights and by default **excludes fullbright 224–255**,
+    which is what made the first hires pack look blown-out white.
+    """
+    import numpy as np
+
+    h, w, _ = arr.shape
+    pal_a = np.array(pal, dtype=np.float64)
+    allowed = _palette_allowed(pal, prefer_indices, allow_fullbright)
+    pal_sub = pal_a[allowed]  # M x 3
+
+    # perceptual weights (rough Rec.601)
+    wt = np.array([0.299, 0.587, 0.114], dtype=np.float64)
+
+    work = arr.astype(np.float64).copy()
+    out = np.empty((h, w), dtype=np.uint8)
+
+    def nearest(rgb: np.ndarray) -> int:
+        # rgb shape (3,)
+        d = pal_sub - rgb[None, :]
+        dist = np.sum(wt[None, :] * (d * d), axis=1)
+        return int(allowed[int(np.argmin(dist))])
+
+    if not dither:
+        flat = work.reshape(-1, 3)
+        # vectorized nearest
+        # dist[n,m] = sum wt*(flat[n]-pal_sub[m])^2
+        chunk = 2048
+        o = np.empty(flat.shape[0], dtype=np.uint8)
+        for i in range(0, flat.shape[0], chunk):
+            block = flat[i : i + chunk]
+            d = block[:, None, :] - pal_sub[None, :, :]
+            dist = np.sum(wt[None, None, :] * (d * d), axis=2)
+            o[i : i + chunk] = allowed[np.argmin(dist, axis=1)].astype(np.uint8)
+        return o.tobytes()
+
+    # Floyd–Steinberg dithering
+    for y in range(h):
+        for x in range(w):
+            old = work[y, x].copy()
+            old = np.clip(old, 0, 255)
+            idx = nearest(old)
+            out[y, x] = idx
+            new = pal_a[idx]
+            err = old - new
+            if x + 1 < w:
+                work[y, x + 1] += err * (7.0 / 16.0)
+            if y + 1 < h:
+                if x > 0:
+                    work[y + 1, x - 1] += err * (3.0 / 16.0)
+                work[y + 1, x] += err * (5.0 / 16.0)
+                if x + 1 < w:
+                    work[y + 1, x + 1] += err * (1.0 / 16.0)
+    return out.tobytes()
+
+
+def indices_from_png_file(path: Path, pal: list[tuple[int, int, int]]) -> set[int]:
+    """Unique palette indices used by an already-indexed or RGB original PNG."""
+    from PIL import Image
+    import numpy as np
+
+    img = Image.open(path)
+    if img.mode == "P":
+        return set(int(i) for i in img.getdata())
+    img = img.convert("RGB")
+    arr = np.asarray(img, dtype=np.uint8)
+    raw = quantize_rgb_to_quake(arr, pal, allow_fullbright=True, dither=False)
+    return set(raw)
+
+
+def png_to_indices(
+    path: Path,
+    pal: list[tuple[int, int, int]],
+    *,
+    original_png: Path | None = None,
+) -> tuple[bytes, int, int]:
     from PIL import Image
     import numpy as np
 
@@ -114,17 +226,49 @@ def png_to_indices(path: Path, pal: list[tuple[int, int, int]]) -> tuple[bytes, 
     if (nw, nh) != (w, h):
         img = img.resize((nw, nh), Image.Resampling.LANCZOS)
         w, h = nw, nh
-    arr = np.asarray(img, dtype=np.int16)
-    pal_a = np.array(pal, dtype=np.int16)
-    # nearest palette (chunked)
-    flat = arr.reshape(-1, 3)
-    out = np.empty(flat.shape[0], dtype=np.uint8)
-    chunk = 4096
-    for i in range(0, flat.shape[0], chunk):
-        block = flat[i : i + chunk][:, None, :]  # N,1,3
-        dist = np.sum((block - pal_a[None, :, :]) ** 2, axis=2)
-        out[i : i + chunk] = np.argmin(dist, axis=1).astype(np.uint8)
-    return out.tobytes(), w, h
+    arr = np.asarray(img, dtype=np.uint8)
+
+    prefer: set[int] | None = None
+    allow_fb = False
+    if original_png is not None and original_png.is_file():
+        prefer = indices_from_png_file(original_png, pal)
+        # only allow fullbright if original used them
+        allow_fb = any(i >= FULLBRIGHT_LO for i in prefer)
+        # expand preferred set with a few neighbors by RGB proximity (helps upscale)
+        prefer = _expand_palette_set(prefer, pal, extra=24)
+
+    data = quantize_rgb_to_quake(
+        arr, pal, prefer_indices=prefer, allow_fullbright=allow_fb, dither=True
+    )
+    return data, w, h
+
+
+def _expand_palette_set(
+    base: set[int], pal: list[tuple[int, int, int]], extra: int
+) -> set[int]:
+    """Add `extra` nearest non-fullbright colors to the set used by the original."""
+    import numpy as np
+
+    if not base:
+        return set(range(FULLBRIGHT_LO))
+    pal_a = np.array(pal, dtype=np.float64)
+    wt = np.array([0.299, 0.587, 0.114])
+    used = np.array(sorted(i for i in base if i < FULLBRIGHT_LO), dtype=np.int32)
+    if used.size == 0:
+        used = np.arange(FULLBRIGHT_LO)
+    # mean color of original
+    mean = pal_a[used].mean(axis=0)
+    candidates = []
+    for i in range(FULLBRIGHT_LO):
+        if i in base:
+            continue
+        d = pal_a[i] - mean
+        candidates.append((float(np.sum(wt * d * d)), i))
+    candidates.sort()
+    out = set(int(x) for x in used)
+    for _, i in candidates[:extra]:
+        out.add(i)
+    return out
 
 
 def extract_bsp_textures(bsp_path: Path, out_dir: Path, pal: list[tuple[int, int, int]]) -> int:
@@ -185,7 +329,13 @@ def upscale_dir(src: Path, dst: Path, scale: int, model: str) -> None:
         (dst / p.name).write_text(p.read_text())
 
 
-def pack_dir(src: Path, out_tex: Path, pal: list[tuple[int, int, int]]) -> int:
+def pack_dir(
+    src: Path,
+    out_tex: Path,
+    pal: list[tuple[int, int, int]],
+    *,
+    original_dir: Path | None = None,
+) -> int:
     out_tex.mkdir(parents=True, exist_ok=True)
     n = 0
     # realesrgan may emit foo.png.png — accept *.png
@@ -202,15 +352,20 @@ def pack_dir(src: Path, out_tex: Path, pal: list[tuple[int, int, int]]) -> int:
         qname = name_file.read_text().strip() if name_file.is_file() else stem.replace("#", "*")
         if qname.lower().endswith(".png"):
             qname = qname[: -4]
-        # skip clip/trigger (invisible)
-        if qname in ("clip", "trigger"):
-            print(f"skip utility {qname}")
+        # skip clip/trigger (invisible) and sky (engine layout)
+        if qname in ("clip", "trigger") or qname.startswith("sky"):
+            print(f"skip {qname}")
             continue
-        indices, w, h = png_to_indices(png, pal)
+        orig = None
+        if original_dir is not None:
+            cand = original_dir / f"{sanitize_filename(qname)}.png"
+            if cand.is_file():
+                orig = cand
+        indices, w, h = png_to_indices(png, pal, original_png=orig)
         pixels = build_mips(indices, w, h)
         out = out_tex / (sanitize_filename(qname) + ".mip")
         write_mip(out, qname, w, h, pixels)
-        print(f"pack {qname} {w}x{h} -> {out}")
+        print(f"pack {qname} {w}x{h} -> {out} (fb={'yes' if any(b>=FULLBRIGHT_LO for b in indices) else 'no'})")
         n += 1
     return n
 
@@ -234,7 +389,7 @@ def cmd_build_e1m1(args: argparse.Namespace) -> None:
     extract_bsp_textures(work / "extract/maps/e1m1.bsp", src, pal)
     up = work / f"png_x{args.scale}"
     upscale_dir(src, up, args.scale, args.model)
-    n = pack_dir(up, hires / "textures", pal)
+    n = pack_dir(up, hires / "textures", pal, original_dir=src)
     print(f"done: {n} textures in {hires / 'textures'}")
     print(f"run: ./quake.x11 -basedir . -game hires -mem 256 -width 1920 -height 1080 -window +map e1m1")
 
@@ -258,6 +413,11 @@ def main() -> None:
     p.add_argument("src")
     p.add_argument("dst")
     p.add_argument("--palette", required=True)
+    p.add_argument(
+        "--original",
+        default=None,
+        help="Dir of pre-upscale PNGs (constrains palette to original colors)",
+    )
 
     p = sub.add_parser("build-e1m1")
     p.add_argument("--quake-root", default=".")
@@ -276,7 +436,8 @@ def main() -> None:
         upscale_dir(Path(args.src), Path(args.dst), args.s, args.n)
     elif args.cmd == "pack":
         pal = load_palette(Path(args.palette))
-        n = pack_dir(Path(args.src), Path(args.dst), pal)
+        orig = Path(args.original) if getattr(args, "original", None) else None
+        n = pack_dir(Path(args.src), Path(args.dst), pal, original_dir=orig)
         print(f"packed {n}")
     elif args.cmd == "build-e1m1":
         cmd_build_e1m1(args)
