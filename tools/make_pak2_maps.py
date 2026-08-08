@@ -21,10 +21,11 @@ def main() -> int:
         raw = f.read_bytes()
         name = f"maps/{f.name}".encode("ascii")
         name = name + b"\0" * (56 - len(name))
-        off = len(data)
+        # Quake PAK offsets are from start of file (after 12-byte header)
+        off = 12 + len(data)
         data.extend(raw)
         entries.append((name, off, len(raw)))
-        print(f"  {f.name}: {len(raw)}")
+        print(f"  {f.name}: {len(raw)} @ {off}")
     diroff = 12 + len(data)
     directory = bytearray()
     for name, off, size in entries:

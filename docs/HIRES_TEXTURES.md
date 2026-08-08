@@ -64,7 +64,7 @@ Prefer `-mem 256` or `512` with hires + 32bpp.
 - **32bpp + RGBA:** lit world surfaces sample `texture_t.rgba` (truecolor) with lightmap shade; no palette quantize on the hot path.
 - **8-bit fallback:** mips still built (box-filtered) for PseudoColor / missing RGBA.
 - **Sky** not overridden.
-- **Turb water/slime/tele** (`*name` → `#name`): **not** replaced from hires. Software warp expects classic 64×64 paletted mips; Real-ESRGAN water often washes to flat gray. Keep BSP stock until a dedicated turb art path exists.
+- **Turb water/slime/tele** (`*name` → `#name`): hires TGA OK. Software **truecolor turb** samples `texture_t.rgba` with scaled warp. Rebuild art with Lanczos×4 + light ESRGAN blend (not raw ESRGAN alone — washes gray).
 - ×4 pack is larger (~30MB+); use `-mem 256` or `512`.
 
 ## VisPatch (GL transparent water) — not for software turb look

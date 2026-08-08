@@ -30,6 +30,11 @@ fixed16_t		r_turb_s, r_turb_t, r_turb_sstep, r_turb_tstep;
 int				*r_turb_turb;
 int				r_turb_spancount;
 
+/* Truecolor turb: full-res RGBA (NULL → 8-bit + d_8to24table). */
+const byte		*r_turb_rgba;
+int				r_turb_rgba_w;
+int				r_turb_rgba_h;
+
 void D_DrawTurbulent8Span (void);
 
 
@@ -101,22 +106,57 @@ void D_DrawTurbulent8Span (void)
 {
 	int		sturb, tturb;
 	byte	tex;
+	int		warp_s, warp_t;
 	/* Power-of-two turb size (stock 64, hires often 256) */
 	const int	tw = (cachewidth > 0) ? cachewidth : 64;
 	const int	tmask = tw - 1;
+	/* Scale classic 64-texel warp amplitude to actual size */
+	const int	wscale = (tw > 0) ? tw : 64;
+	const int	use_rgba = (r_turb_rgba != NULL && r_pixbytes == 4
+				&& r_turb_rgba_w > 0 && r_turb_rgba_h > 0);
+	const int	rw = use_rgba ? r_turb_rgba_w : tw;
+	const int	rh = use_rgba ? r_turb_rgba_h : tw;
+	const int	rmask_s = rw - 1;
+	const int	rmask_t = rh - 1;
 
 	do
 	{
-		sturb = ((r_turb_s + r_turb_turb[(r_turb_t>>16)&(CYCLE-1)])>>16) & tmask;
-		tturb = ((r_turb_t + r_turb_turb[(r_turb_s>>16)&(CYCLE-1)])>>16) & tmask;
-		tex = *(r_turb_pbase + tturb * tw + sturb);
-		if (r_pixbytes == 4)
+		/*
+		 * sintable is calibrated for 64×64; scale displacement so ×4 water
+		 * still has a visible ripple in texel space.
+		 */
+		warp_s = r_turb_turb[(r_turb_t >> 16) & (CYCLE - 1)];
+		warp_t = r_turb_turb[(r_turb_s >> 16) & (CYCLE - 1)];
+		if (wscale != 64)
 		{
-			*(unsigned *)r_turb_pdest = d_8to24table[tex];
+			warp_s = (int)(((long long)warp_s * wscale) / 64);
+			warp_t = (int)(((long long)warp_t * wscale) / 64);
+		}
+		sturb = ((r_turb_s + warp_s) >> 16);
+		tturb = ((r_turb_t + warp_t) >> 16);
+
+		if (use_rgba)
+		{
+			const byte	*p;
+			sturb &= rmask_s;
+			tturb &= rmask_t;
+			p = r_turb_rgba + ((size_t)tturb * (size_t)rw + (size_t)sturb) * 4;
+			*(unsigned *)r_turb_pdest = D_PackRGB (p[0], p[1], p[2]);
 			r_turb_pdest += 4;
 		}
 		else
-			*r_turb_pdest++ = tex;
+		{
+			sturb &= tmask;
+			tturb &= tmask;
+			tex = *(r_turb_pbase + tturb * tw + sturb);
+			if (r_pixbytes == 4)
+			{
+				*(unsigned *)r_turb_pdest = d_8to24table[tex];
+				r_turb_pdest += 4;
+			}
+			else
+				*r_turb_pdest++ = tex;
+		}
 		r_turb_s += r_turb_sstep;
 		r_turb_t += r_turb_tstep;
 	} while (--r_turb_spancount > 0);
@@ -143,6 +183,7 @@ void Turbulent8 (espan_t *pspan)
 	r_turb_tstep = 0;	// ditto
 
 	r_turb_pbase = (unsigned char *)cacheblock;
+	/* r_turb_rgba set by D_DrawSurfaces when texture has truecolor */
 
 	sdivz16stepu = d_sdivzstepu * 16;
 	tdivz16stepu = d_tdivzstepu * 16;

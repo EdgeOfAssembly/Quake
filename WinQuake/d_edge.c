@@ -274,15 +274,37 @@ void D_DrawSurfaces (void)
 			}
 			else if (s->flags & SURF_DRAWTURB)
 			{
+				texture_t	*tx;
+
 				pface = s->data;
 				miplevel = 0;
+				tx = pface->texinfo->texture;
 				cacheblock = (pixel_t *)
-						((byte *)pface->texinfo->texture +
-						pface->texinfo->texture->offsets[0]);
+						((byte *)tx + tx->offsets[0]);
 				/* Was hardcoded 64; hires #water is e.g. 256×256 */
-				cachewidth = (int)pface->texinfo->texture->width;
+				cachewidth = (int)tx->width;
 				if (cachewidth < 1)
 					cachewidth = 64;
+				/* Truecolor turb when RGBA present (32bpp path) */
+				if (tx->rgba && tx->rgba_width > 0 && tx->rgba_height > 0
+					&& r_pixbytes == 4)
+				{
+					extern const byte	*r_turb_rgba;
+					extern int		r_turb_rgba_w, r_turb_rgba_h;
+					r_turb_rgba = tx->rgba;
+					r_turb_rgba_w = tx->rgba_width;
+					r_turb_rgba_h = tx->rgba_height;
+					/* UV space matches rgba size */
+					cachewidth = tx->rgba_width;
+				}
+				else
+				{
+					extern const byte	*r_turb_rgba;
+					extern int		r_turb_rgba_w, r_turb_rgba_h;
+					r_turb_rgba = NULL;
+					r_turb_rgba_w = 0;
+					r_turb_rgba_h = 0;
+				}
 
 				if (s->insubmodel)
 				{
