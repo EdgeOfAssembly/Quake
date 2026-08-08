@@ -156,6 +156,7 @@ void	R_InitTextures (void)
 	r_notexture_mip = Hunk_AllocName (sizeof(texture_t) + 16*16+8*8+4*4+2*2, "notexture");
 	
 	r_notexture_mip->width = r_notexture_mip->height = 16;
+	r_notexture_mip->base_width = r_notexture_mip->base_height = 16;
 	r_notexture_mip->offsets[0] = sizeof(texture_t);
 	r_notexture_mip->offsets[1] = r_notexture_mip->offsets[0] + 16*16;
 	r_notexture_mip->offsets[2] = r_notexture_mip->offsets[1] + 8*8;

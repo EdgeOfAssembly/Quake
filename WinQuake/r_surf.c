@@ -37,6 +37,10 @@ int				r_lightwidth;
 int				r_numhblocks, r_numvblocks;
 unsigned char	*r_source, *r_sourcemax;
 
+/* Hires UV fix: sample source at logical*scale (base_width → width). */
+int				r_src_scale_s = 1;
+int				r_src_scale_t = 1;
+
 void R_DrawSurfaceBlock8_mip0 (void);
 void R_DrawSurfaceBlock8_mip1 (void);
 void R_DrawSurfaceBlock8_mip2 (void);
@@ -268,9 +272,40 @@ void R_DrawSurface (void)
 	
 // the fractional light values should range from 0 to (VID_GRADES - 1) << 16
 // from a source range of 0 - 255
-	
-	texwidth = mt->width >> r_drawsurf.surfmip;
 
+	/*
+	 * UV scale fix for hires replacements:
+	 * BSP texturemins/extents are in base_width×base_height space.
+	 * Actual mip data may be larger (width×height). Keep lightmap/cache in
+	 * base space; sample source at logical * (width/base_width).
+	 */
+	{
+		int	base_w = mt->base_width ? (int)mt->base_width : (int)mt->width;
+		int	base_h = mt->base_height ? (int)mt->base_height : (int)mt->height;
+		int	src_w = (int)mt->width >> r_drawsurf.surfmip;
+		int	src_h = (int)mt->height >> r_drawsurf.surfmip;
+		int	log_w = base_w >> r_drawsurf.surfmip;
+		int	log_h = base_h >> r_drawsurf.surfmip;
+
+		if (log_w < 1) log_w = 1;
+		if (log_h < 1) log_h = 1;
+		if (src_w < 1) src_w = 1;
+		if (src_h < 1) src_h = 1;
+
+		r_src_scale_s = src_w / log_w;
+		r_src_scale_t = src_h / log_h;
+		if (r_src_scale_s < 1) r_src_scale_s = 1;
+		if (r_src_scale_t < 1) r_src_scale_t = 1;
+
+		texwidth = src_w;		/* actual source stride */
+		smax = log_w;			/* logical UV width */
+		tmax = log_h;
+		twidth = src_w;
+		sourcetstep = src_w * r_src_scale_t;	/* one logical row in source */
+		r_stepback = src_h * src_w;
+		r_sourcemax = r_source + (src_h * src_w);
+	}
+	
 	blocksize = 16 >> r_drawsurf.surfmip;
 	blockdivshift = 4 - r_drawsurf.surfmip;
 	blockdivmask = (1 << blockdivshift) - 1;
@@ -298,21 +333,16 @@ void R_DrawSurface (void)
 		horzblockstep = blocksize << 1;
 	}
 
-	smax = mt->width >> r_drawsurf.surfmip;
-	twidth = texwidth;
-	tmax = mt->height >> r_drawsurf.surfmip;
-	sourcetstep = texwidth;
-	r_stepback = tmax * twidth;
-
-	r_sourcemax = r_source + (tmax * smax);
-
 	soffset = r_drawsurf.surf->texturemins[0];
 	basetoffset = r_drawsurf.surf->texturemins[1];
 
 // << 16 components are to guarantee positive values for %
 	soffset = ((soffset >> r_drawsurf.surfmip) + (smax << 16)) % smax;
-	basetptr = &r_source[((((basetoffset >> r_drawsurf.surfmip) 
-		+ (tmax << 16)) % tmax) * twidth)];
+	{
+		int	log_t = (((basetoffset >> r_drawsurf.surfmip) + (tmax << 16)) % tmax);
+		int	src_t = log_t * r_src_scale_t;
+		basetptr = &r_source[src_t * texwidth];
+	}
 
 	pcolumndest = r_drawsurf.surfdat;
 
@@ -322,7 +352,8 @@ void R_DrawSurface (void)
 
 		prowdestbase = pcolumndest;
 
-		pbasesource = basetptr + soffset;
+		/* logical s → source s */
+		pbasesource = basetptr + soffset * r_src_scale_s;
 
 		(*pblockdrawer)();
 
@@ -370,10 +401,10 @@ void R_DrawSurfaceBlock8_mip0 (void)
 			lightstep = (ll - lr) >> 4;
 			light = lr;
 
-			/* 16 texels right-to-left (matches original) */
+			/* 16 logical texels; scale>1 skips hires source texels */
 			for (b=15; b>=0; b--)
 			{
-				pix = psource[b];
+				pix = psource[b * r_src_scale_s];
 				prowdest[b] = colormap[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
@@ -423,7 +454,7 @@ void R_DrawSurfaceBlock8_mip1 (void)
 
 			for (b=7; b>=0; b--)
 			{
-				pix = psource[b];
+				pix = psource[b * r_src_scale_s];
 				prowdest[b] = colormap[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
@@ -472,7 +503,7 @@ void R_DrawSurfaceBlock8_mip2 (void)
 
 			for (b=3; b>=0; b--)
 			{
-				pix = psource[b];
+				pix = psource[b * r_src_scale_s];
 				prowdest[b] = ((unsigned char *)vid.colormap)
 						[(light & 0xFF00) + pix];
 				light += lightstep;
@@ -522,7 +553,7 @@ void R_DrawSurfaceBlock8_mip3 (void)
 
 			for (b=1; b>=0; b--)
 			{
-				pix = psource[b];
+				pix = psource[b * r_src_scale_s];
 				prowdest[b] = ((unsigned char *)vid.colormap)
 						[(light & 0xFF00) + pix];
 				light += lightstep;
@@ -546,8 +577,7 @@ R_DrawSurfaceBlock32
 
 Lit surface → native 32-bit pixels for X11.
 Uses 8-bit mips + colormap (same lighting as 8-bit path), then d_8to24table.
-If texture_t.rgba is present, samples truecolor and scales by light row
-(Quake: higher light&0xFF00 = darker, matching colormap).
+Hires: sample source at logical * r_src_scale_s (UV base space).
 ================
 */
 void R_DrawSurfaceBlock32 (void)
@@ -561,6 +591,7 @@ void R_DrawSurfaceBlock32 (void)
 	const int		sstep = sourcetstep;
 	const int		bs = blocksize;
 	const int		bshift = blockdivshift;
+	const int		sscale = r_src_scale_s;
 
 	psource = pbasesource;
 	prowdest = (unsigned *)prowdestbase;
@@ -581,7 +612,7 @@ void R_DrawSurfaceBlock32 (void)
 
 			for (b = bs - 1; b >= 0; b--)
 			{
-				pix = psource[b];
+				pix = psource[b * sscale];
 				if (pix == 255)
 					prowdest[b] = 0;
 				else

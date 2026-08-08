@@ -376,7 +376,12 @@ Load textures/<name>.{tga,rgba} as 24/32-bit, keep RGBA on texture_t,
 build 8-bit mips for software spans. Transparent → alpha 0 → index 255.
 =================
 */
-static texture_t *Mod_TryLoadExternalRGBA (const char *texname)
+/*
+ * @param base_w  BSP miptex width (UV space). 0 → use loaded width.
+ * @param base_h  BSP miptex height (UV space). 0 → use loaded height.
+ */
+static texture_t *Mod_TryLoadExternalRGBA (const char *texname,
+	unsigned base_w, unsigned base_h)
 {
 	char		path[MAX_OSPATH];
 	char		file[MAX_QPATH];
@@ -434,6 +439,9 @@ static texture_t *Mod_TryLoadExternalRGBA (const char *texname)
 	memcpy (tx->name, texname, sizeof(tx->name) - 1);
 	tx->width = w;
 	tx->height = h;
+	/* BSP UV space — keep lightmap/cache extents correct when art is larger */
+	tx->base_width = base_w ? base_w : (unsigned)w;
+	tx->base_height = base_h ? base_h : (unsigned)h;
 	{
 		int	off = sizeof(texture_t);
 		int	cw = w, ch = h;
@@ -459,7 +467,11 @@ static texture_t *Mod_TryLoadExternalRGBA (const char *texname)
 	tx->rgba_width = w;
 	tx->rgba_height = h;
 
-	Con_Printf ("hires RGBA: %s (%dx%d)\n", path, w, h);
+	if (tx->base_width != (unsigned)w || tx->base_height != (unsigned)h)
+		Con_Printf ("hires RGBA: %s (%dx%d, UV base %ux%u)\n",
+			path, w, h, tx->base_width, tx->base_height);
+	else
+		Con_Printf ("hires RGBA: %s (%dx%d)\n", path, w, h);
 	return tx;
 }
 
@@ -471,7 +483,12 @@ Look for textures/<name>.mip (* → # in filename). Used by -game hires packs.
 Returns hunk-allocated texture_t or NULL.
 =================
 */
-static texture_t *Mod_TryLoadExternalMip (const char *texname)
+/*
+ * @param base_w  BSP miptex width (UV space). 0 → use loaded width.
+ * @param base_h  BSP miptex height (UV space). 0 → use loaded height.
+ */
+static texture_t *Mod_TryLoadExternalMip (const char *texname,
+	unsigned base_w, unsigned base_h)
 {
 	char		path[MAX_OSPATH];
 	char		file[MAX_QPATH];
@@ -491,7 +508,7 @@ static texture_t *Mod_TryLoadExternalMip (const char *texname)
 		return NULL;
 
 	/* Prefer truecolor sources first */
-	tx = Mod_TryLoadExternalRGBA (texname);
+	tx = Mod_TryLoadExternalRGBA (texname, base_w, base_h);
 	if (tx)
 		return tx;
 
@@ -554,13 +571,16 @@ static texture_t *Mod_TryLoadExternalMip (const char *texname)
 	memcpy (tx->name, texname, sizeof(tx->name) - 1);
 	tx->width = (int)w;
 	tx->height = (int)h;
+	tx->base_width = base_w ? base_w : w;
+	tx->base_height = base_h ? base_h : h;
 	for (j = 0; j < MIPLEVELS; j++)
 		tx->offsets[j] = mt->offsets[j] + sizeof(texture_t) - sizeof(miptex_t);
 	memcpy (tx + 1, raw + sizeof(miptex_t), pixels);
 	free (raw);
 	tx->rgba = NULL;
 
-	Con_DPrintf ("hires mip: %s (%ux%u)\n", path, w, h);
+	Con_DPrintf ("hires mip: %s (%ux%u, UV base %ux%u)\n",
+		path, w, h, tx->base_width, tx->base_height);
 	return tx;
 }
 
@@ -601,8 +621,9 @@ void Mod_LoadTextures (lump_t *l)
 		for (j=0 ; j<MIPLEVELS ; j++)
 			mt->offsets[j] = LittleLong (mt->offsets[j]);
 
-		/* Hi-res override from textures/<name>.mip (-game hires) */
-		tx = Mod_TryLoadExternalMip (mt->name);
+		/* Hi-res override from textures/<name>.{tga,rgba,mip} (-game hires).
+		 * Pass BSP miptex size as UV base so larger art does not zoom. */
+		tx = Mod_TryLoadExternalMip (mt->name, mt->width, mt->height);
 		if (tx)
 		{
 			loadmodel->textures[i] = tx;
@@ -626,6 +647,8 @@ void Mod_LoadTextures (lump_t *l)
 		memcpy (tx->name, mt->name, sizeof(tx->name));
 		tx->width = mt->width;
 		tx->height = mt->height;
+		tx->base_width = mt->width;
+		tx->base_height = mt->height;
 		for (j=0 ; j<MIPLEVELS ; j++)
 			tx->offsets[j] = mt->offsets[j] + sizeof(texture_t) - sizeof(miptex_t);
 		// the pixels immediately follow the structures

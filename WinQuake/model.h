@@ -79,6 +79,12 @@ typedef struct texture_s
 	byte		*rgba;
 	int			rgba_width;
 	int			rgba_height;
+	/*
+	 * UV space from the BSP (original miptex size). width/height may be larger
+	 * for hires replacements. 0 = same as width/height (no scale).
+	 */
+	unsigned	base_width;
+	unsigned	base_height;
 } texture_t;
 
 

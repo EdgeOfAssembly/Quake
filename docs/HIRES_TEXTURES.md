@@ -38,9 +38,23 @@ python3 tools/hires_textures.py pack /tmp/.../png_x4tta hires/textures \
 # export TGA for RGBA path from those PNGs
 ```
 
+## UV scale (BSP base size)
+
+BSP `texturemins` / extents are authored for the **original** miptex size.
+Hires replacements may be larger (`width`/`height`); the engine stores:
+
+| Field | Meaning |
+|-------|---------|
+| `base_width` / `base_height` | BSP UV space (original size) |
+| `width` / `height` | Actual mip / RGBA pixel size |
+
+Surface cache and lightmaps stay in **base** space. Block drawers sample source at
+`logical * (width/base_width)` so bolts and panels keep correct world scale
+(not zoomed). Scale 1 when art matches BSP.
+
 ## Notes
 
-- Software still **draws** 8-bit + colormap; RGBA is loaded/stored for quality conversion.
+- Software still **draws** 8-bit + colormap into the surface cache; RGBA is kept for quality conversion / future truecolor light.
 - Sky not overridden.
 - ×4 pack is larger (~30MB+); use `-mem 256` or `512`.
 
