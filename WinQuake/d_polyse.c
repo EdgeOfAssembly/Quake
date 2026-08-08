@@ -415,8 +415,16 @@ void D_PolysetUpdateTables (void)
 		skinwidth = r_affinetridesc.skinwidth;
 		skinstart = r_affinetridesc.pskin;
 		s = skinstart;
-		for (i=0 ; i<MAX_LBM_HEIGHT ; i++, s+=skinwidth)
-			skintable[i] = s;
+		/* Only real skin rows — do not walk past buffer (was MAX_LBM_HEIGHT). */
+		{
+			int	sh = r_affinetridesc.skinheight;
+			if (sh > MAX_LBM_HEIGHT)
+				sh = MAX_LBM_HEIGHT;
+			if (sh < 1)
+				sh = 1;
+			for (i = 0; i < sh; i++, s += skinwidth)
+				skintable[i] = s;
+		}
 	}
 }
 

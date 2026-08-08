@@ -82,3 +82,18 @@ Menus and status bar scale together; world art is independent.
 - **Sky** not overridden.
 - **xBRZ** is usually safer for water/flat tiles; **ESRGAN** can wash colors (use color-constrained pack).
 - Future: gfx.wad / model skins can live in the same gamedirs with the same `-game` switch.
+
+## Models + HUD (gfx.wad)
+
+```bash
+# skins ×2 (fits engine; ×4 needs MAX_LBM_HEIGHT 2048 — already raised)
+python3 tools/hires_models.py build --backend xbrz --scale 2 --game hires_xbrz
+python3 tools/hires_models.py build --backend esrgan --scale 2 --game hires_esr
+
+# HUD / menu pics ×4 into gfx.wad
+python3 tools/hires_gfx.py build --backend xbrz --scale 4 --game hires_xbrz
+python3 tools/hires_gfx.py build --backend esrgan --scale 4 --game hires_esr
+```
+
+Packs include `progs/*.mdl` and `gfx.wad`. HUD draw uses **PicFit** so pre-×4
+lumps still match `Draw_GuiScale` layout.

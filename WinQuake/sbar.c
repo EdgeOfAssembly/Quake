@@ -260,6 +260,21 @@ static int Sbar_Scale (void)
 	return Draw_GuiScale ();
 }
 
+/**
+ * @brief If gfx.wad pics were pre-upscaled (×2/×4), detect content scale.
+ * Stock SBAR is 320 wide.
+ */
+static int Sbar_PicContentScale (qpic_t *pic)
+{
+	if (!pic || pic->width < 1)
+		return 1;
+	if (pic->width >= 960)
+		return 4;
+	if (pic->width >= 480)
+		return 2;
+	return 1;
+}
+
 /** Horizontal origin of the 320-wide sbar design space. */
 static int Sbar_XOfs (void)
 {
@@ -284,8 +299,13 @@ Sbar_DrawPic
 void Sbar_DrawPic (int x, int y, qpic_t *pic)
 {
 	int	s = Sbar_Scale ();
+	int	cs = Sbar_PicContentScale (pic);
+	int	dw = (pic->width / cs) * s;
+	int	dh = (pic->height / cs) * s;
 
-	Draw_PicScaled (Sbar_XOfs () + x * s, Sbar_YBase () + y * s, pic, s);
+	if (dw < 1) dw = s;
+	if (dh < 1) dh = s;
+	Draw_PicFit (Sbar_XOfs () + x * s, Sbar_YBase () + y * s, pic, dw, dh);
 }
 
 /*
@@ -296,8 +316,13 @@ Sbar_DrawTransPic
 void Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 {
 	int	s = Sbar_Scale ();
+	int	cs = Sbar_PicContentScale (pic);
+	int	dw = (pic->width / cs) * s;
+	int	dh = (pic->height / cs) * s;
 
-	Draw_TransPicScaled (Sbar_XOfs () + x * s, Sbar_YBase () + y * s, pic, s);
+	if (dw < 1) dw = s;
+	if (dh < 1) dh = s;
+	Draw_TransPicFit (Sbar_XOfs () + x * s, Sbar_YBase () + y * s, pic, dw, dh);
 }
 
 /*

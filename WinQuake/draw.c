@@ -452,6 +452,128 @@ void Draw_PicScaled (int x, int y, qpic_t *pic, int scale)
 	}
 }
 
+/*
+================
+Draw_PicFit / Draw_TransPicFit
+
+Stretch pic to dw×dh (nearest). Used when gfx.wad lumps are pre-upscaled
+(e.g. ×4) but HUD layout still uses 320 design × GuiScale.
+================
+*/
+void Draw_PicFit (int x, int y, qpic_t *pic, int dw, int dh)
+{
+	byte	*source;
+	int		dy, dx, sx, sy;
+
+	if (!pic || dw < 1 || dh < 1)
+		return;
+	if (dw == pic->width && dh == pic->height)
+	{
+		Draw_Pic (x, y, pic);
+		return;
+	}
+	source = pic->data;
+	for (dy = 0; dy < dh; dy++)
+	{
+		int	py = y + dy;
+		if (py < 0 || py >= vid.height)
+			continue;
+		sy = dy * pic->height / dh;
+		if (sy >= pic->height)
+			sy = pic->height - 1;
+		if (r_pixbytes == 4)
+		{
+			unsigned	*p32 = (unsigned *)
+				((byte *)vid.buffer + py * vid.rowbytes + (x << 2));
+			for (dx = 0; dx < dw; dx++)
+			{
+				int	px = x + dx;
+				if (px < 0 || px >= vid.width)
+					continue;
+				sx = dx * pic->width / dw;
+				if (sx >= pic->width)
+					sx = pic->width - 1;
+				p32[dx] = d_8to24table[source[sy * pic->width + sx]];
+			}
+		}
+		else if (r_pixbytes == 1)
+		{
+			byte	*dest = vid.buffer + py * vid.rowbytes + x;
+			for (dx = 0; dx < dw; dx++)
+			{
+				int	px = x + dx;
+				if (px < 0 || px >= vid.width)
+					continue;
+				sx = dx * pic->width / dw;
+				if (sx >= pic->width)
+					sx = pic->width - 1;
+				dest[dx] = source[sy * pic->width + sx];
+			}
+		}
+	}
+}
+
+void Draw_TransPicFit (int x, int y, qpic_t *pic, int dw, int dh)
+{
+	byte	*source;
+	int		dy, dx, sx, sy;
+
+	if (!pic || dw < 1 || dh < 1)
+		return;
+	if (dw == pic->width && dh == pic->height)
+	{
+		Draw_TransPic (x, y, pic);
+		return;
+	}
+	source = pic->data;
+	for (dy = 0; dy < dh; dy++)
+	{
+		int	py = y + dy;
+		if (py < 0 || py >= vid.height)
+			continue;
+		sy = dy * pic->height / dh;
+		if (sy >= pic->height)
+			sy = pic->height - 1;
+		if (r_pixbytes == 4)
+		{
+			unsigned	*p32 = (unsigned *)
+				((byte *)vid.buffer + py * vid.rowbytes + (x << 2));
+			for (dx = 0; dx < dw; dx++)
+			{
+				int	px = x + dx;
+				byte	c;
+				if (px < 0 || px >= vid.width)
+					continue;
+				sx = dx * pic->width / dw;
+				if (sx >= pic->width)
+					sx = pic->width - 1;
+				c = source[sy * pic->width + sx];
+				if (c == TRANSPARENT_COLOR)
+					continue;
+				p32[dx] = d_8to24table[c];
+			}
+		}
+		else if (r_pixbytes == 1)
+		{
+			byte	*dest = vid.buffer + py * vid.rowbytes + x;
+			for (dx = 0; dx < dw; dx++)
+			{
+				int	px = x + dx;
+				byte	c;
+				if (px < 0 || px >= vid.width)
+					continue;
+				sx = dx * pic->width / dw;
+				if (sx >= pic->width)
+					sx = pic->width - 1;
+				c = source[sy * pic->width + sx];
+				if (c == TRANSPARENT_COLOR)
+					continue;
+				dest[dx] = c;
+			}
+		}
+	}
+}
+
 void Draw_TransPicScaled (int x, int y, qpic_t *pic, int scale)
 {
 	byte	*source;

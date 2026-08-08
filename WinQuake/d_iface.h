@@ -22,7 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define WARP_WIDTH		320
 #define WARP_HEIGHT		200
 
-#define MAX_LBM_HEIGHT	480
+/* Was 480 — too small for ×4 alias skins (~194*4). Modern: 2048 rows. */
+#define MAX_LBM_HEIGHT	2048
 
 typedef struct
 {

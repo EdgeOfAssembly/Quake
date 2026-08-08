@@ -30,8 +30,11 @@ void Draw_CharacterScaled (int x, int y, int num, int scale);
 void Draw_DebugChar (char num);
 void Draw_Pic (int x, int y, qpic_t *pic);
 void Draw_PicScaled (int x, int y, qpic_t *pic, int scale);
+/** Nearest-neighbor stretch pic to exact dest size (hires gfx + GuiScale). */
+void Draw_PicFit (int x, int y, qpic_t *pic, int dw, int dh);
 void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_TransPicScaled (int x, int y, qpic_t *pic, int scale);
+void Draw_TransPicFit (int x, int y, qpic_t *pic, int dw, int dh);
 void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
 void Draw_TransPicTranslateScaled (int x, int y, qpic_t *pic, byte *translation, int scale);
 void Draw_ConsoleBackground (int lines);

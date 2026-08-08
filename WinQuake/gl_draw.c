@@ -698,6 +698,34 @@ void Draw_PicScaled (int x, int y, qpic_t *pic, int scale)
 	glEnd ();
 }
 
+void Draw_PicFit (int x, int y, qpic_t *pic, int dw, int dh)
+{
+	glpic_t	*gl;
+
+	if (!pic || dw < 1 || dh < 1)
+		return;
+	if (scrap_dirty)
+		Scrap_Upload ();
+	gl = (glpic_t *)pic->data;
+	glColor4f (1,1,1,1);
+	GL_Bind (gl->texnum);
+	glBegin (GL_QUADS);
+	glTexCoord2f (gl->sl, gl->tl);
+	glVertex2f (x, y);
+	glTexCoord2f (gl->sh, gl->tl);
+	glVertex2f (x + dw, y);
+	glTexCoord2f (gl->sh, gl->th);
+	glVertex2f (x + dw, y + dh);
+	glTexCoord2f (gl->sl, gl->th);
+	glVertex2f (x, y + dh);
+	glEnd ();
+}
+
+void Draw_TransPicFit (int x, int y, qpic_t *pic, int dw, int dh)
+{
+	Draw_PicFit (x, y, pic, dw, dh);
+}
+
 
 /*
 =============
