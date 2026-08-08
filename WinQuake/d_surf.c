@@ -35,6 +35,7 @@ surfcache_t                     *sc_rover, *sc_base;
 int     D_SurfaceCacheForRes (int width, int height)
 {
 	int             size, pix;
+	int		modern_floor;
 
 	if (COM_CheckParm ("-surfcachesize"))
 	{
@@ -53,11 +54,20 @@ int     D_SurfaceCacheForRes (int width, int height)
 		size *= r_pixbytes;
 
 	/*
-	 * Hires: lit surface caches can be scale² larger (×4 art → ×16 area).
-	 * Keep headroom so thrashing stays reasonable at 1080p + hires.
-	 * Override with -surfcachesize <KB> if needed.
+	 * Hires: lit surfaces are scale² larger (×4 art → ×16 area).
+	 * Stock formula + ×8 still thrash at 720p/1080p (RAM icon).
+	 * Modern machines have GBs free — floor the cache so a whole map
+	 * view can stay hot. Override: -surfcachesize <KB>
+	 *   e.g. -surfcachesize 262144  → 256 MiB
 	 */
-	size *= 8;
+	size *= 16;
+	/* 32bpp + hires: at least 128 MiB; 8bpp keeps formula result */
+	if (r_pixbytes > 1)
+	{
+		modern_floor = 128 * 1024 * 1024;
+		if (size < modern_floor)
+			size = modern_floor;
+	}
 
 	return size;
 }
