@@ -48,3 +48,32 @@ Rebuild:
 python3 tools/hires_textures.py pack /tmp/quake-hires-work/png_x2 hires/textures \
   --palette hires/gfx/palette.lmp --original /tmp/quake-hires-work/png
 ```
+
+## 24/32-bit RGB(A) sources
+
+Engine loads (search order per texture name):
+
+1. `textures/<name>.tga` — 24-bit RGB or 32-bit RGBA (uncompressed TGA)
+2. `textures/<name>.rgba` — raw: `u32 w, u32 h, u32 flags, RGBA×w×h`
+3. `textures/<name>.mip` — classic 8-bit miptex
+
+`*` in texture names → `#` in filenames (`*water0` → `#water0.tga`).
+
+### Transparency → alpha
+
+| Source | Mapping |
+|--------|---------|
+| TGA/PNG alpha &lt; 128 | alpha = 0 |
+| RGB equals **palette index 255** color | alpha = 0 (Quake transparent key) |
+| Magenta (255,0,255) | alpha = 0 |
+
+Software still **draws** via 8-bit mips + colormap (span path). RGBA is kept on
+`texture_t.rgba` for future truecolor lighting. Transparent texels become
+**index 255** in the 8-bit mips.
+
+### Export TGA from pipeline PNGs
+
+```python
+# see tools — or convert:
+# Real-ESRGAN PNG → 32-bit TGA in hires/textures/
+```

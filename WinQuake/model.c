@@ -347,6 +347,119 @@ model_t *Mod_ForName (char *name, qboolean crash)
 byte	*mod_base;
 
 
+#include "image_load.h"
+
+/*
+=================
+Mod_SanitizeTexFilename
+*water0 → #water0
+=================
+*/
+static void Mod_SanitizeTexFilename (const char *texname, char *file, size_t filesz)
+{
+	size_t	k;
+
+	Q_strncpy (file, (char *)texname, (int)filesz - 1);
+	file[filesz - 1] = 0;
+	for (k = 0; file[k]; k++)
+	{
+		if (file[k] == '*')
+			file[k] = '#';
+	}
+}
+
+/*
+=================
+Mod_TryLoadExternalRGBA
+
+Load textures/<name>.{tga,rgba} as 24/32-bit, keep RGBA on texture_t,
+build 8-bit mips for software spans. Transparent → alpha 0 → index 255.
+=================
+*/
+static texture_t *Mod_TryLoadExternalRGBA (const char *texname)
+{
+	char		path[MAX_OSPATH];
+	char		file[MAX_QPATH];
+	byte		*rgba, *rgba_hunk, *pix8;
+	texture_t	*tx;
+	int		w, h, j, pixels, pixsize;
+	const char	*exts[] = { ".tga", ".rgba", NULL };
+	int		ei;
+
+	if (!texname || !texname[0])
+		return NULL;
+	if (!Q_strncmp ((char *)texname, "sky", 3))
+		return NULL;
+
+	Mod_SanitizeTexFilename (texname, file, sizeof(file));
+	rgba = NULL;
+	w = h = 0;
+	for (ei = 0; exts[ei]; ei++)
+	{
+		Q_snprintf (path, sizeof(path), "textures/%s%s", file, exts[ei]);
+		rgba = Image_LoadRGBA (path, &w, &h);
+		if (rgba)
+			break;
+	}
+	if (!rgba)
+		return NULL;
+
+	/* snap down to 16-aligned if needed */
+	if ((w & 15) || (h & 15))
+	{
+		Con_Printf ("external %s: size %dx%d not 16-aligned, ignored\n", path, w, h);
+		free (rgba);
+		return NULL;
+	}
+	if (w < 16 || h < 16 || w > 1024 || h > 1024)
+	{
+		Con_Printf ("external %s: bad size, ignored\n", path);
+		free (rgba);
+		return NULL;
+	}
+
+	if (Image_RGBAToMiptex8 (rgba, w, h, &pix8, &pixels, false) != 0)
+	{
+		free (rgba);
+		return NULL;
+	}
+
+	tx = Hunk_AllocName (
+		Q_size_to_int (Q_checked_add_size (sizeof(texture_t), (size_t)pixels, path), path),
+		loadname);
+	memset (tx, 0, sizeof(texture_t));
+	memcpy (tx->name, texname, sizeof(tx->name) - 1);
+	tx->width = w;
+	tx->height = h;
+	{
+		int	off = sizeof(texture_t);
+		int	cw = w, ch = h;
+		for (j = 0; j < MIPLEVELS; j++)
+		{
+			tx->offsets[j] = off;
+			off += cw * ch;
+			cw >>= 1;
+			ch >>= 1;
+			if (cw < 1) cw = 1;
+			if (ch < 1) ch = 1;
+		}
+	}
+	memcpy (tx + 1, pix8, pixels);
+	free (pix8);
+
+	/* keep full-res RGBA on hunk for tools / future truecolor path */
+	pixsize = w * h * 4;
+	rgba_hunk = Hunk_AllocName (pixsize, "texrgba");
+	memcpy (rgba_hunk, rgba, pixsize);
+	free (rgba);
+	tx->rgba = rgba_hunk;
+	tx->rgba_width = w;
+	tx->rgba_height = h;
+
+	Con_Printf ("hires RGBA: %s (%dx%d)\n", path, w, h);
+	return tx;
+}
+
 /*
 =================
 Mod_TryLoadExternalMip
@@ -365,7 +478,6 @@ static texture_t *Mod_TryLoadExternalMip (const char *texname)
 	int			j, pixels;
 	int			handle;
 	int			len;
-	size_t		k;
 	unsigned	w, h, off0;
 
 	if (!texname || !texname[0])
@@ -375,14 +487,12 @@ static texture_t *Mod_TryLoadExternalMip (const char *texname)
 	if (!Q_strncmp ((char *)texname, "sky", 3))
 		return NULL;
 
-	/* sanitize: *water0 → #water0.mip */
-	Q_strncpy (file, (char *)texname, sizeof(file) - 1);
-	file[sizeof(file) - 1] = 0;
-	for (k = 0; file[k]; k++)
-	{
-		if (file[k] == '*')
-			file[k] = '#';
-	}
+	/* Prefer truecolor sources first */
+	tx = Mod_TryLoadExternalRGBA (texname);
+	if (tx)
+		return tx;
+
+	Mod_SanitizeTexFilename (texname, file, sizeof(file));
 	Q_snprintf (path, sizeof(path), "textures/%s.mip", file);
 
 	len = COM_OpenFile (path, &handle);
@@ -445,8 +555,9 @@ static texture_t *Mod_TryLoadExternalMip (const char *texname)
 		tx->offsets[j] = mt->offsets[j] + sizeof(texture_t) - sizeof(miptex_t);
 	memcpy (tx + 1, raw + sizeof(miptex_t), pixels);
 	free (raw);
+	tx->rgba = NULL;
 
-	Con_DPrintf ("hires: %s (%ux%u)\n", path, w, h);
+	Con_DPrintf ("hires mip: %s (%ux%u)\n", path, w, h);
 	return tx;
 }
 
