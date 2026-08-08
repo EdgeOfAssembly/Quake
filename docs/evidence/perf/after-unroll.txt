@@ -1,0 +1,4 @@
+=== AFTER spans16+unroll4 ===
+969 frames   1.7 seconds 570.2 fps
+969 frames   1.7 seconds 568.1 fps
+969 frames   1.7 seconds 577.0 fps

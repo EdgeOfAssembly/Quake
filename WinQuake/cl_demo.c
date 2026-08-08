@@ -335,6 +335,16 @@ void CL_FinishTimeDemo (void)
 	if (!time)
 		time = 1;
 	Con_Printf ("%i frames %5.1f seconds %5.1f fps\n", frames, time, frames/time);
+
+	/*
+	 * Automated profiling: quake.x11 -profile +timedemo demo1
+	 * Exit immediately — Cbuf quit can leave the client spinning on X.
+	 */
+	if (COM_CheckParm ("-profile"))
+	{
+		Host_Shutdown ();
+		Sys_Quit ();
+	}
 }
 
 /*

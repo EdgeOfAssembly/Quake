@@ -1,0 +1,14 @@
+=== RELEASE baseline 2026-08-08T16:56:27+00:00 640x480 -nosound ===
+--- release run 1 ---
+969 frames   2.7 seconds 363.2 fps
+--- release run 2 ---
+969 frames   2.6 seconds 366.2 fps
+--- release run 3 ---
+969 frames   2.7 seconds 361.3 fps
+=== PROFILE build ===
+--- prof run 1 ---
+969 frames   1.6 seconds 614.9 fps
+--- prof run 2 ---
+969 frames   1.6 seconds 613.1 fps
+--- prof run 3 ---
+969 frames   1.6 seconds 611.2 fps

@@ -1,0 +1,1482 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 5K of event 'cpu/cycles/Pu'
+# Event count (approx.): 5196836296
+#
+# Children      Self       Samples  Command         Shared Object         Symbol                                  
+# ........  ........  ............  ..............  ....................  ........................................
+#
+    99.33%     0.00%             0  quake.x11-prof  libc.so.6             [.] 0x00007f0964086eea
+            |
+            ---0x7f0964086eea
+               main
+               |          
+                --99.17%--_Host_Frame
+                          |          
+                           --97.92%--SCR_UpdateScreen (inlined)
+                                     |          
+                                     |--77.37%--V_RenderView
+                                     |          |          
+                                     |           --77.19%--R_RenderView_
+                                     |                     |          
+                                     |                     |--62.64%--R_EdgeDrawing
+                                     |                     |          |          
+                                     |                     |          |--55.61%--R_ScanEdges
+                                     |                     |          |          |          
+                                     |                     |          |          |--49.54%--D_DrawSurfaces
+                                     |                     |          |          |          |          
+                                     |                     |          |          |          |--31.09%--D_DrawSpans16
+                                     |                     |          |          |          |          
+                                     |                     |          |          |          |--8.77%--D_DrawZSpans
+                                     |                     |          |          |          |          
+                                     |                     |          |          |          |--6.75%--D_CacheSurface
+                                     |                     |          |          |          |          |          
+                                     |                     |          |          |          |           --5.19%--R_DrawSurfaceBlock8_mip0
+                                     |                     |          |          |          |          
+                                     |                     |          |          |           --2.04%--D_DrawTurbulent8Span
+                                     |                     |          |          |          
+                                     |                     |          |          |--2.72%--R_LeadingEdge
+                                     |                     |          |          |          
+                                     |                     |          |           --2.59%--R_GenerateSpans
+                                     |                     |          |          
+                                     |                     |           --4.66%--R_RenderWorld
+                                     |                     |                     R_RecursiveWorldNode
+                                     |                     |                     |          
+                                     |                     |                      --4.65%--R_RecursiveWorldNode
+                                     |                     |                                R_RecursiveWorldNode
+                                     |                     |                                R_RecursiveWorldNode
+                                     |                     |                                |          
+                                     |                     |                                 --4.63%--R_RecursiveWorldNode
+                                     |                     |                                           R_RecursiveWorldNode
+                                     |                     |                                           |          
+                                     |                     |                                            --4.46%--R_RecursiveWorldNode
+                                     |                     |                                                      R_RecursiveWorldNode
+                                     |                     |                                                      |          
+                                     |                     |                                                       --4.43%--R_RecursiveWorldNode
+                                     |                     |                                                                 R_RecursiveWorldNode
+                                     |                     |                                                                 |          
+                                     |                     |                                                                  --4.39%--R_RecursiveWorldNode
+                                     |                     |                                                                            R_RecursiveWorldNode
+                                     |                     |                                                                            R_RecursiveWorldNode
+                                     |                     |                                                                            R_RecursiveWorldNode
+                                     |                     |                                                                            R_RecursiveWorldNode
+                                     |                     |                                                                            |          
+                                     |                     |                                                                             --4.16%--R_RecursiveWorldNode
+                                     |                     |                                                                                       R_RecursiveWorldNode
+                                     |                     |                                                                                       R_RecursiveWorldNode
+                                     |                     |                                                                                       |          
+                                     |                     |                                                                                        --4.12%--R_RecursiveWorldNode
+                                     |                     |                                                                                                  |          
+                                     |                     |                                                                                                   --4.08%--R_RecursiveWorldNode
+                                     |                     |                                                                                                             |          
+                                     |                     |                                                                                                              --4.06%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                        R_RecursiveWorldNode
+                                     |                     |                                                                                                                        R_RecursiveWorldNode
+                                     |                     |                                                                                                                        |          
+                                     |                     |                                                                                                                         --4.03%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                   |          
+                                     |                     |                                                                                                                                    --4.01%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                              R_RecursiveWorldNode
+                                     |                     |                                                                                                                                              |          
+                                     |                     |                                                                                                                                               --3.96%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                         |          
+                                     |                     |                                                                                                                                                          --3.91%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                    |          
+                                     |                     |                                                                                                                                                                     --3.80%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                               |          
+                                     |                     |                                                                                                                                                                                --3.71%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                          |          
+                                     |                     |                                                                                                                                                                                           --3.49%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                     |          
+                                     |                     |                                                                                                                                                                                                      --3.45%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                |          
+                                     |                     |                                                                                                                                                                                                                 --3.36%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                           |          
+                                     |                     |                                                                                                                                                                                                                            --3.31%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                      |          
+                                     |                     |                                                                                                                                                                                                                                       --3.17%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                                 |          
+                                     |                     |                                                                                                                                                                                                                                                  --3.02%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                                            |          
+                                     |                     |                                                                                                                                                                                                                                                             --2.80%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                                                       |          
+                                     |                     |                                                                                                                                                                                                                                                                        --2.69%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                                                                  |          
+                                     |                     |                                                                                                                                                                                                                                                                                   --2.53%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                                                                             |          
+                                     |                     |                                                                                                                                                                                                                                                                                              --2.44%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                                                                                        |          
+                                     |                     |                                                                                                                                                                                                                                                                                                         --2.35%--R_RecursiveWorldNode
+               |                     |                     |                                                                                                                                                                                                                                                                                                                   |          
+                                     |                     |                                                                                                                                                                                                                                                                                                                    --2.21%--R_RecursiveWorldNode
+                          |          |                     |                                                                                                                                                                                                                                                                                                                              |          
+                                     |                     |                                                                                                                                                                                                                                                                                                                               --2.09%--R_RecursiveWorldNode
+                                     |                     |          
+                                     |                     |--8.81%--R_DrawViewModel
+                                     |                     |          |          
+                                     |                     |           --8.71%--R_AliasDrawModel
+                                     |                     |                     |          
+                                     |                     |                      --8.69%--R_AliasPreparePoints
+                                     |                     |                                |          
+                                     |                     |                                |--5.31%--R_AliasClipTriangle
+                                     |                     |                                |          |          
+                                     |                     |                                |           --5.14%--D_PolysetDraw
+                                     |                     |                                |                     |          
+                                     |                     |                                |                      --5.12%--D_DrawNonSubdiv
+                                     |                     |                                |                                |          
+                                     |                     |                                |                                 --4.40%--D_RasterizeAliasPolySmooth
+                                     |                     |                                |                                           |          
+                                     |                     |                                |                                            --3.53%--D_PolysetDrawSpans8
+                                     |                     |                                |          
+                                     |                     |                                 --3.19%--D_PolysetDraw
+                                     |                     |                                           |          
+                                     |                     |                                            --3.15%--D_DrawNonSubdiv
+                                     |                     |                                                      |          
+                                     |                     |                                                       --2.78%--D_RasterizeAliasPolySmooth
+                                     |                     |                                                                 |          
+                                     |                     |                                                                  --2.40%--D_PolysetDrawSpans8
+                                     |                     |          
+                                     |                      --5.36%--R_DrawEntitiesOnList
+                                     |                                |          
+                                     |                                 --4.45%--R_AliasDrawModel
+                                     |                                           |          
+                                     |                                            --3.24%--R_AliasPrepareUnclippedPoints (inlined)
+                                     |                                                      |          
+                                     |                                                       --3.23%--D_PolysetDraw
+                                     |                                                                 |          
+                                     |                                                                  --2.93%--D_DrawNonSubdiv
+                                     |                                                                            |          
+                                     |                                                                             --2.12%--D_RasterizeAliasPolySmooth
+                                     |          
+                                     |--9.79%--SCR_DrawConsole (inlined)
+                                     |          |          
+                                     |          |--4.78%--Draw_Character (inlined)
+                                     |          |          
+                                     |           --4.17%--Con_DrawConsole
+                                     |                     |          
+                                     |                      --3.83%--Draw_ConsoleBackground
+                                     |          
+                                      --7.15%--VID_Update
+                                                |          
+                                                 --7.08%--st3_fixup
+                                                           st3_fixup
+
+    99.33%     0.00%             0  quake.x11-prof  quake.x11-prof        [.] main
+            |
+            ---main
+               |          
+                --99.17%--_Host_Frame
+                          |          
+                           --97.92%--SCR_UpdateScreen (inlined)
+                                     |          
+                                     |--77.37%--V_RenderView
+                                     |          |          
+                                     |           --77.19%--R_RenderView_
+                                     |                     |          
+                                     |                     |--62.64%--R_EdgeDrawing
+                                     |                     |          |          
+                                     |                     |          |--55.61%--R_ScanEdges
+                                     |                     |          |          |          
+                                     |                     |          |          |--49.54%--D_DrawSurfaces
+                                     |                     |          |          |          |          
+                                     |                     |          |          |          |--31.09%--D_DrawSpans16
+                                     |                     |          |          |          |          
+                                     |                     |          |          |          |--8.77%--D_DrawZSpans
+                                     |                     |          |          |          |          
+                                     |                     |          |          |          |--6.75%--D_CacheSurface
+                                     |                     |          |          |          |          |          
+                                     |                     |          |          |          |           --5.19%--R_DrawSurfaceBlock8_mip0
+                                     |                     |          |          |          |          
+                                     |                     |          |          |           --2.04%--D_DrawTurbulent8Span
+                                     |                     |          |          |          
+                                     |                     |          |          |--2.72%--R_LeadingEdge
+                                     |                     |          |          |          
+                                     |                     |          |           --2.59%--R_GenerateSpans
+                                     |                     |          |          
+                                     |                     |           --4.66%--R_RenderWorld
+                                     |                     |                     R_RecursiveWorldNode
+                                     |                     |                     |          
+                                     |                     |                      --4.65%--R_RecursiveWorldNode
+                                     |                     |                                R_RecursiveWorldNode
+                                     |                     |                                R_RecursiveWorldNode
+                                     |                     |                                |          
+                                     |                     |                                 --4.63%--R_RecursiveWorldNode
+                                     |                     |                                           R_RecursiveWorldNode
+                                     |                     |                                           |          
+                                     |                     |                                            --4.46%--R_RecursiveWorldNode
+                                     |                     |                                                      R_RecursiveWorldNode
+                                     |                     |                                                      |          
+                                     |                     |                                                       --4.43%--R_RecursiveWorldNode
+                                     |                     |                                                                 R_RecursiveWorldNode
+                                     |                     |                                                                 |          
+                                     |                     |                                                                  --4.39%--R_RecursiveWorldNode
+                                     |                     |                                                                            R_RecursiveWorldNode
+                                     |                     |                                                                            R_RecursiveWorldNode
+                                     |                     |                                                                            R_RecursiveWorldNode
+                                     |                     |                                                                            R_RecursiveWorldNode
+                                     |                     |                                                                            |          
+                                     |                     |                                                                             --4.16%--R_RecursiveWorldNode
+                                     |                     |                                                                                       R_RecursiveWorldNode
+                                     |                     |                                                                                       R_RecursiveWorldNode
+                                     |                     |                                                                                       |          
+                                     |                     |                                                                                        --4.12%--R_RecursiveWorldNode
+                                     |                     |                                                                                                  |          
+                                     |                     |                                                                                                   --4.08%--R_RecursiveWorldNode
+                                     |                     |                                                                                                             |          
+                                     |                     |                                                                                                              --4.06%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                        R_RecursiveWorldNode
+                                     |                     |                                                                                                                        R_RecursiveWorldNode
+                                     |                     |                                                                                                                        |          
+                                     |                     |                                                                                                                         --4.03%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                   |          
+                                     |                     |                                                                                                                                    --4.01%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                              R_RecursiveWorldNode
+                                     |                     |                                                                                                                                              |          
+                                     |                     |                                                                                                                                               --3.96%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                         |          
+                                     |                     |                                                                                                                                                          --3.91%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                    |          
+                                     |                     |                                                                                                                                                                     --3.80%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                               |          
+                                     |                     |                                                                                                                                                                                --3.71%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                          |          
+                                     |                     |                                                                                                                                                                                           --3.49%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                     |          
+                                     |                     |                                                                                                                                                                                                      --3.45%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                |          
+                                     |                     |                                                                                                                                                                                                                 --3.36%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                           |          
+                                     |                     |                                                                                                                                                                                                                            --3.31%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                      |          
+                                     |                     |                                                                                                                                                                                                                                       --3.17%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                                 |          
+                                     |                     |                                                                                                                                                                                                                                                  --3.02%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                                            |          
+                                     |                     |                                                                                                                                                                                                                                                             --2.80%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                                                       |          
+                                     |                     |                                                                                                                                                                                                                                                                        --2.69%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                                                                  |          
+                                     |                     |                                                                                                                                                                                                                                                                                   --2.53%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                                                                             |          
+                                     |                     |                                                                                                                                                                                                                                                                                              --2.44%--R_RecursiveWorldNode
+                                     |                     |                                                                                                                                                                                                                                                                                                        |          
+                                     |                     |                                                                                                                                                                                                                                                                                                         --2.35%--R_RecursiveWorldNode
+               |                     |                     |                                                                                                                                                                                                                                                                                                                   |          
+                                     |                     |                                                                                                                                                                                                                                                                                                                    --2.21%--R_RecursiveWorldNode
+                          |          |                     |                                                                                                                                                                                                                                                                                                                              |          
+                                     |                     |                                                                                                                                                                                                                                                                                                                               --2.09%--R_RecursiveWorldNode
+                                     |                     |          
+                                     |                     |--8.81%--R_DrawViewModel
+                                     |                     |          |          
+                                     |                     |           --8.71%--R_AliasDrawModel
+                                     |                     |                     |          
+                                     |                     |                      --8.69%--R_AliasPreparePoints
+                                     |                     |                                |          
+                                     |                     |                                |--5.31%--R_AliasClipTriangle
+                                     |                     |                                |          |          
+                                     |                     |                                |           --5.14%--D_PolysetDraw
+                                     |                     |                                |                     |          
+                                     |                     |                                |                      --5.12%--D_DrawNonSubdiv
+                                     |                     |                                |                                |          
+                                     |                     |                                |                                 --4.40%--D_RasterizeAliasPolySmooth
+                                     |                     |                                |                                           |          
+                                     |                     |                                |                                            --3.53%--D_PolysetDrawSpans8
+                                     |                     |                                |          
+                                     |                     |                                 --3.19%--D_PolysetDraw
+                                     |                     |                                           |          
+                                     |                     |                                            --3.15%--D_DrawNonSubdiv
+                                     |                     |                                                      |          
+                                     |                     |                                                       --2.78%--D_RasterizeAliasPolySmooth
+                                     |                     |                                                                 |          
+                                     |                     |                                                                  --2.40%--D_PolysetDrawSpans8
+                                     |                     |          
+                                     |                      --5.36%--R_DrawEntitiesOnList
+                                     |                                |          
+                                     |                                 --4.45%--R_AliasDrawModel
+                                     |                                           |          
+                                     |                                            --3.24%--R_AliasPrepareUnclippedPoints (inlined)
+                                     |                                                      |          
+                                     |                                                       --3.23%--D_PolysetDraw
+                                     |                                                                 |          
+                                     |                                                                  --2.93%--D_DrawNonSubdiv
+                                     |                                                                            |          
+                                     |                                                                             --2.12%--D_RasterizeAliasPolySmooth
+                                     |          
+                                     |--9.79%--SCR_DrawConsole (inlined)
+                                     |          |          
+                                     |          |--4.78%--Draw_Character (inlined)
+                                     |          |          
+                                     |           --4.17%--Con_DrawConsole
+                                     |                     |          
+                                     |                      --3.83%--Draw_ConsoleBackground
+                                     |          
+                                      --7.15%--VID_Update
+                                                |          
+                                                 --7.08%--st3_fixup
+                                                           st3_fixup
+
+    99.17%     0.00%             0  quake.x11-prof  quake.x11-prof        [.] _Host_Frame
+            |
+            ---_Host_Frame
+               |          
+                --97.92%--SCR_UpdateScreen (inlined)
+                          |          
+                          |--77.37%--V_RenderView
+                          |          |          
+                          |           --77.19%--R_RenderView_
+                          |                     |          
+                          |                     |--62.64%--R_EdgeDrawing
+                          |                     |          |          
+                          |                     |          |--55.61%--R_ScanEdges
+                          |                     |          |          |          
+                          |                     |          |          |--49.54%--D_DrawSurfaces
+                          |                     |          |          |          |          
+                          |                     |          |          |          |--31.09%--D_DrawSpans16
+                          |                     |          |          |          |          
+                          |                     |          |          |          |--8.77%--D_DrawZSpans
+                          |                     |          |          |          |          
+                          |                     |          |          |          |--6.75%--D_CacheSurface
+                          |                     |          |          |          |          |          
+                          |                     |          |          |          |           --5.19%--R_DrawSurfaceBlock8_mip0
+                          |                     |          |          |          |          
+                          |                     |          |          |           --2.04%--D_DrawTurbulent8Span
+                          |                     |          |          |          
+                          |                     |          |          |--2.72%--R_LeadingEdge
+                          |                     |          |          |          
+                          |                     |          |           --2.59%--R_GenerateSpans
+                          |                     |          |          
+                          |                     |           --4.66%--R_RenderWorld
+                          |                     |                     R_RecursiveWorldNode
+                          |                     |                     |          
+                          |                     |                      --4.65%--R_RecursiveWorldNode
+                          |                     |                                R_RecursiveWorldNode
+                          |                     |                                R_RecursiveWorldNode
+                          |                     |                                |          
+                          |                     |                                 --4.63%--R_RecursiveWorldNode
+                          |                     |                                           R_RecursiveWorldNode
+                          |                     |                                           |          
+                          |                     |                                            --4.46%--R_RecursiveWorldNode
+                          |                     |                                                      R_RecursiveWorldNode
+                          |                     |                                                      |          
+                          |                     |                                                       --4.43%--R_RecursiveWorldNode
+                          |                     |                                                                 R_RecursiveWorldNode
+                          |                     |                                                                 |          
+                          |                     |                                                                  --4.39%--R_RecursiveWorldNode
+                          |                     |                                                                            R_RecursiveWorldNode
+                          |                     |                                                                            R_RecursiveWorldNode
+                          |                     |                                                                            R_RecursiveWorldNode
+                          |                     |                                                                            R_RecursiveWorldNode
+                          |                     |                                                                            |          
+                          |                     |                                                                             --4.16%--R_RecursiveWorldNode
+                          |                     |                                                                                       R_RecursiveWorldNode
+                          |                     |                                                                                       R_RecursiveWorldNode
+                          |                     |                                                                                       |          
+                          |                     |                                                                                        --4.12%--R_RecursiveWorldNode
+                          |                     |                                                                                                  |          
+                          |                     |                                                                                                   --4.08%--R_RecursiveWorldNode
+                          |                     |                                                                                                             |          
+                          |                     |                                                                                                              --4.06%--R_RecursiveWorldNode
+                          |                     |                                                                                                                        R_RecursiveWorldNode
+                          |                     |                                                                                                                        R_RecursiveWorldNode
+                          |                     |                                                                                                                        |          
+                          |                     |                                                                                                                         --4.03%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                   |          
+                          |                     |                                                                                                                                    --4.01%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                              R_RecursiveWorldNode
+                          |                     |                                                                                                                                              |          
+                          |                     |                                                                                                                                               --3.96%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                         |          
+                          |                     |                                                                                                                                                          --3.91%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                    |          
+                          |                     |                                                                                                                                                                     --3.80%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                               |          
+                          |                     |                                                                                                                                                                                --3.71%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                                          |          
+                          |                     |                                                                                                                                                                                           --3.49%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                                                     |          
+                          |                     |                                                                                                                                                                                                      --3.45%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                                                                |          
+                          |                     |                                                                                                                                                                                                                 --3.36%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                                                                           |          
+                          |                     |                                                                                                                                                                                                                            --3.31%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                                                                                      |          
+                          |                     |                                                                                                                                                                                                                                       --3.17%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                                                                                                 |          
+                          |                     |                                                                                                                                                                                                                                                  --3.02%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                                                                                                            |          
+                          |                     |                                                                                                                                                                                                                                                             --2.80%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                                                                                                                       |          
+                          |                     |                                                                                                                                                                                                                                                                        --2.69%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                                                                                                                                  |          
+                          |                     |                                                                                                                                                                                                                                                                                   --2.53%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                                                                                                                                             |          
+                          |                     |                                                                                                                                                                                                                                                                                              --2.44%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                                                                                                                                                        |          
+                          |                     |                                                                                                                                                                                                                                                                                                         --2.35%--R_RecursiveWorldNode
+                          |                     |                                                                                                                                                                                                                                                                                                                   |          
+                          |                     |                                                                                                                                                                                                                                                                                                                    --2.21%--R_RecursiveWorldNode
+               |          |                     |                                                                                                                                                                                                                                                                                                                              |          
+                          |                     |                                                                                                                                                                                                                                                                                                                               --2.09%--R_RecursiveWorldNode
+                          |                     |          
+                          |                     |--8.81%--R_DrawViewModel
+                          |                     |          |          
+                          |                     |           --8.71%--R_AliasDrawModel
+                          |                     |                     |          
+                          |                     |                      --8.69%--R_AliasPreparePoints
+                          |                     |                                |          
+                          |                     |                                |--5.31%--R_AliasClipTriangle
+                          |                     |                                |          |          
+                          |                     |                                |           --5.14%--D_PolysetDraw
+                          |                     |                                |                     |          
+                          |                     |                                |                      --5.12%--D_DrawNonSubdiv
+                          |                     |                                |                                |          
+                          |                     |                                |                                 --4.40%--D_RasterizeAliasPolySmooth
+                          |                     |                                |                                           |          
+                          |                     |                                |                                            --3.53%--D_PolysetDrawSpans8
+                          |                     |                                |          
+                          |                     |                                 --3.19%--D_PolysetDraw
+                          |                     |                                           |          
+                          |                     |                                            --3.15%--D_DrawNonSubdiv
+                          |                     |                                                      |          
+                          |                     |                                                       --2.78%--D_RasterizeAliasPolySmooth
+                          |                     |                                                                 |          
+                          |                     |                                                                  --2.40%--D_PolysetDrawSpans8
+                          |                     |          
+                          |                      --5.36%--R_DrawEntitiesOnList
+                          |                                |          
+                          |                                 --4.45%--R_AliasDrawModel
+                          |                                           |          
+                          |                                            --3.24%--R_AliasPrepareUnclippedPoints (inlined)
+                          |                                                      |          
+                          |                                                       --3.23%--D_PolysetDraw
+                          |                                                                 |          
+                          |                                                                  --2.93%--D_DrawNonSubdiv
+                          |                                                                            |          
+                          |                                                                             --2.12%--D_RasterizeAliasPolySmooth
+                          |          
+                          |--9.79%--SCR_DrawConsole (inlined)
+                          |          |          
+                          |          |--4.78%--Draw_Character (inlined)
+                          |          |          
+                          |           --4.17%--Con_DrawConsole
+                          |                     |          
+                          |                      --3.83%--Draw_ConsoleBackground
+                          |          
+                           --7.15%--VID_Update
+                                     |          
+                                      --7.08%--st3_fixup
+                                                st3_fixup
+
+    98.45%     0.00%             0  quake.x11-prof  quake.x11-prof        [.] SCR_UpdateScreen (inlined)
+            |
+            ---SCR_UpdateScreen (inlined)
+               |          
+               |--77.37%--V_RenderView
+               |          |          
+               |           --77.19%--R_RenderView_
+               |                     |          
+               |                     |--62.64%--R_EdgeDrawing
+               |                     |          |          
+               |                     |          |--55.61%--R_ScanEdges
+               |                     |          |          |          
+               |                     |          |          |--49.54%--D_DrawSurfaces
+               |                     |          |          |          |          
+               |                     |          |          |          |--31.09%--D_DrawSpans16
+               |                     |          |          |          |          
+               |                     |          |          |          |--8.77%--D_DrawZSpans
+               |                     |          |          |          |          
+               |                     |          |          |          |--6.75%--D_CacheSurface
+               |                     |          |          |          |          |          
+               |                     |          |          |          |           --5.19%--R_DrawSurfaceBlock8_mip0
+               |                     |          |          |          |          
+               |                     |          |          |           --2.04%--D_DrawTurbulent8Span
+               |                     |          |          |          
+               |                     |          |          |--2.72%--R_LeadingEdge
+               |                     |          |          |          
+               |                     |          |           --2.59%--R_GenerateSpans
+               |                     |          |          
+               |                     |           --4.66%--R_RenderWorld
+               |                     |                     R_RecursiveWorldNode
+               |                     |                     |          
+               |                     |                      --4.65%--R_RecursiveWorldNode
+               |                     |                                R_RecursiveWorldNode
+               |                     |                                R_RecursiveWorldNode
+               |                     |                                |          
+               |                     |                                 --4.63%--R_RecursiveWorldNode
+               |                     |                                           R_RecursiveWorldNode
+               |                     |                                           |          
+               |                     |                                            --4.46%--R_RecursiveWorldNode
+               |                     |                                                      R_RecursiveWorldNode
+               |                     |                                                      |          
+               |                     |                                                       --4.43%--R_RecursiveWorldNode
+               |                     |                                                                 R_RecursiveWorldNode
+               |                     |                                                                 |          
+               |                     |                                                                  --4.39%--R_RecursiveWorldNode
+               |                     |                                                                            R_RecursiveWorldNode
+               |                     |                                                                            R_RecursiveWorldNode
+               |                     |                                                                            R_RecursiveWorldNode
+               |                     |                                                                            R_RecursiveWorldNode
+               |                     |                                                                            |          
+               |                     |                                                                             --4.16%--R_RecursiveWorldNode
+               |                     |                                                                                       R_RecursiveWorldNode
+               |                     |                                                                                       R_RecursiveWorldNode
+               |                     |                                                                                       |          
+               |                     |                                                                                        --4.12%--R_RecursiveWorldNode
+               |                     |                                                                                                  |          
+               |                     |                                                                                                   --4.08%--R_RecursiveWorldNode
+               |                     |                                                                                                             |          
+               |                     |                                                                                                              --4.06%--R_RecursiveWorldNode
+               |                     |                                                                                                                        R_RecursiveWorldNode
+               |                     |                                                                                                                        R_RecursiveWorldNode
+               |                     |                                                                                                                        |          
+               |                     |                                                                                                                         --4.03%--R_RecursiveWorldNode
+               |                     |                                                                                                                                   |          
+               |                     |                                                                                                                                    --4.01%--R_RecursiveWorldNode
+               |                     |                                                                                                                                              R_RecursiveWorldNode
+               |                     |                                                                                                                                              |          
+               |                     |                                                                                                                                               --3.96%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                         |          
+               |                     |                                                                                                                                                          --3.91%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                    |          
+               |                     |                                                                                                                                                                     --3.80%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                               |          
+               |                     |                                                                                                                                                                                --3.71%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                          |          
+               |                     |                                                                                                                                                                                           --3.49%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                                     |          
+               |                     |                                                                                                                                                                                                      --3.45%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                                                |          
+               |                     |                                                                                                                                                                                                                 --3.36%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                                                           |          
+               |                     |                                                                                                                                                                                                                            --3.31%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                                                                      |          
+               |                     |                                                                                                                                                                                                                                       --3.17%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                                                                                 |          
+               |                     |                                                                                                                                                                                                                                                  --3.02%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                                                                                            |          
+               |                     |                                                                                                                                                                                                                                                             --2.80%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                                                                                                       |          
+               |                     |                                                                                                                                                                                                                                                                        --2.69%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                                                                                                                  |          
+               |                     |                                                                                                                                                                                                                                                                                   --2.53%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                                                                                                                             |          
+               |                     |                                                                                                                                                                                                                                                                                              --2.44%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                                                                                                                                        |          
+               |                     |                                                                                                                                                                                                                                                                                                         --2.35%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                                                                                                                                                   |          
+               |                     |                                                                                                                                                                                                                                                                                                                    --2.21%--R_RecursiveWorldNode
+               |                     |                                                                                                                                                                                                                                                                                                                              |          
+               |                     |                                                                                                                                                                                                                                                                                                                               --2.09%--R_RecursiveWorldNode
+               |                     |          
+               |                     |--8.81%--R_DrawViewModel
+               |                     |          |          
+               |                     |           --8.71%--R_AliasDrawModel
+               |                     |                     |          
+               |                     |                      --8.69%--R_AliasPreparePoints
+               |                     |                                |          
+               |                     |                                |--5.31%--R_AliasClipTriangle
+               |                     |                                |          |          
+               |                     |                                |           --5.14%--D_PolysetDraw
+               |                     |                                |                     |          
+               |                     |                                |                      --5.12%--D_DrawNonSubdiv
+               |                     |                                |                                |          
+               |                     |                                |                                 --4.40%--D_RasterizeAliasPolySmooth
+               |                     |                                |                                           |          
+               |                     |                                |                                            --3.53%--D_PolysetDrawSpans8
+               |                     |                                |          
+               |                     |                                 --3.19%--D_PolysetDraw
+               |                     |                                           |          
+               |                     |                                            --3.15%--D_DrawNonSubdiv
+               |                     |                                                      |          
+               |                     |                                                       --2.78%--D_RasterizeAliasPolySmooth
+               |                     |                                                                 |          
+               |                     |                                                                  --2.40%--D_PolysetDrawSpans8
+               |                     |          
+               |                      --5.36%--R_DrawEntitiesOnList
+               |                                |          
+               |                                 --4.45%--R_AliasDrawModel
+               |                                           |          
+               |                                            --3.24%--R_AliasPrepareUnclippedPoints (inlined)
+               |                                                      |          
+               |                                                       --3.23%--D_PolysetDraw
+               |                                                                 |          
+               |                                                                  --2.93%--D_DrawNonSubdiv
+               |                                                                            |          
+               |                                                                             --2.12%--D_RasterizeAliasPolySmooth
+               |          
+               |--10.15%--SCR_DrawConsole (inlined)
+               |          |          
+               |          |--4.95%--Draw_Character (inlined)
+               |          |          
+               |           --4.36%--Con_DrawConsole
+               |                     |          
+               |                      --4.01%--Draw_ConsoleBackground
+               |          
+                --7.27%--VID_Update
+                          |          
+                           --7.20%--st3_fixup
+                                     st3_fixup
+
+    77.37%     0.00%             0  quake.x11-prof  quake.x11-prof        [.] V_RenderView
+            |
+            ---V_RenderView
+               |          
+                --77.19%--R_RenderView_
+                          |          
+                          |--62.64%--R_EdgeDrawing
+                          |          |          
+                          |          |--55.61%--R_ScanEdges
+                          |          |          |          
+                          |          |          |--49.54%--D_DrawSurfaces
+                          |          |          |          |          
+                          |          |          |          |--31.09%--D_DrawSpans16
+                          |          |          |          |          
+                          |          |          |          |--8.77%--D_DrawZSpans
+                          |          |          |          |          
+                          |          |          |          |--6.75%--D_CacheSurface
+                          |          |          |          |          |          
+                          |          |          |          |           --5.19%--R_DrawSurfaceBlock8_mip0
+                          |          |          |          |          
+                          |          |          |           --2.04%--D_DrawTurbulent8Span
+                          |          |          |          
+                          |          |          |--2.72%--R_LeadingEdge
+                          |          |          |          
+                          |          |           --2.59%--R_GenerateSpans
+                          |          |          
+                          |           --4.66%--R_RenderWorld
+                          |                     R_RecursiveWorldNode
+                          |                     |          
+                          |                      --4.65%--R_RecursiveWorldNode
+                          |                                R_RecursiveWorldNode
+                          |                                R_RecursiveWorldNode
+                          |                                |          
+                          |                                 --4.63%--R_RecursiveWorldNode
+                          |                                           R_RecursiveWorldNode
+                          |                                           |          
+                          |                                            --4.46%--R_RecursiveWorldNode
+                          |                                                      R_RecursiveWorldNode
+                          |                                                      |          
+                          |                                                       --4.43%--R_RecursiveWorldNode
+                          |                                                                 R_RecursiveWorldNode
+                          |                                                                 |          
+                          |                                                                  --4.39%--R_RecursiveWorldNode
+                          |                                                                            R_RecursiveWorldNode
+                          |                                                                            R_RecursiveWorldNode
+                          |                                                                            R_RecursiveWorldNode
+                          |                                                                            R_RecursiveWorldNode
+                          |                                                                            |          
+                          |                                                                             --4.16%--R_RecursiveWorldNode
+                          |                                                                                       R_RecursiveWorldNode
+                          |                                                                                       R_RecursiveWorldNode
+                          |                                                                                       |          
+                          |                                                                                        --4.12%--R_RecursiveWorldNode
+                          |                                                                                                  |          
+                          |                                                                                                   --4.08%--R_RecursiveWorldNode
+                          |                                                                                                             |          
+                          |                                                                                                              --4.06%--R_RecursiveWorldNode
+                          |                                                                                                                        R_RecursiveWorldNode
+                          |                                                                                                                        R_RecursiveWorldNode
+                          |                                                                                                                        |          
+                          |                                                                                                                         --4.03%--R_RecursiveWorldNode
+                          |                                                                                                                                   |          
+                          |                                                                                                                                    --4.01%--R_RecursiveWorldNode
+                          |                                                                                                                                              R_RecursiveWorldNode
+                          |                                                                                                                                              |          
+                          |                                                                                                                                               --3.96%--R_RecursiveWorldNode
+                          |                                                                                                                                                         |          
+                          |                                                                                                                                                          --3.91%--R_RecursiveWorldNode
+                          |                                                                                                                                                                    |          
+                          |                                                                                                                                                                     --3.80%--R_RecursiveWorldNode
+                          |                                                                                                                                                                               |          
+                          |                                                                                                                                                                                --3.71%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                          |          
+                          |                                                                                                                                                                                           --3.49%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                                     |          
+                          |                                                                                                                                                                                                      --3.45%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                                                |          
+                          |                                                                                                                                                                                                                 --3.36%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                                                           |          
+                          |                                                                                                                                                                                                                            --3.31%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                                                                      |          
+                          |                                                                                                                                                                                                                                       --3.17%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                                                                                 |          
+                          |                                                                                                                                                                                                                                                  --3.02%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                                                                                            |          
+                          |                                                                                                                                                                                                                                                             --2.80%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                                                                                                       |          
+                          |                                                                                                                                                                                                                                                                        --2.69%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                                                                                                                  |          
+                          |                                                                                                                                                                                                                                                                                   --2.53%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                                                                                                                             |          
+                          |                                                                                                                                                                                                                                                                                              --2.44%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                                                                                                                                        |          
+                          |                                                                                                                                                                                                                                                                                                         --2.35%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                                                                                                                                                   |          
+                          |                                                                                                                                                                                                                                                                                                                    --2.21%--R_RecursiveWorldNode
+                          |                                                                                                                                                                                                                                                                                                                              |          
+                          |                                                                                                                                                                                                                                                                                                                               --2.09%--R_RecursiveWorldNode
+                          |          
+                          |--8.81%--R_DrawViewModel
+                          |          |          
+                          |           --8.71%--R_AliasDrawModel
+                          |                     |          
+                          |                      --8.69%--R_AliasPreparePoints
+                          |                                |          
+                          |                                |--5.31%--R_AliasClipTriangle
+                          |                                |          |          
+                          |                                |           --5.14%--D_PolysetDraw
+                          |                                |                     |          
+                          |                                |                      --5.12%--D_DrawNonSubdiv
+                          |                                |                                |          
+                          |                                |                                 --4.40%--D_RasterizeAliasPolySmooth
+                          |                                |                                           |          
+                          |                                |                                            --3.53%--D_PolysetDrawSpans8
+                          |                                |          
+                          |                                 --3.19%--D_PolysetDraw
+                          |                                           |          
+                          |                                            --3.15%--D_DrawNonSubdiv
+                          |                                                      |          
+                          |                                                       --2.78%--D_RasterizeAliasPolySmooth
+                          |                                                                 |          
+                          |                                                                  --2.40%--D_PolysetDrawSpans8
+                          |          
+                           --5.36%--R_DrawEntitiesOnList
+                                     |          
+                                      --4.45%--R_AliasDrawModel
+                                                |          
+                                                 --3.24%--R_AliasPrepareUnclippedPoints (inlined)
+                                                           |          
+                                                            --3.23%--D_PolysetDraw
+                                                                      |          
+                                                                       --2.93%--D_DrawNonSubdiv
+                                                                                 |          
+                                                                                  --2.12%--D_RasterizeAliasPolySmooth
+
+    77.19%     0.00%             0  quake.x11-prof  quake.x11-prof        [.] R_RenderView_
+            |
+            ---R_RenderView_
+               |          
+               |--62.64%--R_EdgeDrawing
+               |          |          
+               |          |--55.61%--R_ScanEdges
+               |          |          |          
+               |          |          |--49.54%--D_DrawSurfaces
+               |          |          |          |          
+               |          |          |          |--31.09%--D_DrawSpans16
+               |          |          |          |          
+               |          |          |          |--8.77%--D_DrawZSpans
+               |          |          |          |          
+               |          |          |          |--6.75%--D_CacheSurface
+               |          |          |          |          |          
+               |          |          |          |           --5.19%--R_DrawSurfaceBlock8_mip0
+               |          |          |          |          
+               |          |          |           --2.04%--D_DrawTurbulent8Span
+               |          |          |          
+               |          |          |--2.72%--R_LeadingEdge
+               |          |          |          
+               |          |           --2.59%--R_GenerateSpans
+               |          |          
+               |           --4.66%--R_RenderWorld
+               |                     R_RecursiveWorldNode
+               |                     |          
+               |                      --4.65%--R_RecursiveWorldNode
+               |                                R_RecursiveWorldNode
+               |                                R_RecursiveWorldNode
+               |                                |          
+               |                                 --4.63%--R_RecursiveWorldNode
+               |                                           R_RecursiveWorldNode
+               |                                           |          
+               |                                            --4.46%--R_RecursiveWorldNode
+               |                                                      R_RecursiveWorldNode
+               |                                                      |          
+               |                                                       --4.43%--R_RecursiveWorldNode
+               |                                                                 R_RecursiveWorldNode
+               |                                                                 |          
+               |                                                                  --4.39%--R_RecursiveWorldNode
+               |                                                                            R_RecursiveWorldNode
+               |                                                                            R_RecursiveWorldNode
+               |                                                                            R_RecursiveWorldNode
+               |                                                                            R_RecursiveWorldNode
+               |                                                                            |          
+               |                                                                             --4.16%--R_RecursiveWorldNode
+               |                                                                                       R_RecursiveWorldNode
+               |                                                                                       R_RecursiveWorldNode
+               |                                                                                       |          
+               |                                                                                        --4.12%--R_RecursiveWorldNode
+               |                                                                                                  |          
+               |                                                                                                   --4.08%--R_RecursiveWorldNode
+               |                                                                                                             |          
+               |                                                                                                              --4.06%--R_RecursiveWorldNode
+               |                                                                                                                        R_RecursiveWorldNode
+               |                                                                                                                        R_RecursiveWorldNode
+               |                                                                                                                        |          
+               |                                                                                                                         --4.03%--R_RecursiveWorldNode
+               |                                                                                                                                   |          
+               |                                                                                                                                    --4.01%--R_RecursiveWorldNode
+               |                                                                                                                                              R_RecursiveWorldNode
+               |                                                                                                                                              |          
+               |                                                                                                                                               --3.96%--R_RecursiveWorldNode
+               |                                                                                                                                                         |          
+               |                                                                                                                                                          --3.91%--R_RecursiveWorldNode
+               |                                                                                                                                                                    |          
+               |                                                                                                                                                                     --3.80%--R_RecursiveWorldNode
+               |                                                                                                                                                                               |          
+               |                                                                                                                                                                                --3.71%--R_RecursiveWorldNode
+               |                                                                                                                                                                                          |          
+               |                                                                                                                                                                                           --3.49%--R_RecursiveWorldNode
+               |                                                                                                                                                                                                     |          
+               |                                                                                                                                                                                                      --3.45%--R_RecursiveWorldNode
+               |                                                                                                                                                                                                                |          
+               |                                                                                                                                                                                                                 --3.36%--R_RecursiveWorldNode
+               |                                                                                                                                                                                                                           |          
+               |                                                                                                                                                                                                                            --3.31%--R_RecursiveWorldNode
+               |                                                                                                                                                                                                                                      |          
+               |                                                                                                                                                                                                                                       --3.17%--R_RecursiveWorldNode
+               |                                                                                                                                                                                                                                                 |          
+               |                                                                                                                                                                                                                                                  --3.02%--R_RecursiveWorldNode
+               |                                                                                                                                                                                                                                                            |          
+               |                                                                                                                                                                                                                                                             --2.80%--R_RecursiveWorldNode
+               |                                                                                                                                                                                                                                                                       |          
+               |                                                                                                                                                                                                                                                                        --2.69%--R_RecursiveWorldNode
+               |                                                                                                                                                                                                                                                                                  |          
+               |                                                                                                                                                                                                                                                                                   --2.53%--R_RecursiveWorldNode
+               |                                                                                                                                                                                                                                                                                             |          
+               |                                                                                                                                                                                                                                                                                              --2.44%--R_RecursiveWorldNode
+               |                                                                                                                                                                                                                                                                                                        |          
+               |                                                                                                                                                                                                                                                                                                         --2.35%--R_RecursiveWorldNode
+               |                                                                                                                                                                                                                                                                                                                   |          
+               |                                                                                                                                                                                                                                                                                                                    --2.21%--R_RecursiveWorldNode
+               |                                                                                                                                                                                                                                                                                                                              |          
+               |                                                                                                                                                                                                                                                                                                                               --2.09%--R_RecursiveWorldNode
+               |          
+               |--8.81%--R_DrawViewModel
+               |          |          
+               |           --8.71%--R_AliasDrawModel
+               |                     |          
+               |                      --8.69%--R_AliasPreparePoints
+               |                                |          
+               |                                |--5.31%--R_AliasClipTriangle
+               |                                |          |          
+               |                                |           --5.14%--D_PolysetDraw
+               |                                |                     |          
+               |                                |                      --5.12%--D_DrawNonSubdiv
+               |                                |                                |          
+               |                                |                                 --4.40%--D_RasterizeAliasPolySmooth
+               |                                |                                           |          
+               |                                |                                            --3.53%--D_PolysetDrawSpans8
+               |                                |          
+               |                                 --3.19%--D_PolysetDraw
+               |                                           |          
+               |                                            --3.15%--D_DrawNonSubdiv
+               |                                                      |          
+               |                                                       --2.78%--D_RasterizeAliasPolySmooth
+               |                                                                 |          
+               |                                                                  --2.40%--D_PolysetDrawSpans8
+               |          
+                --5.36%--R_DrawEntitiesOnList
+                          |          
+                           --4.45%--R_AliasDrawModel
+                                     |          
+                                      --3.24%--R_AliasPrepareUnclippedPoints (inlined)
+                                                |          
+                                                 --3.23%--D_PolysetDraw
+                                                           |          
+                                                            --2.93%--D_DrawNonSubdiv
+                                                                      |          
+                                                                       --2.12%--D_RasterizeAliasPolySmooth
+
+    62.64%     0.00%             0  quake.x11-prof  quake.x11-prof        [.] R_EdgeDrawing
+            |
+            ---R_EdgeDrawing
+               |          
+               |--55.61%--R_ScanEdges
+               |          |          
+               |          |--49.54%--D_DrawSurfaces
+               |          |          |          
+               |          |          |--31.09%--D_DrawSpans16
+               |          |          |          
+               |          |          |--8.77%--D_DrawZSpans
+               |          |          |          
+               |          |          |--6.75%--D_CacheSurface
+               |          |          |          |          
+               |          |          |           --5.19%--R_DrawSurfaceBlock8_mip0
+               |          |          |          
+               |          |           --2.04%--D_DrawTurbulent8Span
+               |          |          
+               |          |--2.72%--R_LeadingEdge
+               |          |          
+               |           --2.59%--R_GenerateSpans
+               |          
+                --4.66%--R_RenderWorld
+                          R_RecursiveWorldNode
+                          |          
+                           --4.65%--R_RecursiveWorldNode
+                                     R_RecursiveWorldNode
+                                     R_RecursiveWorldNode
+                                     |          
+                                      --4.63%--R_RecursiveWorldNode
+                                                R_RecursiveWorldNode
+                                                |          
+                                                 --4.46%--R_RecursiveWorldNode
+                                                           R_RecursiveWorldNode
+                                                           |          
+                                                            --4.43%--R_RecursiveWorldNode
+                                                                      R_RecursiveWorldNode
+                                                                      |          
+                                                                       --4.39%--R_RecursiveWorldNode
+                                                                                 R_RecursiveWorldNode
+                                                                                 R_RecursiveWorldNode
+                                                                                 R_RecursiveWorldNode
+                                                                                 R_RecursiveWorldNode
+                                                                                 |          
+                                                                                  --4.16%--R_RecursiveWorldNode
+                                                                                            R_RecursiveWorldNode
+                                                                                            R_RecursiveWorldNode
+                                                                                            |          
+                                                                                             --4.12%--R_RecursiveWorldNode
+                                                                                                       |          
+                                                                                                        --4.08%--R_RecursiveWorldNode
+                                                                                                                  |          
+                                                                                                                   --4.06%--R_RecursiveWorldNode
+                                                                                                                             R_RecursiveWorldNode
+                                                                                                                             R_RecursiveWorldNode
+                                                                                                                             |          
+                                                                                                                              --4.03%--R_RecursiveWorldNode
+                                                                                                                                        |          
+                                                                                                                                         --4.01%--R_RecursiveWorldNode
+                                                                                                                                                   R_RecursiveWorldNode
+                                                                                                                                                   |          
+                                                                                                                                                    --3.96%--R_RecursiveWorldNode
+                                                                                                                                                              |          
+                                                                                                                                                               --3.91%--R_RecursiveWorldNode
+                                                                                                                                                                         |          
+                                                                                                                                                                          --3.80%--R_RecursiveWorldNode
+                                                                                                                                                                                    |          
+                                                                                                                                                                                     --3.71%--R_RecursiveWorldNode
+                                                                                                                                                                                               |          
+                                                                                                                                                                                                --3.49%--R_RecursiveWorldNode
+                                                                                                                                                                                                          |          
+                                                                                                                                                                                                           --3.45%--R_RecursiveWorldNode
+                                                                                                                                                                                                                     |          
+                                                                                                                                                                                                                      --3.36%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                |          
+                                                                                                                                                                                                                                 --3.31%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                           |          
+                                                                                                                                                                                                                                            --3.17%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                      |          
+                                                                                                                                                                                                                                                       --3.02%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                 |          
+                                                                                                                                                                                                                                                                  --2.80%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                            |          
+                                                                                                                                                                                                                                                                             --2.69%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                                       |          
+                                                                                                                                                                                                                                                                                        --2.53%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                                                  |          
+                                                                                                                                                                                                                                                                                                   --2.44%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                                                             |          
+                                                                                                                                                                                                                                                                                                              --2.35%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                                                                        |          
+                                                                                                                                                                                                                                                                                                                         --2.21%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                                                                                   |          
+                                                                                                                                                                                                                                                                                                                                    --2.09%--R_RecursiveWorldNode
+
+    55.66%     0.70%            40  quake.x11-prof  quake.x11-prof        [.] R_ScanEdges
+            |          
+             --54.96%--R_ScanEdges
+                       |          
+                       |--49.54%--D_DrawSurfaces
+                       |          |          
+                       |          |--31.09%--D_DrawSpans16
+                       |          |          
+                       |          |--8.77%--D_DrawZSpans
+                       |          |          
+                       |          |--6.75%--D_CacheSurface
+                       |          |          |          
+                       |          |           --5.19%--R_DrawSurfaceBlock8_mip0
+                       |          |          
+                       |           --2.04%--D_DrawTurbulent8Span
+                       |          
+                       |--2.72%--R_LeadingEdge
+                       |          
+                        --2.59%--R_GenerateSpans
+
+    49.54%     0.17%            10  quake.x11-prof  quake.x11-prof        [.] D_DrawSurfaces
+            |          
+             --49.37%--D_DrawSurfaces
+                       |          
+                       |--31.09%--D_DrawSpans16
+                       |          
+                       |--8.77%--D_DrawZSpans
+                       |          
+                       |--6.75%--D_CacheSurface
+                       |          |          
+                       |           --5.19%--R_DrawSurfaceBlock8_mip0
+                       |          
+                        --2.04%--D_DrawTurbulent8Span
+
+    31.09%    31.07%          1806  quake.x11-prof  quake.x11-prof        [.] D_DrawSpans16
+            |          
+             --31.07%--0x7f0964086eea
+                       main
+                       _Host_Frame
+                       SCR_UpdateScreen (inlined)
+                       V_RenderView
+                       R_RenderView_
+                       R_EdgeDrawing
+                       R_ScanEdges
+                       D_DrawSurfaces
+                       D_DrawSpans16
+
+    13.16%     0.00%             0  quake.x11-prof  quake.x11-prof        [.] R_AliasDrawModel
+            |
+            ---R_AliasDrawModel
+               |          
+               |--9.88%--R_AliasPreparePoints
+               |          |          
+               |          |--5.60%--R_AliasClipTriangle
+               |          |          |          
+               |          |           --5.38%--D_PolysetDraw
+               |          |                     |          
+               |          |                      --5.34%--D_DrawNonSubdiv
+               |          |                                |          
+               |          |                                 --4.55%--D_RasterizeAliasPolySmooth
+               |          |                                           |          
+               |          |                                            --3.64%--D_PolysetDrawSpans8
+               |          |          
+               |           --3.98%--D_PolysetDraw
+               |                     |          
+               |                      --3.92%--D_DrawNonSubdiv
+               |                                |          
+               |                                 --3.34%--D_RasterizeAliasPolySmooth
+               |                                           |          
+               |                                            --2.77%--D_PolysetDrawSpans8
+               |          
+                --3.24%--R_AliasPrepareUnclippedPoints (inlined)
+                          |          
+                           --3.23%--D_PolysetDraw
+                                     |          
+                                      --2.93%--D_DrawNonSubdiv
+                                                |          
+                                                 --2.12%--D_RasterizeAliasPolySmooth
+
+    12.60%     0.06%             3  quake.x11-prof  quake.x11-prof        [.] D_PolysetDraw
+            |          
+             --12.54%--D_PolysetDraw
+                       |          
+                        --12.19%--D_DrawNonSubdiv
+                                  |          
+                                   --10.01%--D_RasterizeAliasPolySmooth
+                                             |          
+                                              --7.53%--D_PolysetDrawSpans8
+
+    12.21%     0.46%            26  quake.x11-prof  quake.x11-prof        [.] D_DrawNonSubdiv
+            |          
+             --11.76%--D_DrawNonSubdiv
+                       |          
+                        --10.01%--D_RasterizeAliasPolySmooth
+                                  |          
+                                   --7.53%--D_PolysetDrawSpans8
+
+    10.15%     0.00%             0  quake.x11-prof  quake.x11-prof        [.] SCR_DrawConsole (inlined)
+            |
+            ---SCR_DrawConsole (inlined)
+               |          
+               |--4.95%--Draw_Character (inlined)
+               |          
+                --4.36%--Con_DrawConsole
+                          |          
+                           --4.01%--Draw_ConsoleBackground
+
+    10.01%     0.72%            41  quake.x11-prof  quake.x11-prof        [.] D_RasterizeAliasPolySmooth
+            |          
+             --9.30%--D_RasterizeAliasPolySmooth
+                       |          
+                        --7.53%--D_PolysetDrawSpans8
+
+     9.88%     0.26%            15  quake.x11-prof  quake.x11-prof        [.] R_AliasPreparePoints
+            |          
+             --9.62%--R_AliasPreparePoints
+                       |          
+                       |--5.60%--R_AliasClipTriangle
+                       |          |          
+                       |           --5.38%--D_PolysetDraw
+                       |                     |          
+                       |                      --5.34%--D_DrawNonSubdiv
+                       |                                |          
+                       |                                 --4.55%--D_RasterizeAliasPolySmooth
+                       |                                           |          
+                       |                                            --3.64%--D_PolysetDrawSpans8
+                       |          
+                        --3.98%--D_PolysetDraw
+                                  |          
+                                   --3.92%--D_DrawNonSubdiv
+                                             |          
+                                              --3.34%--D_RasterizeAliasPolySmooth
+                                                        |          
+                                                         --2.77%--D_PolysetDrawSpans8
+
+     9.06%     9.06%           515  quake.x11-prof  quake.x11-prof        [.] D_PolysetDrawSpans8
+            |
+            ---0x7f0964086eea
+               main
+               _Host_Frame
+               SCR_UpdateScreen (inlined)
+               V_RenderView
+               R_RenderView_
+               |          
+               |--6.89%--R_DrawViewModel
+               |          R_AliasDrawModel
+               |          R_AliasPreparePoints
+               |          |          
+               |          |--4.20%--R_AliasClipTriangle
+               |          |          D_PolysetDraw
+               |          |          D_DrawNonSubdiv
+               |          |          |          
+               |          |           --3.53%--D_RasterizeAliasPolySmooth
+               |          |                     D_PolysetDrawSpans8
+               |          |          
+               |           --2.69%--D_PolysetDraw
+               |                     D_DrawNonSubdiv
+               |                     |          
+               |                      --2.40%--D_RasterizeAliasPolySmooth
+               |                                D_PolysetDrawSpans8
+               |          
+                --2.17%--R_DrawEntitiesOnList
+                          R_AliasDrawModel
+
+     8.81%     0.00%             0  quake.x11-prof  quake.x11-prof        [.] R_DrawViewModel
+            |
+            ---R_DrawViewModel
+               |          
+                --8.71%--R_AliasDrawModel
+                          |          
+                           --8.69%--R_AliasPreparePoints
+                                     |          
+                                     |--5.31%--R_AliasClipTriangle
+                                     |          |          
+                                     |           --5.14%--D_PolysetDraw
+                                     |                     |          
+                                     |                      --5.12%--D_DrawNonSubdiv
+                                     |                                |          
+                                     |                                 --4.40%--D_RasterizeAliasPolySmooth
+                                     |                                           |          
+                                     |                                            --3.53%--D_PolysetDrawSpans8
+                                     |          
+                                      --3.19%--D_PolysetDraw
+                                                |          
+                                                 --3.15%--D_DrawNonSubdiv
+                                                           |          
+                                                            --2.78%--D_RasterizeAliasPolySmooth
+                                                                      |          
+                                                                       --2.40%--D_PolysetDrawSpans8
+
+     8.79%     8.79%           510  quake.x11-prof  quake.x11-prof        [.] D_DrawZSpans
+            |
+            ---0x7f0964086eea
+               main
+               _Host_Frame
+               SCR_UpdateScreen (inlined)
+               V_RenderView
+               R_RenderView_
+               R_EdgeDrawing
+               R_ScanEdges
+               |          
+                --8.77%--D_DrawSurfaces
+                          D_DrawZSpans
+
+     7.27%     0.04%             2  quake.x11-prof  quake.x11-prof        [.] VID_Update
+            |          
+             --7.24%--VID_Update
+                       |          
+                        --7.08%--st3_fixup
+                                  st3_fixup
+
+     7.20%     7.20%           409  quake.x11-prof  quake.x11-prof        [.] st3_fixup
+            |
+            ---0x7f0964086eea
+               |          
+                --7.08%--main
+                          _Host_Frame
+                          SCR_UpdateScreen (inlined)
+                          VID_Update
+                          st3_fixup
+                          st3_fixup
+
+     6.75%     0.09%             5  quake.x11-prof  quake.x11-prof        [.] D_CacheSurface
+            |          
+             --6.66%--D_CacheSurface
+                       |          
+                        --5.19%--R_DrawSurfaceBlock8_mip0
+
+     5.60%     0.23%            13  quake.x11-prof  quake.x11-prof        [.] R_AliasClipTriangle
+            |          
+             --5.38%--R_AliasClipTriangle
+                       D_PolysetDraw
+                       |          
+                        --5.34%--D_DrawNonSubdiv
+                                  |          
+                                   --4.55%--D_RasterizeAliasPolySmooth
+                                             |          
+                                              --3.64%--D_PolysetDrawSpans8
+
+     5.36%     0.05%             3  quake.x11-prof  quake.x11-prof        [.] R_DrawEntitiesOnList
+            |          
+             --5.30%--R_DrawEntitiesOnList
+                       |          
+                        --4.45%--R_AliasDrawModel
+                                  |          
+                                   --3.24%--R_AliasPrepareUnclippedPoints (inlined)
+                                             |          
+                                              --3.23%--D_PolysetDraw
+                                                        |          
+                                                         --2.93%--D_DrawNonSubdiv
+                                                                   |          
+                                                                    --2.12%--D_RasterizeAliasPolySmooth
+
+     5.19%     5.19%           297  quake.x11-prof  quake.x11-prof        [.] R_DrawSurfaceBlock8_mip0
+            |
+            ---0x7f0964086eea
+               main
+               _Host_Frame
+               SCR_UpdateScreen (inlined)
+               V_RenderView
+               R_RenderView_
+               R_EdgeDrawing
+               R_ScanEdges
+               D_DrawSurfaces
+               D_CacheSurface
+               R_DrawSurfaceBlock8_mip0
+
+     5.07%     5.07%           292  quake.x11-prof  quake.x11-prof        [.] Draw_Character.part.0
+            |
+            ---0x7f0964086eea
+               main
+               |          
+                --5.05%--_Host_Frame
+                          |          
+                           --4.89%--SCR_UpdateScreen (inlined)
+                                     |          
+                                      --4.85%--SCR_DrawConsole (inlined)
+                                                |          
+                                                 --4.67%--Draw_Character (inlined)
+
+     5.00%     0.00%             0  quake.x11-prof  quake.x11-prof        [.] Draw_Character (inlined)
+            |
+            ---Draw_Character (inlined)
+
+     4.66%     0.00%             0  quake.x11-prof  quake.x11-prof        [.] R_RenderWorld
+            |
+            ---R_RenderWorld
+               R_RecursiveWorldNode
+               |          
+                --4.65%--R_RecursiveWorldNode
+                          R_RecursiveWorldNode
+                          R_RecursiveWorldNode
+                          |          
+                           --4.63%--R_RecursiveWorldNode
+                                     R_RecursiveWorldNode
+                                     |          
+                                      --4.46%--R_RecursiveWorldNode
+                                                R_RecursiveWorldNode
+                                                |          
+                                                 --4.43%--R_RecursiveWorldNode
+                                                           R_RecursiveWorldNode
+                                                           |          
+                                                            --4.39%--R_RecursiveWorldNode
+                                                                      R_RecursiveWorldNode
+                                                                      R_RecursiveWorldNode
+                                                                      R_RecursiveWorldNode
+                                                                      R_RecursiveWorldNode
+                                                                      |          
+                                                                       --4.16%--R_RecursiveWorldNode
+                                                                                 R_RecursiveWorldNode
+                                                                                 R_RecursiveWorldNode
+                                                                                 |          
+                                                                                  --4.12%--R_RecursiveWorldNode
+                                                                                            |          
+                                                                                             --4.08%--R_RecursiveWorldNode
+                                                                                                       |          
+                                                                                                        --4.06%--R_RecursiveWorldNode
+                                                                                                                  R_RecursiveWorldNode
+                                                                                                                  R_RecursiveWorldNode
+                                                                                                                  |          
+                                                                                                                   --4.03%--R_RecursiveWorldNode
+                                                                                                                             |          
+                                                                                                                              --4.01%--R_RecursiveWorldNode
+                                                                                                                                        R_RecursiveWorldNode
+                                                                                                                                        |          
+                                                                                                                                         --3.96%--R_RecursiveWorldNode
+                                                                                                                                                   |          
+                                                                                                                                                    --3.91%--R_RecursiveWorldNode
+                                                                                                                                                              |          
+                                                                                                                                                               --3.80%--R_RecursiveWorldNode
+                                                                                                                                                                         |          
+                                                                                                                                                                          --3.71%--R_RecursiveWorldNode
+                                                                                                                                                                                    |          
+                                                                                                                                                                                     --3.49%--R_RecursiveWorldNode
+                                                                                                                                                                                               |          
+                                                                                                                                                                                                --3.45%--R_RecursiveWorldNode
+                                                                                                                                                                                                          |          
+                                                                                                                                                                                                           --3.36%--R_RecursiveWorldNode
+                                                                                                                                                                                                                     |          
+                                                                                                                                                                                                                      --3.31%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                |          
+                                                                                                                                                                                                                                 --3.17%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                           |          
+                                                                                                                                                                                                                                            --3.02%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                      |          
+                                                                                                                                                                                                                                                       --2.80%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                 |          
+                                                                                                                                                                                                                                                                  --2.69%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                            |          
+                                                                                                                                                                                                                                                                             --2.53%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                                       |          
+                                                                                                                                                                                                                                                                                        --2.44%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                                                  |          
+                                                                                                                                                                                                                                                                                                   --2.35%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                                                             |          
+                                                                                                                                                                                                                                                                                                              --2.21%--R_RecursiveWorldNode
+                                                                                                                                                                                                                                                                                                                        |          
+                                                                                                                                                                                                                                                                                                                         --2.09%--R_RecursiveWorldNode
+
+     4.66%     1.11%            62  quake.x11-prof  quake.x11-prof        [.] R_RecursiveWorldNode
+            |          
+             --3.55%--R_RecursiveWorldNode
+                       R_RecursiveWorldNode
+                       R_RecursiveWorldNode
+                       R_RecursiveWorldNode
+                       R_RecursiveWorldNode
+                       R_RecursiveWorldNode
+                       |          
+                        --3.39%--R_RecursiveWorldNode
+                                  R_RecursiveWorldNode
+                                  R_RecursiveWorldNode
+                                  R_RecursiveWorldNode
+                                  R_RecursiveWorldNode
+                                  R_RecursiveWorldNode
+                                  R_RecursiveWorldNode
+                                  R_RecursiveWorldNode
+                                  R_RecursiveWorldNode
+                                  |          
+                                   --3.15%--R_RecursiveWorldNode
+                                             R_RecursiveWorldNode
+                                             R_RecursiveWorldNode
+                                             |          
+                                              --3.13%--R_RecursiveWorldNode
+                                                        |          
+                                                         --3.13%--R_RecursiveWorldNode
+                                                                   R_RecursiveWorldNode
+                                                                   R_RecursiveWorldNode
+                                                                   R_RecursiveWorldNode
+                                                                   |          
+                                                                    --3.09%--R_RecursiveWorldNode
+                                                                              |          
+                                                                               --3.07%--R_RecursiveWorldNode
+                                                                                         R_RecursiveWorldNode
+                                                                                         |          
+                                                                                          --3.06%--R_RecursiveWorldNode
+                                                                                                    |          
+                                                                                                     --3.02%--R_RecursiveWorldNode
+                                                                                                               |          
+                                                                                                                --2.93%--R_RecursiveWorldNode
+                                                                                                                          |          
+                                                                                                                           --2.86%--R_RecursiveWorldNode
+                                                                                                                                     |          
+                                                                                                                                      --2.70%--R_RecursiveWorldNode
+                                                                                                                                                |          
+                                                                                                                                                 --2.66%--R_RecursiveWorldNode
+                                                                                                                                                           |          
+                                                                                                                                                            --2.60%--R_RecursiveWorldNode
+                                                                                                                                                                      |          
+                                                                                                                                                                       --2.57%--R_RecursiveWorldNode
+                                                                                                                                                                                 |          
+                                                                                                                                                                                  --2.46%--R_RecursiveWorldNode
+                                                                                                                                                                                            |          
+                                                                                                                                                                                             --2.35%--R_RecursiveWorldNode
+                                                                                                                                                                                                       |          
+                                                                                                                                                                                                        --2.17%--R_RecursiveWorldNode
+                                                                                                                                                                                                                  |          
+                                                                                                                                                                                                                   --2.13%--R_RecursiveWorldNode
+                                                                                                                                                                                                                             |          
+                                                                                                                                                                                                                              --2.02%--R_RecursiveWorldNode
+
+     4.40%     0.21%            12  quake.x11-prof  quake.x11-prof        [.] Con_DrawConsole
+            |          
+             --4.18%--Con_DrawConsole
+                       |          
+                        --4.01%--Draw_ConsoleBackground
+
+     4.01%     4.01%           234  quake.x11-prof  quake.x11-prof        [.] Draw_ConsoleBackground
+            |
+            ---0x7f0964086eea
+               main
+               |          
+                --3.99%--_Host_Frame
+                          |          
+                           --3.83%--SCR_UpdateScreen (inlined)
+                                     SCR_DrawConsole (inlined)
+                                     Con_DrawConsole
+                                     Draw_ConsoleBackground
+
+     3.57%     1.44%            80  quake.x11-prof  quake.x11-prof        [.] R_RenderFace
+            |          
+             --2.13%--R_RenderFace
+
+     3.24%     0.00%             0  quake.x11-prof  quake.x11-prof        [.] R_AliasPrepareUnclippedPoints (inlined)
+            |
+            ---R_AliasPrepareUnclippedPoints (inlined)
+               |          
+                --3.23%--D_PolysetDraw
+                          |          
+                           --2.93%--D_DrawNonSubdiv
+                                     |          
+                                      --2.12%--D_RasterizeAliasPolySmooth
+
+     2.80%     2.74%           156  quake.x11-prof  quake.x11-prof        [.] R_GenerateSpans
+            |          
+             --2.74%--0x7f0964086eea
+                       main
+                       _Host_Frame
+                       SCR_UpdateScreen (inlined)
+                       V_RenderView
+                       R_RenderView_
+                       R_EdgeDrawing
+                       |          
+                        --2.73%--R_ScanEdges
+                                  |          
+                                   --2.59%--R_GenerateSpans
+
+     2.72%     2.54%           145  quake.x11-prof  quake.x11-prof        [.] R_LeadingEdge
+            |          
+             --2.54%--0x7f0964086eea
+                       main
+                       _Host_Frame
+                       SCR_UpdateScreen (inlined)
+                       V_RenderView
+                       R_RenderView_
+                       R_EdgeDrawing
+                       R_ScanEdges
+                       R_LeadingEdge
+
+     2.06%     2.06%           119  quake.x11-prof  quake.x11-prof        [.] D_DrawTurbulent8Span
+            |
+            ---0x7f0964086eea
+               main
+               _Host_Frame
+               SCR_UpdateScreen (inlined)
+               V_RenderView
+               R_RenderView_
+               R_EdgeDrawing
+               R_ScanEdges
+               D_DrawSurfaces
+               |          
+                --2.04%--D_DrawTurbulent8Span
+
+
+
+#
+# (Tip: To not record events from perf itself add --exclude-perf)
+#

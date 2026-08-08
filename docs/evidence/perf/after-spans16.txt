@@ -1,0 +1,7 @@
+=== AFTER D_DrawSpans16 ===
+--- run 1 ---
+969 frames   1.7 seconds 580.7 fps
+--- run 2 ---
+969 frames   1.7 seconds 582.0 fps
+--- run 3 ---
+969 frames   1.7 seconds 580.5 fps

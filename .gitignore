@@ -61,3 +61,6 @@ id1/
 # Log files
 *.log
 qconsole.log
+quake.x11-prof
+quake.x11-gprof
+*.data

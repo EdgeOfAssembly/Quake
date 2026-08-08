@@ -15,7 +15,7 @@
 # =============================================================================
 
 .PHONY: all clean distclean test tests verify quake.x11 glquake install \
-        debug-x11 sanitize-x11
+        debug-x11 sanitize-x11 profile profile-gprof profile-perf
 
 # -----------------------------------------------------------------------------
 # Toolchain / flags
@@ -48,6 +48,12 @@ endif
 ifdef SANITIZE
   BUILD_VARIANT := $(BUILD_VARIANT)-san
 endif
+ifdef PROFILE
+  BUILD_VARIANT := $(BUILD_VARIANT)-prof
+endif
+ifdef GPROF
+  BUILD_VARIANT := $(BUILD_VARIANT)-gprof
+endif
 BUILD   ?= $(SRCDIR)/build/$(ARCH)$(BUILD_VARIANT)
 BINDIR  ?= $(BUILD)/bin
 OBJ_X11 ?= $(BUILD)/x11
@@ -58,6 +64,18 @@ OBJ_GL  ?= $(BUILD)/gl
 # -fcommon: tolerate legacy tentative defs if any remain
 OPTFLAGS ?= -O3 -ffast-math -funroll-loops -fomit-frame-pointer \
             -fno-strict-aliasing $(MARCH)
+
+# PROFILE=1: same optimisations but keep frame pointers + symbols for perf(1)
+# GPROF=1: add -pg for gprof (slower; separate tree)
+ifdef PROFILE
+  OPTFLAGS := -O3 -ffast-math -funroll-loops -fno-omit-frame-pointer -g \
+              -fno-strict-aliasing $(MARCH)
+endif
+ifdef GPROF
+  OPTFLAGS := -O3 -ffast-math -funroll-loops -fno-omit-frame-pointer -g -pg \
+              -fno-strict-aliasing $(MARCH)
+  LDFLAGS += -pg
+endif
 
 WARNFLAGS ?= -Wall -Wno-unused-parameter -Wno-unused-variable \
              -Wno-missing-field-initializers -Wno-pointer-sign \
@@ -235,6 +253,67 @@ test-debug:
 
 verify: test
 	@echo "formal: not run (game engine; no CBMC model yet)"
+
+# -----------------------------------------------------------------------------
+# Profile / timedemo baseline (software X11)
+# -----------------------------------------------------------------------------
+# make profile       — build PROFILE=1 binary, run timedemo demo1 ×3, log FPS
+# make profile-perf  — same + perf record/report (needs perf, DISPLAY)
+# make profile-gprof — GPROF=1 build + timedemo + gprof report
+#
+# Override: DEMO=demo1 RUNS=3 BASEDIR=$(ROOTDIR)
+
+DEMO    ?= demo1
+RUNS    ?= 3
+BASEDIR ?= $(ROOTDIR)
+PROF_DIR ?= $(ROOTDIR)/docs/evidence/perf
+PROF_BIN = $(SRCDIR)/build/$(ARCH)-prof/bin/quake.x11
+GPROF_BIN = $(SRCDIR)/build/$(ARCH)-gprof/bin/quake.x11
+
+# Windowed fixed res for stable FPS; -profile quits after timedemo (cl_demo.c)
+# -nosound: avoid ALSA futex stalls under load; fixed 640x480 for comparable FPS
+PROF_ARGS ?= -basedir $(BASEDIR) -window -width 640 -height 480 -nosound -profile +timedemo $(DEMO)
+
+profile:
+	$(MAKE) -f Makefile.linux PROFILE=1 quake.x11
+	cp -f $(PROF_BIN) $(ROOTDIR)/quake.x11-prof
+	@mkdir -p $(PROF_DIR)
+	@echo "== timedemo $(DEMO) ×$(RUNS) (PROFILE build, 640x480) ==" | tee $(PROF_DIR)/baseline.txt
+	@i=1; while [ $$i -le $(RUNS) ]; do \
+		echo "--- run $$i ---" | tee -a $(PROF_DIR)/baseline.txt; \
+		$(PROF_BIN) $(PROF_ARGS) 2>&1 \
+			| tee /tmp/quake-profile-run$$i.log \
+			| grep -Ei 'frames|seconds|fps' | tee -a $(PROF_DIR)/baseline.txt; \
+		i=$$((i+1)); \
+	done
+	@echo "Logged $(PROF_DIR)/baseline.txt"
+	@echo "Binary: $(ROOTDIR)/quake.x11-prof"
+
+profile-perf:
+	$(MAKE) -f Makefile.linux PROFILE=1 quake.x11
+	cp -f $(PROF_BIN) $(ROOTDIR)/quake.x11-prof
+	@mkdir -p $(PROF_DIR)
+	@echo "== perf record timedemo $(DEMO) =="
+	perf record -o $(PROF_DIR)/perf.data -g -- \
+		$(PROF_BIN) $(PROF_ARGS) 2>&1 \
+		| tee $(PROF_DIR)/perf-timedemo.log | grep -Ei 'frames|seconds|fps' || true
+	perf report -i $(PROF_DIR)/perf.data --stdio --no-children -n --percent-limit 1 \
+		> $(PROF_DIR)/perf-report.txt 2>/dev/null || \
+	perf report -i $(PROF_DIR)/perf.data --stdio -n --percent-limit 1 \
+		> $(PROF_DIR)/perf-report.txt
+	@echo "Wrote $(PROF_DIR)/perf-report.txt"
+	@head -80 $(PROF_DIR)/perf-report.txt
+
+profile-gprof:
+	$(MAKE) -f Makefile.linux GPROF=1 quake.x11
+	cp -f $(GPROF_BIN) $(ROOTDIR)/quake.x11-gprof
+	@mkdir -p $(PROF_DIR)
+	cd $(PROF_DIR) && $(GPROF_BIN) $(PROF_ARGS) 2>&1 \
+		| tee gprof-timedemo.log | grep -Ei 'frames|seconds|fps' || true
+	@if [ -f $(PROF_DIR)/gmon.out ]; then \
+		gprof $(GPROF_BIN) $(PROF_DIR)/gmon.out > $(PROF_DIR)/gprof-report.txt; \
+		echo "Wrote $(PROF_DIR)/gprof-report.txt"; head -60 $(PROF_DIR)/gprof-report.txt; \
+	else echo "gmon.out missing"; fi
 
 # -----------------------------------------------------------------------------
 # Clean
