@@ -18,3 +18,8 @@ Stack packs (later wins):
 ```
 
 Rebuild: `python3 tools/hires_textures.py build-dual --scale 4`
+
+## Contents
+- `textures/` — world ×4
+- `progs/` — model skins ×2
+- HUD uses **stock gfx.wad** + runtime GuiScale (pre-scaled gfx.wad optional via tools/hires_gfx.py)

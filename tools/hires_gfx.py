@@ -158,7 +158,7 @@ def cmd_build(args: argparse.Namespace) -> None:
                 # engine expects 128x128 conchars — keep size, just enhance
                 if up.size != (128, 128):
                     up = up.resize((128, 128), Image.Resampling.LANCZOS)
-                indices = quantize(up, pal, allow_fb=True)
+                indices = quantize(up, pal, allow_fb=False)
                 out_lumps.append((name, typ, indices))
                 print(f"gfx CONCHARS: enhanced {args.backend} (kept 128x128)")
                 continue
@@ -180,7 +180,7 @@ def cmd_build(args: argparse.Namespace) -> None:
                     try:
                         upscale(sp, dp, args.scale, args.backend)
                         up = Image.open(dp).convert("RGB")
-                        indices = quantize(up, pal, allow_fb=True)
+                        indices = quantize(up, pal, allow_fb=False)
                         nw, nh = up.size
                         new_payload = struct.pack("<ii", nw, nh) + indices
                         out_lumps.append((name, typ, new_payload))

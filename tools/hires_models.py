@@ -140,7 +140,8 @@ def remaster_mdl(
         up = Image.open(dp).convert("RGB")
         if up.size != (new_w, new_h):
             up = up.resize((new_w, new_h), Image.Resampling.NEAREST)
-        indices = quantize(up, pal, allow_fb=True)
+        # no fullbright — washes white in software
+        indices = quantize(up, pal, allow_fb=False)
         new_skins += struct.pack("<i", ALIAS_SKIN_SINGLE)
         new_skins += indices
 
