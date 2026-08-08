@@ -102,6 +102,12 @@ static unsigned R_LitPackRGB (int r, int g, int b, int light)
 		if (row > 63) row = 63;
 		s = (64 - row) << 2;	/* 256 .. 4 */
 	}
+	/*
+	 * Truecolor albedo is often a bit darker than palette-quantized stock.
+	 * Mild lift toward fullbright so floors match original feel.
+	 */
+	s = s + ((256 - s) >> 3);	/* +12.5% of remaining headroom */
+	s = (s * 17) >> 4;		/* ×1.0625 overall */
 	if (s < 0)
 		s = 0;
 	if (s > 256)

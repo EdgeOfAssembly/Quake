@@ -532,6 +532,49 @@ void Draw_Character (int x, int y, int num)
 	glEnd ();
 }
 
+int Draw_GuiScale (void)
+{
+	int	s = vid.height / 240;
+	if (s < 1) s = 1;
+	if (s > 5) s = 5;
+	return s;
+}
+
+void Draw_CharacterScaled (int x, int y, int num, int scale)
+{
+	int		row, col;
+	float	frow, fcol, size;
+	float	sz;
+
+	if (scale <= 1)
+	{
+		Draw_Character (x, y, num);
+		return;
+	}
+	if (num == 32)
+		return;
+	num &= 255;
+	if (y + 8 * scale <= 0)
+		return;
+	row = num >> 4;
+	col = num & 15;
+	frow = row * 0.0625f;
+	fcol = col * 0.0625f;
+	size = 0.0625f;
+	sz = 8.0f * (float)scale;
+	GL_Bind (char_texture);
+	glBegin (GL_QUADS);
+	glTexCoord2f (fcol, frow);
+	glVertex2f (x, y);
+	glTexCoord2f (fcol + size, frow);
+	glVertex2f (x + sz, y);
+	glTexCoord2f (fcol + size, frow + size);
+	glVertex2f (x + sz, y + sz);
+	glTexCoord2f (fcol, frow + size);
+	glVertex2f (x, y + sz);
+	glEnd ();
+}
+
 /*
 ================
 Draw_String
@@ -626,6 +669,35 @@ void Draw_Pic (int x, int y, qpic_t *pic)
 	glEnd ();
 }
 
+void Draw_PicScaled (int x, int y, qpic_t *pic, int scale)
+{
+	glpic_t	*gl;
+	float	w, h;
+
+	if (scale <= 1)
+	{
+		Draw_Pic (x, y, pic);
+		return;
+	}
+	if (scrap_dirty)
+		Scrap_Upload ();
+	gl = (glpic_t *)pic->data;
+	w = (float)(pic->width * scale);
+	h = (float)(pic->height * scale);
+	glColor4f (1,1,1,1);
+	GL_Bind (gl->texnum);
+	glBegin (GL_QUADS);
+	glTexCoord2f (gl->sl, gl->tl);
+	glVertex2f (x, y);
+	glTexCoord2f (gl->sh, gl->tl);
+	glVertex2f (x + w, y);
+	glTexCoord2f (gl->sh, gl->th);
+	glVertex2f (x + w, y + h);
+	glTexCoord2f (gl->sl, gl->th);
+	glVertex2f (x, y + h);
+	glEnd ();
+}
+
 
 /*
 =============
@@ -645,6 +717,18 @@ void Draw_TransPic (int x, int y, qpic_t *pic)
 	}
 		
 	Draw_Pic (x, y, pic);
+}
+
+void Draw_TransPicScaled (int x, int y, qpic_t *pic, int scale)
+{
+	Draw_PicScaled (x, y, pic, scale);
+}
+
+void Draw_TransPicTranslateScaled (int x, int y, qpic_t *pic, byte *translation, int scale)
+{
+	/* GL translate path is fixed 64×64; draw unscaled then accept for now */
+	(void)scale;
+	Draw_TransPicTranslate (x, y, pic, translation);
 }
 
 

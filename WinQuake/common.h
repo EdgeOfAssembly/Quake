@@ -179,6 +179,8 @@ extern	char	com_gamedir[MAX_OSPATH];
 
 void COM_WriteFile (char *filename, void *data, int len);
 int COM_OpenFile (char *filename, int *hndl);
+/** Like COM_OpenFile but no "can't find" / path spam (optional assets). */
+int COM_OpenFileQuiet (char *filename, int *hndl);
 int COM_FOpenFile (char *filename, FILE **file);
 void COM_CloseFile (int h);
 

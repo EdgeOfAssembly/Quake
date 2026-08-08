@@ -28,7 +28,8 @@ static byte *Image_ReadFile (const char *path, int *len_out)
 {
 	int h, len;
 	byte *buf;
-	len = COM_OpenFile ((char *)path, &h);
+	/* Optional hires art — do not spam FindFile: can't find */
+	len = COM_OpenFileQuiet ((char *)path, &h);
 	if (len < 0)
 		return NULL;
 	buf = (byte *)malloc ((size_t)len);

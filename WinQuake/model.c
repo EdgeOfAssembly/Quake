@@ -515,7 +515,8 @@ static texture_t *Mod_TryLoadExternalMip (const char *texname,
 	Mod_SanitizeTexFilename (texname, file, sizeof(file));
 	Q_snprintf (path, sizeof(path), "textures/%s.mip", file);
 
-	len = COM_OpenFile (path, &handle);
+	/* Optional external .mip — quiet miss (most maps lack a full hires set) */
+	len = COM_OpenFileQuiet (path, &handle);
 	if (len < (int)sizeof(miptex_t))
 	{
 		if (len != -1)

@@ -254,6 +254,367 @@ void Draw_String (int x, int y, char *str)
 
 /*
 ================
+Draw_GuiScale
+
+Scale 320×200 UI to current framebuffer. 720p → 3, 1080p → 4, etc.
+================
+*/
+int Draw_GuiScale (void)
+{
+	int	s;
+
+	/* Prefer height so 1280×720 and 1920×1080 both look right */
+	s = vid.height / 240;
+	if (s < 1)
+		s = 1;
+	if (s > 5)
+		s = 5;
+	return s;
+}
+
+/*
+================
+Draw_CharacterScaled
+
+Nearest-neighbor scale of an 8×8 conchar (transparent 0).
+================
+*/
+void Draw_CharacterScaled (int x, int y, int num, int scale)
+{
+	byte			*source;
+	int				row, col;
+	int				sx, sy, dx, dy;
+	int				draw_h, src_row0;
+
+	if (scale <= 1)
+	{
+		Draw_Character (x, y, num);
+		return;
+	}
+
+	num &= 255;
+	if (y + 8 * scale <= 0)
+		return;
+
+	row = num >> 4;
+	col = num & 15;
+	source = draw_chars + (row << 10) + (col << 3);
+
+	src_row0 = 0;
+	draw_h = 8;
+	if (y < 0)
+	{
+		int	skip = (-y) / scale;
+		if (skip >= 8)
+			return;
+		src_row0 = skip;
+		draw_h = 8 - skip;
+		y += skip * scale;
+	}
+
+	for (sy = 0; sy < draw_h; sy++)
+	{
+		byte	*src = source + (src_row0 + sy) * 128;
+		for (dy = 0; dy < scale; dy++)
+		{
+			int	py = y + sy * scale + dy;
+			if (py < 0 || py >= vid.height)
+				continue;
+			if (r_pixbytes == 1)
+			{
+				byte	*dest = vid.conbuffer + py * vid.conrowbytes + x;
+				for (sx = 0; sx < 8; sx++)
+				{
+					byte	c = src[sx];
+					if (!c)
+						continue;
+					for (dx = 0; dx < scale; dx++)
+					{
+						int	px = x + sx * scale + dx;
+						if (px >= 0 && px < vid.width)
+							dest[sx * scale + dx] = c;
+					}
+				}
+			}
+			else if (r_pixbytes == 4)
+			{
+				unsigned	*p32 = (unsigned *)
+					((byte *)vid.conbuffer + py * vid.conrowbytes + (x << 2));
+				for (sx = 0; sx < 8; sx++)
+				{
+					byte	c = src[sx];
+					unsigned	pix;
+					if (!c)
+						continue;
+					pix = d_8to24table[c];
+					for (dx = 0; dx < scale; dx++)
+					{
+						int	px = x + sx * scale + dx;
+						if (px >= 0 && px < vid.width)
+							p32[sx * scale + dx] = pix;
+					}
+				}
+			}
+			else
+			{
+				unsigned short	*pus = (unsigned short *)
+					((byte *)vid.conbuffer + py * vid.conrowbytes + (x << 1));
+				for (sx = 0; sx < 8; sx++)
+				{
+					byte	c = src[sx];
+					unsigned short	pix;
+					if (!c)
+						continue;
+					pix = d_8to16table[c];
+					for (dx = 0; dx < scale; dx++)
+					{
+						int	px = x + sx * scale + dx;
+						if (px >= 0 && px < vid.width)
+							pus[sx * scale + dx] = pix;
+					}
+				}
+			}
+		}
+	}
+}
+
+/*
+================
+Draw_PicScaled / Draw_TransPicScaled
+================
+*/
+void Draw_PicScaled (int x, int y, qpic_t *pic, int scale)
+{
+	byte	*source;
+	int		v, u, dy, dx;
+
+	if (scale <= 1)
+	{
+		Draw_Pic (x, y, pic);
+		return;
+	}
+	if (!pic)
+		return;
+	source = pic->data;
+	for (v = 0; v < pic->height; v++)
+	{
+		for (dy = 0; dy < scale; dy++)
+		{
+			int	py = y + v * scale + dy;
+			if (py < 0 || py >= vid.height)
+				continue;
+			if (r_pixbytes == 4)
+			{
+				unsigned	*p32 = (unsigned *)
+					((byte *)vid.buffer + py * vid.rowbytes + (x << 2));
+				for (u = 0; u < pic->width; u++)
+				{
+					unsigned	pix = d_8to24table[source[u]];
+					for (dx = 0; dx < scale; dx++)
+					{
+						int	px = x + u * scale + dx;
+						if (px >= 0 && px < vid.width)
+							p32[u * scale + dx] = pix;
+					}
+				}
+			}
+			else if (r_pixbytes == 1)
+			{
+				byte	*dest = vid.buffer + py * vid.rowbytes + x;
+				for (u = 0; u < pic->width; u++)
+				{
+					byte	c = source[u];
+					for (dx = 0; dx < scale; dx++)
+					{
+						int	px = x + u * scale + dx;
+						if (px >= 0 && px < vid.width)
+							dest[u * scale + dx] = c;
+					}
+				}
+			}
+			else
+			{
+				unsigned short	*pus = (unsigned short *)vid.buffer
+					+ py * (vid.rowbytes >> 1) + x;
+				for (u = 0; u < pic->width; u++)
+				{
+					unsigned short	pix = d_8to16table[source[u]];
+					for (dx = 0; dx < scale; dx++)
+					{
+						int	px = x + u * scale + dx;
+						if (px >= 0 && px < vid.width)
+							pus[u * scale + dx] = pix;
+					}
+				}
+			}
+		}
+		source += pic->width;
+	}
+}
+
+void Draw_TransPicScaled (int x, int y, qpic_t *pic, int scale)
+{
+	byte	*source;
+	int		v, u, dy, dx;
+
+	if (scale <= 1)
+	{
+		Draw_TransPic (x, y, pic);
+		return;
+	}
+	if (!pic)
+		return;
+	source = pic->data;
+	for (v = 0; v < pic->height; v++)
+	{
+		for (dy = 0; dy < scale; dy++)
+		{
+			int	py = y + v * scale + dy;
+			if (py < 0 || py >= vid.height)
+				continue;
+			if (r_pixbytes == 4)
+			{
+				unsigned	*p32 = (unsigned *)
+					((byte *)vid.buffer + py * vid.rowbytes + (x << 2));
+				for (u = 0; u < pic->width; u++)
+				{
+					byte	c = source[u];
+					unsigned	pix;
+					if (c == TRANSPARENT_COLOR)
+						continue;
+					pix = d_8to24table[c];
+					for (dx = 0; dx < scale; dx++)
+					{
+						int	px = x + u * scale + dx;
+						if (px >= 0 && px < vid.width)
+							p32[u * scale + dx] = pix;
+					}
+				}
+			}
+			else if (r_pixbytes == 1)
+			{
+				byte	*dest = vid.buffer + py * vid.rowbytes + x;
+				for (u = 0; u < pic->width; u++)
+				{
+					byte	c = source[u];
+					if (c == TRANSPARENT_COLOR)
+						continue;
+					for (dx = 0; dx < scale; dx++)
+					{
+						int	px = x + u * scale + dx;
+						if (px >= 0 && px < vid.width)
+							dest[u * scale + dx] = c;
+					}
+				}
+			}
+			else
+			{
+				unsigned short	*pus = (unsigned short *)vid.buffer
+					+ py * (vid.rowbytes >> 1) + x;
+				for (u = 0; u < pic->width; u++)
+				{
+					byte	c = source[u];
+					unsigned short	pix;
+					if (c == TRANSPARENT_COLOR)
+						continue;
+					pix = d_8to16table[c];
+					for (dx = 0; dx < scale; dx++)
+					{
+						int	px = x + u * scale + dx;
+						if (px >= 0 && px < vid.width)
+							pus[u * scale + dx] = pix;
+					}
+				}
+			}
+		}
+		source += pic->width;
+	}
+}
+
+void Draw_TransPicTranslateScaled (int x, int y, qpic_t *pic, byte *translation, int scale)
+{
+	byte	*source;
+	int		v, u, dy, dx;
+
+	if (scale <= 1)
+	{
+		Draw_TransPicTranslate (x, y, pic, translation);
+		return;
+	}
+	if (!pic)
+		return;
+	source = pic->data;
+	for (v = 0; v < pic->height; v++)
+	{
+		for (dy = 0; dy < scale; dy++)
+		{
+			int	py = y + v * scale + dy;
+			if (py < 0 || py >= vid.height)
+				continue;
+			if (r_pixbytes == 4)
+			{
+				unsigned	*p32 = (unsigned *)
+					((byte *)vid.buffer + py * vid.rowbytes + (x << 2));
+				for (u = 0; u < pic->width; u++)
+				{
+					byte	c = source[u];
+					unsigned	pix;
+					if (c == TRANSPARENT_COLOR)
+						continue;
+					c = translation[c];
+					pix = d_8to24table[c];
+					for (dx = 0; dx < scale; dx++)
+					{
+						int	px = x + u * scale + dx;
+						if (px >= 0 && px < vid.width)
+							p32[u * scale + dx] = pix;
+					}
+				}
+			}
+			else if (r_pixbytes == 1)
+			{
+				byte	*dest = vid.buffer + py * vid.rowbytes + x;
+				for (u = 0; u < pic->width; u++)
+				{
+					byte	c = source[u];
+					if (c == TRANSPARENT_COLOR)
+						continue;
+					c = translation[c];
+					for (dx = 0; dx < scale; dx++)
+					{
+						int	px = x + u * scale + dx;
+						if (px >= 0 && px < vid.width)
+							dest[u * scale + dx] = c;
+					}
+				}
+			}
+			else
+			{
+				unsigned short	*pus = (unsigned short *)vid.buffer
+					+ py * (vid.rowbytes >> 1) + x;
+				for (u = 0; u < pic->width; u++)
+				{
+					byte	c = source[u];
+					unsigned short	pix;
+					if (c == TRANSPARENT_COLOR)
+						continue;
+					c = translation[c];
+					pix = d_8to16table[c];
+					for (dx = 0; dx < scale; dx++)
+					{
+						int	px = x + u * scale + dx;
+						if (px >= 0 && px < vid.width)
+							pus[u * scale + dx] = pix;
+					}
+				}
+			}
+		}
+		source += pic->width;
+	}
+}
+
+/*
+================
 Draw_DebugChar
 
 Draws a single character directly to the upper right corner of the screen.

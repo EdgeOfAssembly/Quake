@@ -1460,6 +1460,9 @@ void COM_CopyFile (char *netpath, char *cachepath)
 	Sys_FileClose (out);    
 }
 
+/* When set, COM_FindFile skips Sys_Printf (optional texture probes). */
+static int	com_file_quiet;
+
 /*
 ===========
 COM_FindFile
@@ -1502,7 +1505,8 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 			for (i=0 ; i<pak->numfiles ; i++)
 				if (!strcmp (pak->files[i].name, filename))
 				{       // found it!
-					Sys_Printf ("PackFile: %s : %s\n",pak->filename, filename);
+					if (!com_file_quiet)
+						Sys_Printf ("PackFile: %s : %s\n",pak->filename, filename);
 					if (handle)
 					{
 						*handle = pak->handle;
@@ -1554,7 +1558,8 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 				strcpy (netpath, cachepath);
 			}	
 
-			Sys_Printf ("FindFile: %s\n",netpath);
+			if (!com_file_quiet)
+				Sys_Printf ("FindFile: %s\n",netpath);
 			com_filesize = Sys_FileOpenRead (netpath, &i);
 			if (handle)
 				*handle = i;
@@ -1568,7 +1573,8 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 		
 	}
 	
-	Sys_Printf ("FindFile: can't find %s\n", filename);
+	if (!com_file_quiet)
+		Sys_Printf ("FindFile: can't find %s\n", filename);
 	
 	if (handle)
 		*handle = -1;
@@ -1591,6 +1597,16 @@ it may actually be inside a pak file
 int COM_OpenFile (char *filename, int *handle)
 {
 	return COM_FindFile (filename, handle, NULL);
+}
+
+int COM_OpenFileQuiet (char *filename, int *handle)
+{
+	int	r;
+
+	com_file_quiet = 1;
+	r = COM_FindFile (filename, handle, NULL);
+	com_file_quiet = 0;
+	return r;
 }
 
 /*
