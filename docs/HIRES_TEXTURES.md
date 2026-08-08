@@ -38,7 +38,7 @@ python3 tools/hires_textures.py pack /tmp/.../png_x4tta hires/textures \
 # export TGA for RGBA path from those PNGs
 ```
 
-## UV scale (BSP base size)
+## UV scale + full-res surface cache
 
 BSP `texturemins` / extents are authored for the **original** miptex size.
 Hires replacements may be larger (`width`/`height`); the engine stores:
@@ -48,9 +48,16 @@ Hires replacements may be larger (`width`/`height`); the engine stores:
 | `base_width` / `base_height` | BSP UV space (original size) |
 | `width` / `height` | Actual mip / RGBA pixel size |
 
-Surface cache and lightmaps stay in **base** space. Block drawers sample source at
-`logical * (width/base_width)` so bolts and panels keep correct world scale
-(not zoomed). Scale 1 when art matches BSP.
+| Stage | Space |
+|-------|--------|
+| Lightmaps | **Base** UV (unchanged BSP extents) |
+| Surface cache | **Hires** — `surfwidth = (extents>>mip) * (width/base_width)` |
+| Span UVs | Scaled in `D_CalcGradients` to match cache |
+| Block fill | Sample source **1:1** into the larger cache |
+
+So bolts keep correct world scale **and** show full hires detail. Pool size is
+×8 vs stock (`D_SurfaceCacheForRes`); override with `-surfcachesize <KB>`.
+Prefer `-mem 256` or `512` with hires + 32bpp.
 
 ## Notes
 

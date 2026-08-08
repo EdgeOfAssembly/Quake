@@ -142,6 +142,8 @@ void D_CalcGradients (msurface_t *pface)
 	vec3_t		p_temp1;
 	vec3_t		p_saxis, p_taxis;
 	float		t;
+	int			scale_s, scale_t;
+	texture_t	*mt;
 
 	pplane = pface->plane;
 
@@ -179,6 +181,27 @@ void D_CalcGradients (msurface_t *pface)
 //
 	bbextents = ((fixed16_t)(pface->extents[0] * 65536) >> miplevel) - 1;
 	bbextentt = ((fixed16_t)(pface->extents[1] * 65536) >> miplevel) - 1;
+
+	/*
+	 * Hires full-res surface cache: UVs are in BSP base space above;
+	 * scale into cache texel space (matches D_CacheSurface dimensions).
+	 */
+	/* Anim frames share size; base texture is enough for scale. */
+	mt = pface->texinfo->texture;
+	R_GetTextureScale (mt, miplevel, &scale_s, &scale_t);
+	if (scale_s != 1 || scale_t != 1)
+	{
+		d_sdivzstepu *= (float)scale_s;
+		d_sdivzstepv *= (float)scale_s;
+		d_sdivzorigin *= (float)scale_s;
+		d_tdivzstepu *= (float)scale_t;
+		d_tdivzstepv *= (float)scale_t;
+		d_tdivzorigin *= (float)scale_t;
+		sadjust *= scale_s;
+		tadjust *= scale_t;
+		bbextents = bbextents * scale_s + (scale_s - 1);
+		bbextentt = bbextentt * scale_t + (scale_t - 1);
+	}
 }
 
 

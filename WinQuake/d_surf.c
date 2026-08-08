@@ -52,6 +52,13 @@ int     D_SurfaceCacheForRes (int width, int height)
 	if (r_pixbytes > 1)
 		size *= r_pixbytes;
 
+	/*
+	 * Hires: lit surface caches can be scale² larger (×4 art → ×16 area).
+	 * Keep headroom so thrashing stays reasonable at 1080p + hires.
+	 * Override with -surfcachesize <KB> if needed.
+	 */
+	size *= 8;
+
 	return size;
 }
 
@@ -135,11 +142,12 @@ surfcache_t     *D_SCAlloc (int width, int size)
 	surfcache_t             *new;
 	qboolean                wrapped_this_time;
 
-	if ((width < 0) || (width > 512))
+	/* Hires: max face 256×scale (scale≤4 → 1024); allow 2048 */
+	if ((width < 0) || (width > 2048))
 		Sys_Error ("D_SCAlloc: bad cache width %d\n", width);
 
-	/* 32bpp: 256*256*4 = 0x40000; allow up to 1 MiB per block */
-	if ((size <= 0) || (size > 0x100000))
+	/* 32bpp hires: 1024*1024*4 = 4 MiB; allow 8 MiB per block */
+	if ((size <= 0) || (size > 0x800000))
 		Sys_Error ("D_SCAlloc: bad cache size %d\n", size);
 	
 	size = (int)&((surfcache_t *)0)->data[size];
@@ -292,17 +300,34 @@ surfcache_t *D_CacheSurface (msurface_t *surface, int miplevel)
 		return cache;
 
 //
-// determine shape of surface
+// determine shape of surface (hires: × texture scale so cache holds full detail)
 //
-	surfscale = 1.0 / (1<<miplevel);
-	r_drawsurf.surfmip = miplevel;
-	r_drawsurf.surfwidth = surface->extents[0] >> miplevel;
-	r_drawsurf.surfheight = surface->extents[1] >> miplevel;
-	r_drawsurf.rowbytes = r_drawsurf.surfwidth * r_pixbytes;
+	{
+		int	scale_s, scale_t;
+
+		R_GetTextureScale (r_drawsurf.texture, miplevel, &scale_s, &scale_t);
+		surfscale = 1.0 / (1<<miplevel);
+		r_drawsurf.surfmip = miplevel;
+		r_drawsurf.surfwidth = (surface->extents[0] >> miplevel) * scale_s;
+		r_drawsurf.surfheight = (surface->extents[1] >> miplevel) * scale_t;
+		if (r_drawsurf.surfwidth < 1)
+			r_drawsurf.surfwidth = 1;
+		if (r_drawsurf.surfheight < 1)
+			r_drawsurf.surfheight = 1;
+		r_drawsurf.rowbytes = r_drawsurf.surfwidth * r_pixbytes;
+	}
 	
 //
-// allocate memory if needed
+// allocate memory if needed (reallocate if hires size changed)
 //
+	if (cache && (int)cache->width != r_drawsurf.surfwidth)
+	{
+		/* stale size (e.g. after texture replace) — drop and realloc */
+		if (cache->owner)
+			*cache->owner = NULL;
+		cache = NULL;
+		surface->cachespots[miplevel] = NULL;
+	}
 	if (!cache)     // if a texture just animated, don't reallocate it
 	{
 		cache = D_SCAlloc (r_drawsurf.surfwidth,

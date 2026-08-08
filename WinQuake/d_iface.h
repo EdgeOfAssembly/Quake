@@ -197,11 +197,24 @@ typedef struct
 							// adjust for lightmap levels for dynamic lighting
 	texture_t	*texture;	// corrected for animating textures
 	int			surfmip;	// mipmapped ratio of surface texels / world pixels
-	int			surfwidth;	// in mipmapped texels
-	int			surfheight;	// in mipmapped texels
+	int			surfwidth;	// in mipmapped texels (hires-scaled)
+	int			surfheight;	// in mipmapped texels (hires-scaled)
 } drawsurf_t;
 
 extern drawsurf_t	r_drawsurf;
+
+/* Hires: source texels per BSP UV texel (width/base_width at current mip). */
+extern int	r_src_scale_s;
+extern int	r_src_scale_t;
+
+/**
+ * @brief Texture scale from BSP UV space to actual mip pixels.
+ * @param mt   Texture (may be hires replacement).
+ * @param mip  Mip level 0..3.
+ * @param scale_s  Out: horizontal scale (>=1).
+ * @param scale_t  Out: vertical scale (>=1).
+ */
+void R_GetTextureScale (texture_t *mt, int mip, int *scale_s, int *scale_t);
 
 void R_DrawSurface (void);
 void R_GenTile (msurface_t *psurf, void *pdest);
