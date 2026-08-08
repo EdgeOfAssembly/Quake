@@ -1,0 +1,61 @@
+# Debugging quake.x11 (Linux software + X11)
+
+See also: [`GOAL_QUAKE_X11_DEBUG_MEMORY.md`](GOAL_QUAKE_X11_DEBUG_MEMORY.md)
+
+## Build
+
+```bash
+# From repo root
+make debug-x11                          # → quake.x11-dbg  (-O0 -g3 -DDEBUG -DPARANOID -UNDEBUG)
+make sanitize-x11                       # → quake.x11-asan (ASan + UBSan + debug flags)
+make DEBUG=1 quake.x11                  # debug objects under WinQuake/build/*-dbg/
+make DEBUG=1 SANITIZE=address,undefined quake.x11
+```
+
+Debug/sanitize builds use a **separate** `WinQuake/build/<arch>-dbg[-san]/` tree so they never mix with release `-O3` objects.
+
+## Asserts
+
+Debug builds define `-DDEBUG -DPARANOID -UNDEBUG` so:
+
+- C `assert()` is active
+- Quake `#ifdef PARANOID` checks run (zone heap, math, etc.)
+
+Release builds must **not** pass these; do not add `-DNDEBUG` to `DEBUG=1`.
+
+## GDB
+
+```bash
+gdb --args ./quake.x11-dbg -basedir . +map e1m1
+# useful breakpoints:
+#   break Sys_Error
+#   break Z_Free
+#   break Hunk_AllocName
+#   break PR_ExecuteProgram
+```
+
+## Valgrind
+
+```bash
+valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
+  ./quake.x11-dbg -basedir . +map e1m1 +quit
+```
+
+Prefer a short `+map`/`+quit` or timedemo; full play is slow under Valgrind.  
+Use a real X display (Xmux/Xvfb) if the client requires it.
+
+## ASan / UBSan
+
+```bash
+./quake.x11-asan -basedir . +map e1m1 +quit
+# or:
+ASAN_OPTIONS=abort_on_error=1:detect_leaks=1 \
+  ./quake.x11-asan -basedir . +map e1m1
+```
+
+## Smoke tests
+
+```bash
+make DEBUG=1 -C WinQuake -f Makefile.linux test-debug
+make test          # release both binaries
+```

@@ -21,6 +21,10 @@ WinQuake/glquake
 WinQuake/quake.x11
 WinQuake/build/
 glquake-dbg
+quake.x11-dbg
+quake.x11-asan
+WinQuake/quake.x11-dbg
+WinQuake/quake.x11-asan
 *.o
 /tmp/
 

@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // comndef.h  -- general definitions
 
+#include <stddef.h>	/* ptrdiff_t, offsetof — STRUCT_FROM_LINK */
+
 #if !defined BYTE_DEFINED
 typedef unsigned char 		byte;
 #define BYTE_DEFINED 1
@@ -63,7 +65,8 @@ void InsertLinkAfter (link_t *l, link_t *after);
 // (type *)STRUCT_FROM_LINK(link_t *link, type, member)
 // ent = STRUCT_FROM_LINK(link,entity_t,order)
 // FIXME: remove this mess!
-#define	STRUCT_FROM_LINK(l,t,m) ((t *)((byte *)l - (int)&(((t *)0)->m)))
+/* Offset must be ptrdiff_t-sized on LP64 (was int — truncates high bits of offsetof). */
+#define	STRUCT_FROM_LINK(l,t,m) ((t *)((byte *)(l) - (ptrdiff_t)offsetof(t, m)))
 
 //============================================================================
 

@@ -854,28 +854,58 @@ char *COM_FileExtension (char *in)
 /*
 ============
 COM_FileBase
+
+Extract basename without path or extension into out.
+Callers (e.g. COM_LoadFile) typically pass a 32-byte buffer — cap writes.
+Does not walk before `in` (classic bug when path has no '/').
 ============
 */
 void COM_FileBase (char *in, char *out)
 {
-	char *s, *s2;
-	
-	s = in + strlen(in) - 1;
-	
-	while (s != in && *s != '.')
-		s--;
-	
-	for (s2 = s ; *s2 && *s2 != '/' ; s2--)
-	;
-	
-	if (s-s2 < 2)
-		strcpy (out,"?model?");
-	else
+	const char	*start;
+	const char	*end;
+	const char	*dot;
+	const char	*p;
+	size_t		n;
+
+	if (!out)
+		return;
+	if (!in || !in[0])
 	{
-		s--;
-		strncpy (out,s2+1, s-s2);
-		out[s-s2] = 0;
+		strcpy (out, "?model?");
+		return;
 	}
+
+	/* basename: after last / or \ */
+	start = in;
+	for (p = in; *p; p++)
+	{
+		if (*p == '/' || *p == '\\')
+			start = p + 1;
+	}
+
+	/* end: before last '.' in basename, else whole basename */
+	end = start + strlen (start);
+	dot = NULL;
+	for (p = start; *p; p++)
+	{
+		if (*p == '.')
+			dot = p;
+	}
+	if (dot && dot > start)
+		end = dot;
+
+	n = (size_t)(end - start);
+	if (n < 1)
+	{
+		strcpy (out, "?model?");
+		return;
+	}
+	/* Match historical COM_LoadFile base[32] and leave room for NUL */
+	if (n > 31)
+		n = 31;
+	memcpy (out, start, n);
+	out[n] = 0;
 }
 
 
@@ -915,6 +945,7 @@ char *COM_Parse (char *data)
 {
 	int             c;
 	int             len;
+	const int	maxlen = (int)sizeof(com_token) - 1;
 	
 	len = 0;
 	com_token[0] = 0;
@@ -952,8 +983,11 @@ skipwhite:
 				com_token[len] = 0;
 				return data;
 			}
-			com_token[len] = c;
-			len++;
+			if (len < maxlen)
+			{
+				com_token[len] = c;
+				len++;
+			}
 		}
 	}
 
@@ -969,9 +1003,12 @@ skipwhite:
 // parse a regular word
 	do
 	{
-		com_token[len] = c;
+		if (len < maxlen)
+		{
+			com_token[len] = c;
+			len++;
+		}
 		data++;
-		len++;
 		c = *data;
 	if (c=='{' || c=='}'|| c==')'|| c=='(' || c=='\'' || c==':')
 			break;
@@ -1175,8 +1212,9 @@ char    *va(char *format, ...)
 	static char             string[1024];
 	
 	va_start (argptr, format);
-	vsprintf (string, format,argptr);
+	vsnprintf (string, sizeof(string), format, argptr);
 	va_end (argptr);
+	string[sizeof(string) - 1] = 0;
 
 	return string;  
 }

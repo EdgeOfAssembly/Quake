@@ -14,7 +14,8 @@
 # Based on id Software Makefile.linuxi386 + community patches.
 # =============================================================================
 
-.PHONY: all clean distclean test tests verify quake.x11 glquake install
+.PHONY: all clean distclean test tests verify quake.x11 glquake install \
+        debug-x11 sanitize-x11
 
 # -----------------------------------------------------------------------------
 # Toolchain / flags
@@ -37,9 +38,17 @@ else
 endif
 
 # Paths
+# DEBUG=1 / SANITIZE=... use separate build trees so objects never mix with -O3.
 SRCDIR  := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 ROOTDIR := $(abspath $(SRCDIR)/..)
-BUILD   ?= $(SRCDIR)/build/$(ARCH)
+BUILD_VARIANT :=
+ifdef DEBUG
+  BUILD_VARIANT := $(BUILD_VARIANT)-dbg
+endif
+ifdef SANITIZE
+  BUILD_VARIANT := $(BUILD_VARIANT)-san
+endif
+BUILD   ?= $(SRCDIR)/build/$(ARCH)$(BUILD_VARIANT)
 BINDIR  ?= $(BUILD)/bin
 OBJ_X11 ?= $(BUILD)/x11
 OBJ_GL  ?= $(BUILD)/gl
@@ -63,14 +72,29 @@ BASE_CFLAGS := $(STD) $(OPTFLAGS) $(WARNFLAGS) -fcommon \
                -Dstricmp=strcasecmp -D_GNU_SOURCE \
                -I$(SRCDIR)
 
-# Debug override: make DEBUG=1
+# Debug: full symbols, asserts on, Quake PARANOID checks, no NDEBUG.
+# Usage: make -f Makefile.linux DEBUG=1 quake.x11
+#        make -f Makefile.linux debug-x11
 ifdef DEBUG
   BASE_CFLAGS := $(STD) -O0 -g3 -fno-strict-aliasing -fno-omit-frame-pointer \
-                 $(WARNFLAGS) -fcommon -Dstricmp=strcasecmp -D_GNU_SOURCE -I$(SRCDIR)
+                 -fno-optimize-sibling-calls -fstack-protector-strong \
+                 $(WARNFLAGS) -fcommon \
+                 -Dstricmp=strcasecmp -D_GNU_SOURCE -I$(SRCDIR) \
+                 -DDEBUG -DPARANOID -UNDEBUG
 endif
 
-X11_CFLAGS  := $(BASE_CFLAGS) $(ALSA_CFLAGS) -DX11
-GL_CFLAGS   := $(BASE_CFLAGS) $(ALSA_CFLAGS) -DGLQUAKE
+LDFLAGS ?= -Wl,--as-needed -Wl,-O1
+
+# Sanitizers (gcc). Example: SANITIZE=address,undefined
+# Usage: make -f Makefile.linux DEBUG=1 SANITIZE=address,undefined quake.x11
+ifdef SANITIZE
+  SAN_FLAGS := -fsanitize=$(SANITIZE) -fno-omit-frame-pointer
+  ifneq (,$(findstring address,$(SANITIZE)))
+    SAN_FLAGS += -fsanitize-address-use-after-scope
+  endif
+  BASE_CFLAGS += $(SAN_FLAGS)
+  LDFLAGS += $(SAN_FLAGS)
+endif
 
 # ALSA for snd_linux.c (OSS /dev/dsp is gone on modern systems)
 ALSA_LIBS := $(shell pkg-config --libs alsa 2>/dev/null)
@@ -79,10 +103,11 @@ ifeq ($(ALSA_LIBS),)
 endif
 ALSA_CFLAGS := $(shell pkg-config --cflags alsa 2>/dev/null)
 
+X11_CFLAGS  := $(BASE_CFLAGS) $(ALSA_CFLAGS) -DX11
+GL_CFLAGS   := $(BASE_CFLAGS) $(ALSA_CFLAGS) -DGLQUAKE
+
 X11_LIBS := -lX11 -lXext -lXxf86dga $(ALSA_LIBS) -lm
 GL_LIBS  := -lGL -lX11 -lXext -lXxf86dga -lXxf86vm -ldl $(ALSA_LIBS) -lm
-
-LDFLAGS ?= -Wl,--as-needed -Wl,-O1
 
 # -----------------------------------------------------------------------------
 # Source lists (pure C — id386=0 on x86_64; C fallbacks in tree)
@@ -145,6 +170,20 @@ install: all
 	cp -f $(BINDIR)/glquake   $(ROOTDIR)/glquake
 	@echo "Installed quake.x11 and glquake to $(SRCDIR) and $(ROOTDIR)"
 
+# Debug / sanitizer convenience (X11 software only — see docs/DEBUGGING_X11.md)
+# Note: recursive make sets its own BUILD/BINDIR; copy from that tree explicitly.
+debug-x11:
+	$(MAKE) -f Makefile.linux DEBUG=1 quake.x11
+	cp -f $(SRCDIR)/build/$(ARCH)-dbg/bin/quake.x11 $(ROOTDIR)/quake.x11-dbg
+	cp -f $(SRCDIR)/build/$(ARCH)-dbg/bin/quake.x11 $(SRCDIR)/quake.x11-dbg
+	@echo "Installed $(ROOTDIR)/quake.x11-dbg (DEBUG=1, asserts/PARANOID on)"
+
+sanitize-x11:
+	$(MAKE) -f Makefile.linux DEBUG=1 SANITIZE=address,undefined quake.x11
+	cp -f $(SRCDIR)/build/$(ARCH)-dbg-san/bin/quake.x11 $(ROOTDIR)/quake.x11-asan
+	cp -f $(SRCDIR)/build/$(ARCH)-dbg-san/bin/quake.x11 $(SRCDIR)/quake.x11-asan
+	@echo "Installed $(ROOTDIR)/quake.x11-asan (ASan+UBSan)"
+
 # -----------------------------------------------------------------------------
 # Compile rules
 # -----------------------------------------------------------------------------
@@ -178,6 +217,15 @@ test tests: all
 	# Just verify --help-ish: unknown flag should not segfault before usage
 	-$(BINDIR)/quake.x11 -basedir $(ROOTDIR) +quit 2>&1 | head -5 || true
 	@echo "test: OK (binaries built; interactive proof via Xmux)"
+
+# Debug-only smoke (does not require glquake). Use after: make debug-x11 / sanitize-x11
+test-debug:
+	@echo "== debug/sanitize binary smoke =="
+	test -x $(BINDIR)/quake.x11
+	file $(BINDIR)/quake.x11
+	@echo "== symbols (expect not stripped) =="
+	nm $(BINDIR)/quake.x11 2>/dev/null | head -3 || true
+	@echo "test-debug: OK ($(BINDIR)/quake.x11)"
 
 verify: test
 	@echo "formal: not run (game engine; no CBMC model yet)"

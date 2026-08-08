@@ -302,3 +302,22 @@ behavior changes, missing evidence. Do not implement.
 ---
 
 *Created for the post-ADOM return to Quake development. Keep this goal focused on **quake.x11** reliability before more gameplay/renderer features.*
+
+## 10. Evidence log (session 2026-08-08)
+
+| Date | Command | Result |
+|------|---------|--------|
+| 2026-08-08 | `make debug-x11` | exit 0 → `quake.x11-dbg` (`-DDEBUG -DPARANOID -UNDEBUG`) |
+| 2026-08-08 | `make sanitize-x11` | exit 0 → `quake.x11-asan` (ASan+UBSan) |
+| 2026-08-08 | `./quake.x11-asan -basedir . +quit` (before fix) | **ASan global-buffer-overflow** `COM_FileBase` common.c:868 |
+| 2026-08-08 | same after fix | **exit 0**, VID_Shutdown clean |
+| 2026-08-08 | explore reports | `docs/evidence/quake-x11-memory-explore.md`, `…-types-loops-explore.md` |
+
+### Fixes landed this session
+- Makefile: DEBUG/SANITIZE separate build trees, `debug-x11` / `sanitize-x11`, docs/DEBUGGING_X11.md
+- `world.c` PARANOID: undeclared `sv_hullmodel` → `hull` (arg order fixed)
+- `STRUCT_FROM_LINK`: `ptrdiff_t`/`offsetof` (LP64)
+- `COM_FileBase`: no walk before string start; cap basename 31 chars
+- `COM_Parse`: clamp to `com_token` size
+- `va` + host printf helpers: `vsnprintf`
+
