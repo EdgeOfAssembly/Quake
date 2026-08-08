@@ -1,0 +1,9 @@
+=== 1080p STOCK ===
+969 frames   7.3 seconds 132.5 fps
+969 frames   7.4 seconds 130.8 fps
+969 frames   7.3 seconds 132.2 fps
+=== 1080p HIRES ===
+=== 1080p HIRES ===
+969 frames   7.5 seconds 129.7 fps
+969 frames   7.3 seconds 132.6 fps
+969 frames   7.3 seconds 132.6 fps

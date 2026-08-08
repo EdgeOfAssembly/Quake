@@ -373,17 +373,24 @@ int main (int c, char **v)
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
-/* Full HD software needs more hunk; GL textures also benefit. */
+/*
+	 * Software Full HD + optional hires textures need a large hunk.
+	 * Override: -mem <megabytes>
+	 */
 #ifdef GLQUAKE
-	parms.memsize = 64*1024*1024;
+	parms.memsize = 128*1024*1024;
 #else
-	parms.memsize = 32*1024*1024;
+	parms.memsize = 128*1024*1024;
 #endif
 
 	j = COM_CheckParm("-mem");
 	if (j)
 		parms.memsize = (int) (Q_atof(com_argv[j+1]) * 1024 * 1024);
+	if (parms.memsize < 16*1024*1024)
+		parms.memsize = 16*1024*1024;
 	parms.membase = malloc (parms.memsize);
+	if (!parms.membase)
+		Sys_Error ("Not enough memory (%d bytes)\n", parms.memsize);
 
 	parms.basedir = basedir;
 // caching is disabled by default, use -cachedir to enable

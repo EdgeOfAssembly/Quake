@@ -349,6 +349,109 @@ byte	*mod_base;
 
 /*
 =================
+Mod_TryLoadExternalMip
+
+Look for textures/<name>.mip (* → # in filename). Used by -game hires packs.
+Returns hunk-allocated texture_t or NULL.
+=================
+*/
+static texture_t *Mod_TryLoadExternalMip (const char *texname)
+{
+	char		path[MAX_OSPATH];
+	char		file[MAX_QPATH];
+	byte		*raw;
+	miptex_t	*mt;
+	texture_t	*tx;
+	int			j, pixels;
+	int			handle;
+	int			len;
+	size_t		k;
+	unsigned	w, h, off0;
+
+	if (!texname || !texname[0])
+		return NULL;
+
+	/* Sky has fixed layout expectations — never replace from hires. */
+	if (!Q_strncmp ((char *)texname, "sky", 3))
+		return NULL;
+
+	/* sanitize: *water0 → #water0.mip */
+	Q_strncpy (file, (char *)texname, sizeof(file) - 1);
+	file[sizeof(file) - 1] = 0;
+	for (k = 0; file[k]; k++)
+	{
+		if (file[k] == '*')
+			file[k] = '#';
+	}
+	Q_snprintf (path, sizeof(path), "textures/%s.mip", file);
+
+	len = COM_OpenFile (path, &handle);
+	if (len < (int)sizeof(miptex_t))
+	{
+		if (len != -1)
+			COM_CloseFile (handle);
+		return NULL;
+	}
+	raw = (byte *)malloc ((size_t)len);
+	if (!raw)
+	{
+		COM_CloseFile (handle);
+		return NULL;
+	}
+	Sys_FileRead (handle, raw, len);
+	COM_CloseFile (handle);
+
+	mt = (miptex_t *)raw;
+	w = LittleLong (mt->width);
+	h = LittleLong (mt->height);
+	off0 = LittleLong (mt->offsets[0]);
+	for (j = 0; j < MIPLEVELS; j++)
+		mt->offsets[j] = LittleLong (mt->offsets[j]);
+	mt->width = w;
+	mt->height = h;
+
+	if ((w & 15) || (h & 15) || w < 16 || h < 16 || w > 1024 || h > 1024)
+	{
+		Con_Printf ("external texture %s: bad size %ux%u, ignored\n", path, w, h);
+		free (raw);
+		return NULL;
+	}
+	if (off0 < sizeof(miptex_t) || off0 + (w * h) > (unsigned)len)
+	{
+		Con_Printf ("external texture %s: truncated, ignored\n", path);
+		free (raw);
+		return NULL;
+	}
+	{
+		size_t wh = Q_checked_mul_size ((size_t)w, (size_t)h, path);
+		size_t pix = wh / 64 * 85;
+		if (wh % 64 || pix + sizeof(miptex_t) > (size_t)len)
+		{
+			Con_Printf ("external texture %s: bad mip payload, ignored\n", path);
+			free (raw);
+			return NULL;
+		}
+		pixels = Q_size_to_int (pix, path);
+	}
+
+	tx = Hunk_AllocName (
+		Q_size_to_int (Q_checked_add_size (sizeof(texture_t), (size_t)pixels, path), path),
+		loadname);
+	memset (tx, 0, sizeof(texture_t));
+	memcpy (tx->name, texname, sizeof(tx->name) - 1);
+	tx->width = (int)w;
+	tx->height = (int)h;
+	for (j = 0; j < MIPLEVELS; j++)
+		tx->offsets[j] = mt->offsets[j] + sizeof(texture_t) - sizeof(miptex_t);
+	memcpy (tx + 1, raw + sizeof(miptex_t), pixels);
+	free (raw);
+
+	Con_DPrintf ("hires: %s (%ux%u)\n", path, w, h);
+	return tx;
+}
+
+/*
+=================
 Mod_LoadTextures
 =================
 */
@@ -383,6 +486,16 @@ void Mod_LoadTextures (lump_t *l)
 		mt->height = LittleLong (mt->height);
 		for (j=0 ; j<MIPLEVELS ; j++)
 			mt->offsets[j] = LittleLong (mt->offsets[j]);
+
+		/* Hi-res override from textures/<name>.mip (-game hires) */
+		tx = Mod_TryLoadExternalMip (mt->name);
+		if (tx)
+		{
+			loadmodel->textures[i] = tx;
+			if (!Q_strncmp(tx->name,"sky",3))
+				R_InitSky (tx);
+			continue;
+		}
 		
 		if ( (mt->width & 15) || (mt->height & 15) )
 			Sys_Error ("Texture %s is not 16 aligned", mt->name);
