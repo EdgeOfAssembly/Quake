@@ -101,12 +101,15 @@ void D_DrawTurbulent8Span (void)
 {
 	int		sturb, tturb;
 	byte	tex;
+	/* Power-of-two turb size (stock 64, hires often 256) */
+	const int	tw = (cachewidth > 0) ? cachewidth : 64;
+	const int	tmask = tw - 1;
 
 	do
 	{
-		sturb = ((r_turb_s + r_turb_turb[(r_turb_t>>16)&(CYCLE-1)])>>16)&63;
-		tturb = ((r_turb_t + r_turb_turb[(r_turb_s>>16)&(CYCLE-1)])>>16)&63;
-		tex = *(r_turb_pbase + (tturb<<6) + sturb);
+		sturb = ((r_turb_s + r_turb_turb[(r_turb_t>>16)&(CYCLE-1)])>>16) & tmask;
+		tturb = ((r_turb_t + r_turb_turb[(r_turb_s>>16)&(CYCLE-1)])>>16) & tmask;
+		tex = *(r_turb_pbase + tturb * tw + sturb);
 		if (r_pixbytes == 4)
 		{
 			*(unsigned *)r_turb_pdest = d_8to24table[tex];

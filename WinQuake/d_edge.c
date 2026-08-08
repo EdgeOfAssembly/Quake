@@ -279,7 +279,10 @@ void D_DrawSurfaces (void)
 				cacheblock = (pixel_t *)
 						((byte *)pface->texinfo->texture +
 						pface->texinfo->texture->offsets[0]);
-				cachewidth = 64;
+				/* Was hardcoded 64; hires #water is e.g. 256×256 */
+				cachewidth = (int)pface->texinfo->texture->width;
+				if (cachewidth < 1)
+					cachewidth = 64;
 
 				if (s->insubmodel)
 				{

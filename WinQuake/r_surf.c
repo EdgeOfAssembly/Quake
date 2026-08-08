@@ -962,6 +962,15 @@ void R_GenTurbTile (pixel_t *pbasetex, void *pdest)
 	int		*turb;
 	int		i, j, s, t;
 	byte	*pd;
+	/* Sample from source tex size; tile output stays TILE_SIZE (64) */
+	int		tw = 64;
+	int		tmask = 63;
+
+	if (r_drawsurf.texture && r_drawsurf.texture->width > 0)
+	{
+		tw = (int)r_drawsurf.texture->width;
+		tmask = tw - 1;
+	}
 	
 	turb = sintable + ((int)(cl.time*SPEED)&(CYCLE-1));
 	pd = (byte *)pdest;
@@ -970,9 +979,12 @@ void R_GenTurbTile (pixel_t *pbasetex, void *pdest)
 	{
 		for (j=0 ; j<TILE_SIZE ; j++)
 		{	
-			s = (((j << 16) + turb[i & (CYCLE-1)]) >> 16) & 63;
-			t = (((i << 16) + turb[j & (CYCLE-1)]) >> 16) & 63;
-			*pd++ = *(pbasetex + (t<<6) + s);
+			/* Map tile 0..63 into source 0..tw-1 with warp */
+			s = (((j * tw / TILE_SIZE) << 16) + turb[i & (CYCLE-1)]) >> 16;
+			t = (((i * tw / TILE_SIZE) << 16) + turb[j & (CYCLE-1)]) >> 16;
+			s &= tmask;
+			t &= tmask;
+			*pd++ = *(pbasetex + t * tw + s);
 		}
 	}
 }
@@ -988,6 +1000,14 @@ void R_GenTurbTile16 (pixel_t *pbasetex, void *pdest)
 	int				*turb;
 	int				i, j, s, t;
 	unsigned short	*pd;
+	int				tw = 64;
+	int				tmask = 63;
+
+	if (r_drawsurf.texture && r_drawsurf.texture->width > 0)
+	{
+		tw = (int)r_drawsurf.texture->width;
+		tmask = tw - 1;
+	}
 
 	turb = sintable + ((int)(cl.time*SPEED)&(CYCLE-1));
 	pd = (unsigned short *)pdest;
@@ -996,9 +1016,11 @@ void R_GenTurbTile16 (pixel_t *pbasetex, void *pdest)
 	{
 		for (j=0 ; j<TILE_SIZE ; j++)
 		{	
-			s = (((j << 16) + turb[i & (CYCLE-1)]) >> 16) & 63;
-			t = (((i << 16) + turb[j & (CYCLE-1)]) >> 16) & 63;
-			*pd++ = d_8to16table[*(pbasetex + (t<<6) + s)];
+			s = (((j * tw / TILE_SIZE) << 16) + turb[i & (CYCLE-1)]) >> 16;
+			t = (((i * tw / TILE_SIZE) << 16) + turb[j & (CYCLE-1)]) >> 16;
+			s &= tmask;
+			t &= tmask;
+			*pd++ = d_8to16table[*(pbasetex + t * tw + s)];
 		}
 	}
 }
