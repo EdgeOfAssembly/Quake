@@ -275,17 +275,21 @@ void D_DrawSurfaces (void)
 			else if (s->flags & SURF_DRAWTURB)
 			{
 				texture_t	*tx;
+				int		base_w;
 
 				pface = s->data;
 				miplevel = 0;
 				tx = pface->texinfo->texture;
-				cacheblock = (pixel_t *)
-						((byte *)tx + tx->offsets[0]);
-				/* Was hardcoded 64; hires #water is e.g. 256×256 */
-				cachewidth = (int)tx->width;
-				if (cachewidth < 1)
-					cachewidth = 64;
-				/* Truecolor turb when RGBA present (32bpp path) */
+				/*
+				 * Turb UV math stays in classic 64-texel (base) space so
+				 * CYCLE wrap + sintable warp match stock Quake. Hires is
+				 * only used at sample time (see D_DrawTurbulent8Span).
+				 */
+				base_w = tx->base_width ? (int)tx->base_width : 64;
+				if (base_w < 16)
+					base_w = 64;
+				cacheblock = (pixel_t *)((byte *)tx + tx->offsets[0]);
+				cachewidth = base_w;
 				if (tx->rgba && tx->rgba_width > 0 && tx->rgba_height > 0
 					&& r_pixbytes == 4)
 				{
@@ -294,8 +298,6 @@ void D_DrawSurfaces (void)
 					r_turb_rgba = tx->rgba;
 					r_turb_rgba_w = tx->rgba_width;
 					r_turb_rgba_h = tx->rgba_height;
-					/* UV space matches rgba size */
-					cachewidth = tx->rgba_width;
 				}
 				else
 				{
@@ -304,6 +306,10 @@ void D_DrawSurfaces (void)
 					r_turb_rgba = NULL;
 					r_turb_rgba_w = 0;
 					r_turb_rgba_h = 0;
+					/* 8-bit path: sample mip0 at actual width if no rgba */
+					cachewidth = (int)tx->width;
+					if (cachewidth < 1)
+						cachewidth = base_w;
 				}
 
 				if (s->insubmodel)
@@ -320,7 +326,20 @@ void D_DrawSurfaces (void)
 										// make entity passed in
 				}
 
-				D_CalcGradients (pface);
+				/*
+				 * Turb: do NOT apply hires UV scale in gradients — keep base
+				 * texel space (matches cachewidth=base and CYCLE wrap).
+				 */
+				{
+					int	saved_w = tx->width;
+					int	saved_h = tx->height;
+					/* Force R_GetTextureScale → 1 for this call */
+					tx->width = tx->base_width ? (int)tx->base_width : saved_w;
+					tx->height = tx->base_height ? (int)tx->base_height : saved_h;
+					D_CalcGradients (pface);
+					tx->width = saved_w;
+					tx->height = saved_h;
+				}
 				Turbulent8 (s->spans);
 				D_DrawZSpans (s->spans);
 

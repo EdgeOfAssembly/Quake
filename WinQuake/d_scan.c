@@ -106,48 +106,39 @@ void D_DrawTurbulent8Span (void)
 {
 	int		sturb, tturb;
 	byte	tex;
-	int		warp_s, warp_t;
-	/* Power-of-two turb size (stock 64, hires often 256) */
+	/* UV math in base/cachewidth space (usually 64); hires only at sample. */
 	const int	tw = (cachewidth > 0) ? cachewidth : 64;
 	const int	tmask = tw - 1;
-	/* Scale classic 64-texel warp amplitude to actual size */
-	const int	wscale = (tw > 0) ? tw : 64;
 	const int	use_rgba = (r_turb_rgba != NULL && r_pixbytes == 4
 				&& r_turb_rgba_w > 0 && r_turb_rgba_h > 0);
 	const int	rw = use_rgba ? r_turb_rgba_w : tw;
 	const int	rh = use_rgba ? r_turb_rgba_h : tw;
-	const int	rmask_s = rw - 1;
-	const int	rmask_t = rh - 1;
 
 	do
 	{
-		/*
-		 * sintable is calibrated for 64×64; scale displacement so ×4 water
-		 * still has a visible ripple in texel space.
-		 */
-		warp_s = r_turb_turb[(r_turb_t >> 16) & (CYCLE - 1)];
-		warp_t = r_turb_turb[(r_turb_s >> 16) & (CYCLE - 1)];
-		if (wscale != 64)
-		{
-			warp_s = (int)(((long long)warp_s * wscale) / 64);
-			warp_t = (int)(((long long)warp_t * wscale) / 64);
-		}
-		sturb = ((r_turb_s + warp_s) >> 16);
-		tturb = ((r_turb_t + warp_t) >> 16);
+		/* Stock warp: sintable ±AMP in base texel space, & CYCLE for table */
+		sturb = ((r_turb_s + r_turb_turb[(r_turb_t >> 16) & (CYCLE - 1)]) >> 16)
+			& tmask;
+		tturb = ((r_turb_t + r_turb_turb[(r_turb_s >> 16) & (CYCLE - 1)]) >> 16)
+			& tmask;
 
 		if (use_rgba)
 		{
 			const byte	*p;
-			sturb &= rmask_s;
-			tturb &= rmask_t;
-			p = r_turb_rgba + ((size_t)tturb * (size_t)rw + (size_t)sturb) * 4;
+			int		rs, rt;
+			/* Map base UV → hires texel (nearest) */
+			rs = (sturb * rw) / tw;
+			rt = (tturb * rh) / tw;
+			if (rs < 0) rs = 0;
+			if (rt < 0) rt = 0;
+			if (rs >= rw) rs = rw - 1;
+			if (rt >= rh) rt = rh - 1;
+			p = r_turb_rgba + ((size_t)rt * (size_t)rw + (size_t)rs) * 4;
 			*(unsigned *)r_turb_pdest = D_PackRGB (p[0], p[1], p[2]);
 			r_turb_pdest += 4;
 		}
 		else
 		{
-			sturb &= tmask;
-			tturb &= tmask;
 			tex = *(r_turb_pbase + tturb * tw + sturb);
 			if (r_pixbytes == 4)
 			{
@@ -285,19 +276,9 @@ void Turbulent8 (espan_t *pspan)
 				}
 			}
 
-			/*
-			 * Wrap s/t to texture size (power-of-two). Stock used CYCLE(128)
-			 * which matches 64-texel turb; hires 256 must wrap at 256 or UVs
-			 * jump every span segment → flashing river.
-			 */
-			{
-				int	twrap = (cachewidth > 0) ? cachewidth : CYCLE;
-				if (twrap < CYCLE)
-					twrap = CYCLE;
-				/* power-of-two mask */
-				r_turb_s = r_turb_s & ((twrap << 16) - 1);
-				r_turb_t = r_turb_t & ((twrap << 16) - 1);
-			}
+			/* Stock wrap: CYCLE period for turb table (base UV space). */
+			r_turb_s = r_turb_s & ((CYCLE << 16) - 1);
+			r_turb_t = r_turb_t & ((CYCLE << 16) - 1);
 
 			D_DrawTurbulent8Span ();
 
