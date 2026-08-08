@@ -720,6 +720,16 @@ void	VID_Init (unsigned char *palette)
 		}
 	}
 
+	/*
+	 * Set r_pixbytes BEFORE surface-cache sizing (Reset*FrameBuffers).
+	 * D_SurfaceCacheForRes uses it for 32bpp ×4 and the modern 128 MiB floor.
+	 * Confirm after XImage exists (bits_per_pixel).
+	 */
+	if (x_visinfo->depth >= 24)
+		r_pixbytes = 4;
+	else
+		r_pixbytes = 1;
+
 	if (doShm)
 	{
 		x_shmeventtype = XShmGetEventBase(x_disp) + ShmCompletion;
@@ -738,10 +748,7 @@ void	VID_Init (unsigned char *palette)
 	vid.conheight = vid.height;
 	vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
 
-	/*
-	 * Native 32-bit software draw when XImage is 32 bpp (typical "24-bit"
-	 * TrueColor). 8-bit path kept for rare PseudoColor.
-	 */
+	/* Confirm from actual XImage */
 	if (x_visinfo->depth >= 24 && x_framebuffer[0]->bits_per_pixel >= 32)
 		r_pixbytes = 4;
 	else if (x_visinfo->depth == 16)
