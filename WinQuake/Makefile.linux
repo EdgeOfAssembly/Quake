@@ -93,6 +93,11 @@ ifdef SANITIZE
   ifneq (,$(findstring address,$(SANITIZE)))
     SAN_FLAGS += -fsanitize-address-use-after-scope
   endif
+  # Software renderer uses intentional signed wrap / fixed-point shifts.
+  # Keep ASan + other UB; do not treat wrap as fatal noise.
+  ifneq (,$(findstring undefined,$(SANITIZE)))
+    SAN_FLAGS += -fno-sanitize=signed-integer-overflow,shift-base
+  endif
   BASE_CFLAGS += $(SAN_FLAGS)
   LDFLAGS += $(SAN_FLAGS)
 endif
