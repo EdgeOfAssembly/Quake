@@ -1,1 +1,4 @@
 ASan e1m1+quit: clean (no leak SUMMARY, no SEGV) 2026-08-08T16:35Z
+2026-08-08T16:39Z timedemo demo1: 969 frames ~23 fps exit 0 (ASan)
+2026-08-08T16:39Z VCR playback OOB fixed; PARANOID mid-hull soft
+valgrind: blocked (glibc ld.so debuginfo missing)

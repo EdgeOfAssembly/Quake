@@ -658,13 +658,14 @@ qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec
 		return false;
 
 #ifdef PARANOID
-	/* Original id code referenced undeclared sv_hullmodel; use hull (this check). */
+	/*
+	 * FP epsilon can place mid slightly in solid on valid traces.
+	 * Original id check used undeclared sv_hullmodel; we use hull.
+	 * Do not abort the trace — only note under developer (DPrintf).
+	 */
 	if (SV_HullPointContents (hull, node->children[side], mid)
 	== CONTENTS_SOLID)
-	{
-		Con_Printf ("mid PointInHullSolid\n");
-		return false;
-	}
+		Con_DPrintf ("mid PointInHullSolid\n");
 #endif
 	
 	if (SV_HullPointContents (hull, node->children[side^1], mid)

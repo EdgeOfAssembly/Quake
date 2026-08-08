@@ -80,3 +80,21 @@ DISPLAY=:10 gnome-screenshot -f /tmp/quake-shots/gnome-N.png
 ```
 
 Evidence shots: `docs/evidence/shots/`.
+
+## Valgrind
+
+Requires glibc debuginfo for the dynamic linker (`ld-linux-x86-64.so.2` must export `memcmp` for redirection).
+
+On this Gentoo host (glibc-2.38), Valgrind 3.26 may fail at startup with:
+
+```text
+a must-be-redirected function ... memcmp ... ld-linux-x86-64.so.2 was not found
+```
+
+**Fix (host):** install/splitdebug glibc so `/usr/lib/debug/.../ld-*.so` is present, then:
+
+```bash
+valgrind --leak-check=full --track-origins=yes ./quake.x11-dbg -basedir . +quit
+```
+
+Until then, prefer **ASan** (`make sanitize-x11`) for memory errors.

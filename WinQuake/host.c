@@ -795,14 +795,24 @@ void Host_InitVCR (quakeparms_t *parms)
 			Sys_Error("Invalid signature in vcr file\n");
 
 		Sys_FileRead (vcrFile, &com_argc, sizeof(int));
-		com_argv = malloc(com_argc * sizeof(char *));
+		if (com_argc < 0 || com_argc > MAX_NUM_ARGVS)
+			Sys_Error("Invalid argc in vcr file\n");
+		/* +1 for argv[0]; old code allocated com_argc then wrote [i+1] → OOB */
+		com_argv = malloc((size_t)(com_argc + 1) * sizeof(char *));
+		if (!com_argv)
+			Sys_Error("VCR playback: out of memory\n");
 		com_argv[0] = parms->argv[0];
 		for (i = 0; i < com_argc; i++)
 		{
 			Sys_FileRead (vcrFile, &len, sizeof(int));
-			p = malloc(len);
+			if (len < 1 || len > 65536)
+				Sys_Error("Invalid string length in vcr file\n");
+			p = malloc((size_t)len);
+			if (!p)
+				Sys_Error("VCR playback: out of memory\n");
 			Sys_FileRead (vcrFile, p, len);
-			com_argv[i+1] = p;
+			p[len - 1] = 0;	/* ensure C string if file lacked NUL */
+			com_argv[i + 1] = p;
 		}
 		com_argc++; /* add one for arg[0] */
 		parms->argc = com_argc;
