@@ -1,17 +1,60 @@
-# Hi-res textures for software quake.x11
+# Hi-res texture packs for software quake.x11
+
+## Two packs (pick one)
+
+| Gamedir | Backend | Feel |
+|---------|---------|------|
+| **`hires_xbrz`** | [xBRZ](https://sourceforge.net/projects/xbrz/) ×4 | Sharp, on-palette, pixel-art faithful |
+| **`hires_esr`** | Real-ESRGAN ×4 | Softer, more “remaster” detail |
+
+```bash
+# Pixel-art style (recommended default for stock Quake look)
+./quake.x11 -basedir . -game hires_xbrz -mem 512 -width 1280 -height 720 -window +map e1m1
+
+# Neural remaster style
+./quake.x11 -basedir . -game hires_esr -mem 512 -width 1280 -height 720 -window +map e1m1
+```
+
+**Override order:** later `-game` wins for the same path:
+
+```bash
+./quake.x11 -basedir . -game hires_esr -game hires_xbrz ...
+# → xBRZ textures override ESR where both exist
+```
+
+Legacy **`hires/`** may still exist from earlier work; prefer **`hires_xbrz`** / **`hires_esr`**.
+
+## Rebuild e1m1 dual packs
+
+```bash
+source /mnt/python/bin/activate   # Pillow, etc.
+# needs: xbrzscale, realesrgan-ncnn-vulkan, qpaktool
+python3 tools/hires_textures.py build-dual --scale 4
+# optional better ESRGAN:
+python3 tools/hires_textures.py build-dual --scale 4 --tta
+```
+
+Single pack:
+
+```bash
+python3 tools/hires_textures.py build-e1m1 --backend xbrz --game hires_xbrz --scale 4
+python3 tools/hires_textures.py build-e1m1 --backend esrgan --game hires_esr --scale 4
+```
+
+Manual steps:
+
+```bash
+python3 tools/hires_textures.py extract-bsp id1/maps/e1m1.bsp -o /tmp/tex-src --palette id1/gfx/palette.lmp
+python3 tools/hires_textures.py upscale /tmp/tex-src /tmp/tex-xbrz -s 4 --backend xbrz
+python3 tools/hires_textures.py pack /tmp/tex-xbrz hires_xbrz/textures \
+  --palette id1/gfx/palette.lmp --original /tmp/tex-src
+```
 
 ## Policy (source art)
 
-1. **Keep images as large as possible** (e.g. Real-ESRGAN **×4 + TTA**).
+1. **Keep images as large as possible** (×4).
 2. **Do not downscale in the pipeline** for “engine convenience.”
-3. **Engine** either uses the size as-is (if valid) or **box-downscales** to the
-   next supported size: **multiple of 16**, edge **≤ 1024** (`Image_FitTextureSize`).
-
-## Run
-
-```bash
-./quake.x11 -basedir . -game hires -mem 512 -width 1920 -height 1080 -window +map e1m1
-```
+3. **Engine** uses size as-is or **box-downscales** to multiple of **16**, edge **≤ 1024**.
 
 ## External formats (per texture name, `*` → `#`)
 
@@ -19,76 +62,23 @@
 2. `textures/<name>.rgba` — raw RGBA
 3. `textures/<name>.mip` — classic 8-bit
 
-### Transparency → alpha
-
-- Image alpha &lt; 128 → transparent  
-- RGB = **palette index 255** → transparent (Quake key)  
-- Magenta (255,0,255) → transparent  
-- Software mips: transparent → **index 255**
-
-## Rebuild e1m1 ×4 + TTA
-
-```bash
-source /mnt/python/bin/activate
-# extract + realesrgan -s 4 -x, then pack (no downscale)
-python3 tools/hires_textures.py build-e1m1 --scale 4 --tta
-# or manual: upscale file-by-file with -x, then:
-python3 tools/hires_textures.py pack /tmp/.../png_x4tta hires/textures \
-  --palette hires/gfx/palette.lmp --original /tmp/.../png_src
-# export TGA for RGBA path from those PNGs
-```
-
 ## UV scale + full-res surface cache
-
-BSP `texturemins` / extents are authored for the **original** miptex size.
-Hires replacements may be larger (`width`/`height`); the engine stores:
 
 | Field | Meaning |
 |-------|---------|
 | `base_width` / `base_height` | BSP UV space (original size) |
 | `width` / `height` | Actual mip / RGBA pixel size |
 
-| Stage | Space |
-|-------|--------|
-| Lightmaps | **Base** UV (unchanged BSP extents) |
-| Surface cache | **Hires** — `surfwidth = (extents>>mip) * (width/base_width)` |
-| Span UVs | Scaled in `D_CalcGradients` to match cache |
-| Block fill | Sample source **1:1** into the larger cache |
+Lightmaps stay in base UV; surface cache is hires-scaled. Prefer `-mem 256` or `512`.
 
-So bolts keep correct world scale **and** show full hires detail. Pool size is
-×8 vs stock (`D_SurfaceCacheForRes`); override with `-surfcachesize <KB>`.
-Prefer `-mem 256` or `512` with hires + 32bpp.
+## HUD / fonts
+
+UI scale is **resolution-based** (`Draw_GuiScale` = height/240), **not** texture ×4.
+Menus and status bar scale together; world art is independent.
 
 ## Notes
 
-- **32bpp + RGBA:** lit world surfaces sample `texture_t.rgba` (truecolor) with lightmap shade; no palette quantize on the hot path.
-- **8-bit fallback:** mips still built (box-filtered) for PseudoColor / missing RGBA.
+- **32bpp + RGBA:** lit world samples `texture_t.rgba`; turb uses truecolor warp in base UV space.
 - **Sky** not overridden.
-- **Turb water/slime/tele** (`*name` → `#name`): hires TGA OK. Software **truecolor turb** samples `texture_t.rgba` with scaled warp. Rebuild art with Lanczos×4 + light ESRGAN blend (not raw ESRGAN alone — washes gray).
-- ×4 pack is larger (~30MB+); use `-mem 256` or `512`.
-
-## VisPatch (GL transparent water) — not for software turb look
-
-[VisPatch](http://vispatch.sourceforge.net/) patches BSP **VIS** so **GLQuake** can draw
-see-through water (`r_wateralpha`). It does **not** fix software water texture/warp.
-
-```text
-vispatch <file> [-dir DIR] [-data FILE] [-new] [-extract]
-```
-
-Needs a **vis data file** (`vispatch.dat` / `id1.vis` from WaterVIS packs). Stock id1
-maps are not water-vised; applying a community `id1.vis` helps **GL** only.
-
-Software weird water we hit was **hires `#water0.tga` ≈ solid gray**, not missing VIS.
-
-## Native 32-bit software draw
-
-On X11 TrueColor (depth 24, bpp 32), the engine sets **`r_pixbytes = 4`**:
-
-- World spans write **native 32-bit** pixels (`D_DrawSpans32bpp`)
-- Surface cache stores 4 bytes/texel (`R_DrawSurfaceBlock32`)
-- **No** `st3_fixup` 8→32 expand at present
-- Particles, sprites, alias, HUD expand 8-bit art via `d_8to24table`
-- Log line: `VID: r_pixbytes=4 (depth=24 bpp=32)`
-
-8-bit PseudoColor still uses `r_pixbytes=1` + fixup.
+- **xBRZ** is usually safer for water/flat tiles; **ESRGAN** can wash colors (use color-constrained pack).
+- Future: gfx.wad / model skins can live in the same gamedirs with the same `-game` switch.
