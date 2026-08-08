@@ -44,6 +44,8 @@ D_WarpScreen
 
 // this performs a slight compression of the screen at the same time as
 // the sine warp, to keep the edges from wrapping
+//
+// 32bpp: copy whole pixels (was byte-only → scrambled underwater view).
 =============
 */
 void D_WarpScreen (void)
@@ -64,12 +66,14 @@ void D_WarpScreen (void)
 	wratio = w / (float)scr_vrect.width;
 	hratio = h / (float)scr_vrect.height;
 
+	/* screenwidth is byte stride of d_viewbuffer */
 	for (v=0 ; v<scr_vrect.height+AMP2*2 ; v++)
 	{
 		rowptr[v] = d_viewbuffer + (r_refdef.vrect.y * screenwidth) +
 				 (screenwidth * (int)((float)v * hratio * h / (h + AMP2 * 2)));
 	}
 
+	/* column[] = horizontal pixel offset within the viewbuffer scanline */
 	for (u=0 ; u<scr_vrect.width+AMP2*2 ; u++)
 	{
 		column[u] = r_refdef.vrect.x +
@@ -77,19 +81,37 @@ void D_WarpScreen (void)
 	}
 
 	turb = intsintable + ((int)(cl.time*SPEED)&(CYCLE-1));
-	dest = vid.buffer + scr_vrect.y * vid.rowbytes + scr_vrect.x;
+	dest = vid.buffer + scr_vrect.y * vid.rowbytes + scr_vrect.x * r_pixbytes;
 
-	for (v=0 ; v<scr_vrect.height ; v++, dest += vid.rowbytes)
+	if (r_pixbytes == 4)
 	{
-		col = &column[turb[v]];
-		row = &rowptr[v];
-
-		for (u=0 ; u<scr_vrect.width ; u+=4)
+		for (v = 0; v < scr_vrect.height; v++, dest += vid.rowbytes)
 		{
-			dest[u+0] = row[turb[u+0]][col[u+0]];
-			dest[u+1] = row[turb[u+1]][col[u+1]];
-			dest[u+2] = row[turb[u+2]][col[u+2]];
-			dest[u+3] = row[turb[u+3]][col[u+3]];
+			unsigned	*pdest = (unsigned *)dest;
+
+			col = &column[turb[v]];
+			row = &rowptr[v];
+			for (u = 0; u < scr_vrect.width; u++)
+			{
+				/* row[] is scanline start; col[] is pixel x */
+				pdest[u] = ((unsigned *)row[turb[u]])[col[u]];
+			}
+		}
+	}
+	else
+	{
+		for (v=0 ; v<scr_vrect.height ; v++, dest += vid.rowbytes)
+		{
+			col = &column[turb[v]];
+			row = &rowptr[v];
+
+			for (u=0 ; u<scr_vrect.width ; u+=4)
+			{
+				dest[u+0] = row[turb[u+0]][col[u+0]];
+				dest[u+1] = row[turb[u+1]][col[u+1]];
+				dest[u+2] = row[turb[u+2]][col[u+2]];
+				dest[u+3] = row[turb[u+3]][col[u+3]];
+			}
 		}
 	}
 }
